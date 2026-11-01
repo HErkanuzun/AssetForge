@@ -1,0 +1,35 @@
+# AssetForge — Kimodo kalıcı üretim servisi. /opt/kimodo içinde çalıştırılır:
+#   docker compose -f forge/docker-compose.forge.yaml up -d
+# Metin kodlayıcı (Llama-3-8B, ~16 GB) CPU'da çalışır → 8 GB'lık ekran kartında da yeterli VRAM kalır.
+services:
+  forge:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: kimodo:1.0
+    container_name: forge-kimodo
+    working_dir: /workspace
+    command: python /workspace/forge/forge_kimodo_server.py --port 9551
+    volumes:
+      - ../:/workspace
+      - ${HOME}/.cache/huggingface:/workspace/.cache/huggingface
+      - ${HOME}/.cache/huggingface/token:/workspace/.cache/huggingface/token:ro
+    ports:
+      - "9551:9551"
+    environment:
+      - HF_HOME=/workspace/.cache/huggingface
+      - TEXT_ENCODER_MODE=local
+      - TEXT_ENCODER_DEVICE=cpu
+      - HOST_USER=${USER:-root}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    shm_size: "8gb"
+    ipc: host
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

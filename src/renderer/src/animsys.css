@@ -1,0 +1,328 @@
+/* ================================================================== Animasyon sistemleri */
+.anim-wrap {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.anim-wrap > .anim {
+  min-height: 0;
+}
+.anim-tabs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px 10px 0;
+}
+.sys-intro h2 {
+  margin: 0 0 4px;
+  font: 600 20px var(--font-display);
+}
+.sys-intro p {
+  margin: 0 0 14px;
+  max-width: 760px;
+  line-height: 1.55;
+  font-size: 13px;
+}
+.sys-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.sys-card {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.sys-card:hover {
+  border-color: rgba(255, 140, 80, 0.45);
+  transform: translateY(-1px);
+}
+.sys-card.open {
+  grid-column: 1 / -1;
+  border-color: rgba(255, 140, 80, 0.55);
+  background: linear-gradient(135deg, rgba(255, 106, 43, 0.1), rgba(226, 35, 95, 0.05) 60%, rgba(255, 255, 255, 0.01));
+  cursor: default;
+}
+.sys-ico {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--grad);
+  color: #1a0600;
+}
+.sys-detail dl {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 8px 16px;
+  margin: 14px 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.sys-detail dt {
+  color: var(--accent2);
+  font-weight: 600;
+}
+.sys-detail dd {
+  margin: 0;
+  color: #d4d8e2;
+}
+.warn-text {
+  color: #f5d48a !important;
+}
+.sys-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 10px;
+}
+.sys-name {
+  width: 100%;
+  font: 600 15px var(--font-display);
+  background: transparent;
+  border-color: transparent;
+  padding-left: 0;
+}
+.sys-name:hover,
+.sys-name:focus {
+  border-color: var(--line2);
+  padding-left: 8px;
+}
+.sys-progress {
+  width: 120px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+.sys-progress div {
+  height: 100%;
+  background: var(--grad);
+  transition: width 0.4s;
+}
+.sys-stage {
+  height: 260px;
+  flex: none;
+  display: flex;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.sys-stage > * {
+  flex: 1;
+}
+.sys-body {
+  padding-top: 12px;
+}
+
+/* durum renkleri */
+.st-done {
+  --st: var(--ok);
+}
+.st-running,
+.st-queued {
+  --st: var(--accent);
+}
+.st-failed {
+  --st: var(--err);
+}
+.st-waiting {
+  --st: var(--accent2);
+}
+.st-none {
+  --st: #59607a;
+}
+
+/* blend space ızgarası */
+.bs-viz {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 14px;
+  background: radial-gradient(500px 200px at 50% 100%, rgba(76, 201, 255, 0.07), transparent 70%), rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--line);
+}
+.bs-viz .grid {
+  stroke: rgba(255, 255, 255, 0.06);
+}
+.bs-viz .axis {
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-width: 2;
+}
+.bs-viz .lbl {
+  fill: var(--dim);
+  font: 10px var(--font);
+}
+.bs-viz .pt {
+  cursor: pointer;
+}
+.bs-viz .pt circle {
+  fill: var(--st);
+  stroke: #07080c;
+  stroke-width: 2;
+}
+.bs-viz .pt.sel circle {
+  stroke: #fff;
+}
+.bs-viz .pt.ghost {
+  opacity: 0.45;
+}
+.bs-viz .pt-lbl {
+  fill: #cfd3dc;
+  font: 600 10px var(--font);
+  pointer-events: none;
+}
+
+/* dans kartı */
+.dance {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dc-head {
+  font: 600 12px var(--font-display);
+  color: var(--muted);
+  margin: 0 2px 6px;
+  display: flex;
+  gap: 6px;
+}
+.dc-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 6px;
+}
+.dc-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px 8px 12px;
+  min-height: 54px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.025);
+  cursor: pointer;
+  font-size: 12px;
+  overflow: hidden;
+}
+.dc-tile::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--st, #59607a);
+}
+.dc-tile:hover {
+  border-color: var(--line2);
+}
+.dc-tile.sel {
+  border-color: rgba(255, 140, 80, 0.7);
+  background: rgba(255, 106, 43, 0.09);
+}
+.dc-tile.off {
+  opacity: 0.38;
+}
+.dc-st {
+  color: var(--st);
+}
+
+/* akış (durum makinesi / montaj) */
+.flow-viz {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.flow-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.flow-row .dc-tile {
+  width: 190px;
+  flex: none;
+}
+.flow-ref {
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--line2);
+  font-size: 11.5px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.flow-arrow {
+  color: var(--accent2);
+}
+
+/* nişan ızgarası */
+.aim-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  max-width: 480px;
+}
+
+/* klip denetçisi */
+.ins textarea {
+  width: 100%;
+  resize: vertical;
+  font: 12.5px var(--font);
+  margin-top: 4px;
+}
+.ins-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.ins-grid label,
+.ins-num {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.ins-num .input {
+  width: 100%;
+  min-width: 0;
+}
+.ins-meas {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  background: rgba(52, 211, 153, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.build-box {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.build-box.ok {
+  border-color: rgba(52, 211, 153, 0.35);
+}
+.build-box.err {
+  border-color: rgba(244, 63, 94, 0.4);
+}
+.how p {
+  margin: 0 0 10px;
+  line-height: 1.55;
+}
+.sys-stage .stage {
+  min-height: 0;
+}
