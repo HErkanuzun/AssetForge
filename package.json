@@ -40,6 +40,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "start": "electron-vite preview",
     "dist": "electron-vite build && electron-builder --win",
+    "version": "node scripts/sync-version.mjs && git add README.md README.tr.md README.es.md README.zh-CN.md ROADMAP.md llms.txt CHANGELOG.md",
     "release:patch": "npm version patch -m \"Release v%s\"",
     "release:minor": "npm version minor -m \"Release v%s\"",
     "release:major": "npm version major -m \"Release v%s\""

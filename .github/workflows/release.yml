@@ -21,9 +21,13 @@ jobs:
       - run: npm run typecheck
       - run: npx electron-vite build
       - run: npx electron-builder --win --publish never
+      - name: Release notes from CHANGELOG.md
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: node scripts/release-notes.mjs ${{ github.ref_name }} > release-notes.md
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: dist/AssetForge-Setup-*.exe
-          generate_release_notes: true
+          body_path: release-notes.md
           make_latest: true

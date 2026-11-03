@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 - Settings is split into categories (Accounts & API, AI models, Project, Local tools, Animation, Unreal Engine, MCP, About) with a searchable side menu. It remembers the last category and opens Accounts & API first when a key is missing.
+- GitHub release notes now come from the matching CHANGELOG.md section, and `npm version` updates the version in the READMEs, ROADMAP and llms.txt automatically.
 
 ## [0.4.0] - 2026-11-02
 
