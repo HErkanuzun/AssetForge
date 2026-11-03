@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.7] - 2026-11-03
+
 ### Fixed
 - **Quick connect** no longer waits silently when the copied text is not recognized. If what you copied does not look like that service's key (for example a password copied while logging in), the tile says so and shows how the key should start. Keys copied together with other text, such as `MESHY_API_KEY="msy_…"` or with quotes and line breaks, are now found inside it.
 - A key that failed only because of a network problem is tried again when you copy it again; before, it was ignored for the rest of the attempt. A key the service rejected now gets a clear message instead of being ignored.

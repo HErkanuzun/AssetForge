@@ -11,7 +11,7 @@
 [![Licencia: AGPL-3.0](https://img.shields.io/badge/licencia-AGPL--3.0-blue)](LICENSE)
 ![Plataforma](https://img.shields.io/badge/plataforma-Windows%2010%2F11-0078d4)
 ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.x-313131?logo=unrealengine)
-![Versión](https://img.shields.io/badge/versi%C3%B3n-0.4.6%20alpha-orange)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-0.4.7%20alpha-orange)
 
 [English](README.md) · [Türkçe](README.tr.md) · **Español** · [简体中文](README.zh-CN.md)
 
@@ -100,7 +100,7 @@ npm run check   # tipos, lint, formato y pruebas (igual que CI)
 
 ## Versiones y hoja de ruta
 
-El proyecto usa [Versionado Semántico](https://semver.org/lang/es/). Versión actual: **0.4.6 (alpha)**. Tiempo estimado hasta la 1.0: unos 6 meses. Detalles en [ROADMAP.md](ROADMAP.md) y cambios en [CHANGELOG.md](CHANGELOG.md).
+El proyecto usa [Versionado Semántico](https://semver.org/lang/es/). Versión actual: **0.4.7 (alpha)**. Tiempo estimado hasta la 1.0: unos 6 meses. Detalles en [ROADMAP.md](ROADMAP.md) y cambios en [CHANGELOG.md](CHANGELOG.md).
 
 ## Contribuir
 
