@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-03
+
 ### Added
 - Automated tests (Vitest, 92 tests): pipeline graph ordering and cycle detection, integrity of every built-in pipeline template (node types, ports, port types, required inputs), animation system catalogs and production order, Kimodo root paths (direction, speed, turns, stops, pivots), request building, WAV headers, image sniffing and quick-connect key detection.
 - `npm run check` runs typecheck, lint, format check and tests in one go; CI and the release workflow run the same checks, plus `ruff` for the Blender / Unreal / Kimodo Python scripts.
