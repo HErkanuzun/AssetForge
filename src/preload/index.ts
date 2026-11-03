@@ -82,6 +82,15 @@ const api: ForgeApi = {
   llm: {
     test: (providerId) => call('llm:test', providerId)
   },
+  connect: {
+    start: (service) => call('connect:start', service),
+    cancel: () => call('connect:cancel'),
+    onEvent: (cb) => {
+      const listener = (_e: unknown, ev: Parameters<typeof cb>[0]) => cb(ev)
+      ipcRenderer.on('connect:event', listener)
+      return () => ipcRenderer.removeListener('connect:event', listener)
+    }
+  },
   mcp: {
     status: () => call('mcp:status'),
     test: (id) => call('mcp:test', id)

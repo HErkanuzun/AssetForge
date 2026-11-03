@@ -626,3 +626,12 @@ export type AgentEvent =
   | { type: 'thinking'; convId: string; on: boolean }
   | { type: 'conv'; conv: AgentConversation }
   | { type: 'error'; convId: string; error: string }
+
+/** Hızlı bağlantı: tarayıcıda giriş / anahtar sayfası */
+export type ConnectService = 'anthropic' | 'meshy' | 'elevenlabs' | 'huggingface' | 'openrouter'
+
+export interface ConnectEvent {
+  service: ConnectService
+  phase: 'waiting' | 'checking' | 'done' | 'error' | 'canceled'
+  message: string
+}

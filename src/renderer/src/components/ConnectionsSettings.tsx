@@ -1,4 +1,4 @@
-// Ayarlar → Bağlantılar: yapay zeka sağlayıcıları, görev atamaları, MCP (dışarı açma + dış sunucular)
+// Ayarlar: yapay zeka sağlayıcıları ve görev atamaları (ModelSettings), MCP sunucusu ve dış araçlar (McpSettings)
 import { useEffect, useState } from 'react'
 import type { LlmProvider, LlmRoles, McpServerConfig, McpServerStatus } from '../../../shared/types'
 import { useStore } from '../store'
@@ -26,31 +26,35 @@ const MCP_PRESETS: { label: string; s: Omit<McpServerConfig, 'id'> }[] = [
   { label: 'Özel (HTTP)', s: { name: 'Sunucu', transport: 'http', command: '', args: '', env: '', url: 'http://127.0.0.1:8000/mcp', headers: '', enabled: true, autoApprove: false } }
 ]
 
+export const CLAUDE_MODELS = [
+  { value: 'claude-opus-5-5', label: 'Claude Opus 5.5 (önerilen)' },
+  { value: 'claude-fable-5-1', label: 'Claude Fable 5.1 (en güçlü, pahalı)' },
+  { value: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5 (hızlı/ucuz)' },
+  { value: 'claude-haiku-5-5', label: 'Claude Haiku 5.5 (en ucuz)' }
+]
+
 const rid = (p: string) => `${p}_${Math.random().toString(36).slice(2, 8)}`
 
 function copy(text: string, toast: (t: string, k?: 'ok') => void) {
   navigator.clipboard.writeText(text).then(() => toast('Kopyalandı', 'ok'))
 }
 
-export default function ConnectionsSettings() {
+function useSettingsPatch() {
   const { settings, setSettings, toast } = useStore()
-  const s = settings!
+  const patch = async (p: Parameters<typeof window.forge.settings.set>[0]) => setSettings(await window.forge.settings.set(p))
+  return { s: settings!, patch, toast }
+}
+
+/** Yapay zeka sağlayıcıları ve görev atamaları */
+export function ModelSettings() {
+  const { s, patch, toast } = useSettingsPatch()
   const [keys, setKeys] = useState<Record<string, string>>({})
-  const [mcp, setMcp] = useState<{ servers: McpServerStatus[]; expose: { running: boolean; url: string } } | null>(null)
   const [testing, setTesting] = useState('')
   const custom = s.llmProviders.filter((p) => !p.builtin)
 
-  const refreshMcp = () => window.forge.mcp.status().then(setMcp, () => undefined)
-  useEffect(() => {
-    refreshMcp()
-  }, [])
-
-  const patch = async (p: Parameters<typeof window.forge.settings.set>[0]) => setSettings(await window.forge.settings.set(p))
   const setProviders = (list: LlmProvider[]) => patch({ llmProviders: list })
   const editProvider = (id: string, ch: Partial<LlmProvider>) => setProviders(custom.map((p) => (p.id === id ? { ...p, ...ch } : p)))
   const setRole = (role: keyof LlmRoles, id: string) => patch({ llmRoles: { ...s.llmRoles, [role]: id } })
-  const setServers = (list: McpServerConfig[]) => patch({ mcpServers: list })
-  const editServer = (id: string, ch: Partial<McpServerConfig>) => setServers(s.mcpServers.map((x) => (x.id === id ? { ...x, ...ch } : x)))
 
   const test = async (id: string) => {
     setTesting(id)
@@ -63,9 +67,6 @@ export default function ConnectionsSettings() {
     }
   }
 
-  const url = `http://127.0.0.1:${s.mcpExpose.port}/mcp`
-  const ccCmd = `claude mcp add --transport http assetforge ${url} --header "Authorization: Bearer ${s.mcpExpose.token}"`
-  const desktop = JSON.stringify({ mcpServers: { assetforge: { command: 'npx', args: ['-y', 'mcp-remote', `${url}?token=${s.mcpExpose.token}`] } } }, null, 2)
   const roleOpts = s.llmProviders.map((p) => (
     <option key={p.id} value={p.id}>
       {p.name} · {p.model || '?'}
@@ -73,17 +74,22 @@ export default function ConnectionsSettings() {
   ))
 
   return (
-    <>
       <section className="card">
-        <h2>Yapay zeka modelleri</h2>
+        <h2>Sağlayıcılar</h2>
         <p className="muted small">
           Claude varsayılandır. Yerel modeller (Ollama, LM Studio, vLLM) ya da başka API’ler (OpenRouter, OpenAI uyumlu her uç) eklenebilir ve görevlere ayrı ayrı atanabilir. Yerel modellerde
           araç kullanımı (tool calling) destekleyen bir model seçin — ör. Qwen3, Llama 3.3/4, Mistral Small 3.
         </p>
         <div className="prov">
           <b>Claude (Anthropic)</b>
-          <span className="muted small">Anthropic API · anahtar “AI servisleri”nde</span>
-          <span className="mono small">{s.claudeModel}</span>
+          <span className="muted small">Anthropic API · anahtar “Hesaplar ve API”de</span>
+          <select className="input" value={s.claudeModel} onChange={(e) => patch({ claudeModel: e.target.value })} title="Claude modeli">
+            {CLAUDE_MODELS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
           <span className="chip ok" style={{ justifySelf: 'start' }}>
             görsel ✓
           </span>
@@ -161,7 +167,29 @@ export default function ConnectionsSettings() {
         </div>
         <p className="dim small" style={{ marginTop: 8 }}>Brief sohbeti şimdilik Claude ile çalışır.</p>
       </section>
+  )
+}
 
+/** AssetForge MCP sunucusu (dışarı açma) ve dış MCP araç sunucuları */
+export function McpSettings() {
+  const { s, patch, toast } = useSettingsPatch()
+  const [mcp, setMcp] = useState<{ servers: McpServerStatus[]; expose: { running: boolean; url: string } } | null>(null)
+  const [testing, setTesting] = useState('')
+
+  const refreshMcp = () => window.forge.mcp.status().then(setMcp, () => undefined)
+  useEffect(() => {
+    refreshMcp()
+  }, [])
+
+  const setServers = (list: McpServerConfig[]) => patch({ mcpServers: list })
+  const editServer = (id: string, ch: Partial<McpServerConfig>) => setServers(s.mcpServers.map((x) => (x.id === id ? { ...x, ...ch } : x)))
+
+  const url = `http://127.0.0.1:${s.mcpExpose.port}/mcp`
+  const ccCmd = `claude mcp add --transport http assetforge ${url} --header "Authorization: Bearer ${s.mcpExpose.token}"`
+  const desktop = JSON.stringify({ mcpServers: { assetforge: { command: 'npx', args: ['-y', 'mcp-remote', `${url}?token=${s.mcpExpose.token}`] } } }, null, 2)
+
+  return (
+    <>
       <section className="card">
         <h2>Claude’u bağla — AssetForge MCP sunucusu</h2>
         <p className="muted small">

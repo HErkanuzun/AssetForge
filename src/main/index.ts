@@ -2,7 +2,8 @@ import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell } from 'elect
 import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import type { AgentInput, AssetKind, Bible, Brief, BriefInput, Job, Project, SettingsPatch } from '../shared/types'
+import type { AgentInput, AssetKind, Bible, Brief, BriefInput, ConnectEvent, ConnectService, Job, Project, SettingsPatch } from '../shared/types'
+import { connectCancel, connectStart } from './connect'
 import { approve, createConv, deleteConv, listConvs, loadConv, sendAgent, stopConv } from './agent/assistant'
 import { mcpStatus, mcpTest } from './agent/mcpClient'
 import { mcpServerRunning, mcpUrl, syncMcpServer } from './agent/mcpServer'
@@ -235,6 +236,19 @@ function registerIpc(): void {
   })
   handle('mcp:status', async () => ({ servers: await mcpStatus(), expose: { running: mcpServerRunning(), url: mcpUrl() } }))
   handle('mcp:test', (id: string) => mcpTest(id))
+
+  // Hızlı bağlantı: servis sayfasını tarayıcıda aç, anahtarı yakala
+  handle('connect:start', (service: ConnectService) =>
+    connectStart(
+      service,
+      (e: ConnectEvent) => win?.webContents.send('connect:event', e),
+      () => {
+        if (win?.isMinimized()) win.restore()
+        win?.flashFrame(true)
+      }
+    )
+  )
+  handle('connect:cancel', () => connectCancel())
 
   handle('shell:openPath', (p: string) => shell.openPath(p))
   handle('shell:showItem', (p: string) => shell.showItemInFolder(p))

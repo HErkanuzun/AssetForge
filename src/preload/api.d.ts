@@ -1,4 +1,4 @@
-import type { AnimSystem, AnimSystemClipState, AnimSystemKind, AgentConversation, AgentEvent, AgentInput, McpServerStatus, AnimSegment, AssetKind, AssetSpec, Bible, Brief, BriefEvent, BriefInput, ImportResult, Job, KimodoStatus, Project, SettingsPatch, SettingsPublic, UeNode } from '../shared/types'
+import type { AnimSystem, AnimSystemClipState, AnimSystemKind, AgentConversation, ConnectEvent, ConnectService, AgentEvent, AgentInput, McpServerStatus, AnimSegment, AssetKind, AssetSpec, Bible, Brief, BriefEvent, BriefInput, ImportResult, Job, KimodoStatus, Project, SettingsPatch, SettingsPublic, UeNode } from '../shared/types'
 
 export interface ForgeApi {
   settings: {
@@ -54,6 +54,12 @@ export interface ForgeApi {
   onProjectChanged(cb: (p: Project) => void): () => void
   llm: {
     test(providerId: string): Promise<string>
+  }
+  /** Hızlı bağlantı: servis sayfasını tarayıcıda açar, anahtarı otomatik yakalar */
+  connect: {
+    start(service: ConnectService): Promise<void>
+    cancel(): Promise<void>
+    onEvent(cb: (e: ConnectEvent) => void): () => void
   }
   mcp: {
     status(): Promise<{ servers: McpServerStatus[]; expose: { running: boolean; url: string } }>
