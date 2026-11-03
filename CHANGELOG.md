@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-03
+
 ### Added
 - Quick connect in Settings: one click opens each service's sign-in / API key page (Claude, Meshy, ElevenLabs, Hugging Face). The copied key is picked up from the clipboard, verified against the service and stored encrypted; the clipboard is then cleared.
 - OpenRouter sign-in: "Giriş yap ve bağlan" runs OpenRouter's OAuth (PKCE) flow, so you only approve in the browser and the provider is added with its key automatically.

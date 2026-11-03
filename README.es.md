@@ -11,7 +11,7 @@
 [![Licencia: PolyForm Noncommercial](https://img.shields.io/badge/licencia-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE.md)
 ![Plataforma](https://img.shields.io/badge/plataforma-Windows%2010%2F11-0078d4)
 ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.x-313131?logo=unrealengine)
-![Versión](https://img.shields.io/badge/versi%C3%B3n-0.4.0%20alpha-orange)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-0.4.1%20alpha-orange)
 
 [English](README.md) · [Türkçe](README.tr.md) · **Español** · [简体中文](README.zh-CN.md)
 
@@ -99,7 +99,7 @@ npm run dist    # instalador de Windows en dist/
 
 ## Versiones y hoja de ruta
 
-El proyecto usa [Versionado Semántico](https://semver.org/lang/es/). Versión actual: **0.4.0 (alpha)**. Tiempo estimado hasta la 1.0: unos 6 meses. Detalles en [ROADMAP.md](ROADMAP.md) y cambios en [CHANGELOG.md](CHANGELOG.md).
+El proyecto usa [Versionado Semántico](https://semver.org/lang/es/). Versión actual: **0.4.1 (alpha)**. Tiempo estimado hasta la 1.0: unos 6 meses. Detalles en [ROADMAP.md](ROADMAP.md) y cambios en [CHANGELOG.md](CHANGELOG.md).
 
 ## Licencia
 
