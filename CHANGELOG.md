@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+- **New installer design** in AssetForge's colors: a dark welcome and finish page with the logo and the app's orange gradient, a dark header strip on every page, and its own uninstaller artwork. The installer follows the Windows language (Turkish or English).
+- **Setup options page:** choose whether to add a desktop shortcut (the Start menu entry is always added and shows up in Windows search). The page explains how to pin AssetForge to the taskbar; Windows does not let installers pin apps by themselves.
+- **Taskbar integration:** right-clicking the pinned icon offers Workshop, Library, Animation Studio, Jobs and Settings, and opens that page directly (also when the app is already open). While pipelines run, the taskbar icon shows their overall progress (red when a job fails) and flashes when a job finishes in the background.
+- Uninstalling asks whether to also delete settings, encrypted API keys and logs (default: keep them). Projects and generated assets are never deleted.
+- **Version archive:** `versions/` keeps every release in its own folder with its installer, source code zip and release notes, so you can go back to any version. `npm run versions -- --download` fills it from GitHub Releases, and `npm run dist` archives each new build. See [versions/README.md](versions/README.md).
+- `npm run installer:art` regenerates the installer images from `scripts/installer-art/art.html`.
+
 ## [0.4.4] - 2026-11-03
 
 ### Security

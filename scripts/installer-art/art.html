@@ -1,0 +1,140 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+<!-- Kurulum sihirbazı görselleri. render.cjs her görseli ?v=<ad> ile açıp ekran görüntüsü alır. -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        margin: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        background: #07080c;
+        color: #eef0f5;
+        font-family: 'Segoe UI Variable Display', 'Segoe UI', sans-serif;
+        overflow: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+      .sidebar {
+        position: relative;
+        width: 164px;
+        height: 314px;
+        overflow: hidden;
+        background:
+          radial-gradient(120px 140px at 18% 96%, rgba(255, 106, 43, 0.34), transparent 70%), radial-gradient(110px 110px at 100% 70%, rgba(226, 35, 95, 0.22), transparent 70%),
+          radial-gradient(90px 90px at 0% 0%, rgba(255, 181, 71, 0.12), transparent 70%), linear-gradient(180deg, #0b0d13, #07080c);
+      }
+      .grid {
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+        background-size: 16px 16px;
+        mask-image: linear-gradient(180deg, transparent 0%, #000 45%, #000 80%, transparent 100%);
+      }
+      .logo {
+        position: absolute;
+        left: 18px;
+        top: 24px;
+        width: 54px;
+        height: 54px;
+        filter: drop-shadow(0 6px 16px rgba(255, 106, 43, 0.45));
+      }
+      .name {
+        position: absolute;
+        left: 18px;
+        top: 92px;
+        font-size: 21px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+      .bar {
+        position: absolute;
+        left: 18px;
+        top: 124px;
+        width: 34px;
+        height: 3px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, #ffb547, #ff6a2b 45%, #e2235f);
+      }
+      .tag {
+        position: absolute;
+        left: 18px;
+        right: 14px;
+        top: 136px;
+        font-family: 'Segoe UI Variable Text', 'Segoe UI', sans-serif;
+        font-size: 11px;
+        line-height: 1.45;
+        color: #a3a9b8;
+      }
+      .chips {
+        position: absolute;
+        left: 18px;
+        right: 12px;
+        top: 206px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .chip {
+        font-family: 'Segoe UI Variable Text', 'Segoe UI', sans-serif;
+        font-size: 9.5px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        color: #eef0f5;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .foot {
+        position: absolute;
+        left: 18px;
+        bottom: 14px;
+        font-family: 'Segoe UI Variable Text', 'Segoe UI', sans-serif;
+        font-size: 9.5px;
+        color: #6b7284;
+      }
+      .header {
+        position: relative;
+        width: 150px;
+        height: 57px;
+        overflow: hidden;
+        background: radial-gradient(80px 60px at 100% 50%, rgba(255, 106, 43, 0.3), transparent 70%), #0b0d13;
+      }
+      .header img {
+        position: absolute;
+        right: 14px;
+        top: 10px;
+        width: 37px;
+        height: 37px;
+        filter: drop-shadow(0 3px 10px rgba(255, 106, 43, 0.5));
+      }
+      .header .line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #ffb547 40%, #ff6a2b 70%, #e2235f);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      const v = new URLSearchParams(location.search).get('v')
+      const root = document.getElementById('root')
+      if (v === 'header') {
+        root.innerHTML = '<div class="header"><img src="../../build/icon.png" /><div class="line"></div></div>'
+      } else {
+        const un = v === 'uninstall'
+        root.innerHTML = `<div class="sidebar"><div class="grid"></div>
+          <img class="logo" src="../../build/icon.png" />
+          <div class="name">AssetForge</div><div class="bar"></div>
+          <div class="tag">${un ? 'Oyun asset’leri için yapay zekâ atölyesi.<br/>Projelerin ve asset’lerin yerinde kalır.' : 'Oyun asset’leri ve animasyonları için yapay zekâ atölyesi.'}</div>
+          <div class="chips">${un ? '' : ['3D', 'Doku', 'Ses', 'Animasyon', 'Unreal'].map((c) => `<span class="chip">${c}</span>`).join('')}</div>
+          <div class="foot">Açık kaynak · AGPL-3.0</div></div>`
+      }
+    </script>
+  </body>
+</html>

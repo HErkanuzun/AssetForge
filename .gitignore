@@ -9,3 +9,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 *.npz
+
+# Yerel sürüm arşivi (kurulumlar büyük); yalnızca README depoda
+/versions/*
+!/versions/README.md

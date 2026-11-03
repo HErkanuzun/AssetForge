@@ -28,6 +28,11 @@ const api: ForgeApi = {
     cancel: (jobId) => call('run:cancel', jobId)
   },
   jobs: () => call('jobs:list'),
+  onNavigate: (cb) => {
+    const listener = (_e: unknown, page: string) => cb(page)
+    ipcRenderer.on('nav:page', listener)
+    return () => ipcRenderer.removeListener('nav:page', listener)
+  },
   onJobUpdate: (cb) => {
     const listener = (_e: unknown, job: Parameters<typeof cb>[0]) => cb(job)
     ipcRenderer.on('job:update', listener)

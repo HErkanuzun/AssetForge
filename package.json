@@ -48,12 +48,14 @@
     "notices:check": "node scripts/third-party-notices.mjs --check",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run notices:check && npm run audit",
     "start": "electron-vite preview",
-    "dist": "electron-vite build && electron-builder --win",
+    "dist": "electron-vite build && electron-builder --win && node scripts/archive-versions.mjs",
     "version": "node scripts/sync-version.mjs && git add README.md README.tr.md README.es.md README.zh-CN.md ROADMAP.md llms.txt CHANGELOG.md",
     "release:patch": "npm version patch -m \"Release v%s\"",
     "release:minor": "npm version minor -m \"Release v%s\"",
     "release:major": "npm version major -m \"Release v%s\"",
-    "audit": "npm audit --omit=dev --audit-level=moderate"
+    "audit": "npm audit --omit=dev --audit-level=moderate",
+    "installer:art": "electron scripts/installer-art/render.cjs",
+    "versions": "node scripts/archive-versions.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
@@ -113,7 +115,19 @@
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "shortcutName": "AssetForge",
-      "license": "build/license.txt"
+      "license": "build/license.txt",
+      "include": "build/installer.nsh",
+      "installerSidebar": "build/installerSidebar.bmp",
+      "uninstallerSidebar": "build/uninstallerSidebar.bmp",
+      "installerHeader": "build/installerHeader.bmp",
+      "installerLanguages": [
+        "tr_TR",
+        "en_US"
+      ],
+      "multiLanguageInstaller": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "uninstallDisplayName": "AssetForge"
     },
     "copyright": "Copyright (c) 2026 Hasan Erkan Uzun",
     "extraFiles": [

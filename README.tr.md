@@ -106,7 +106,8 @@ git clone https://github.com/HErkanuzun/AssetForge.git
 cd AssetForge
 npm install
 npm run dev     # geliştirme
-npm run dist    # Windows kurulum dosyası (dist/)
+npm run dist    # Windows kurulum dosyası (dist/), versions/ arşivine de kopyalanır
+npm run versions -- --download  # versions/ klasörüne tüm sürümleri indir (kurulum, kaynak, notlar)
 npm run check   # tip kontrolü, lint, biçim ve testler (CI ile aynı)
 ```
 

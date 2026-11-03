@@ -43,6 +43,8 @@ export interface ForgeApi {
     cancel(jobId: string): Promise<void>
   }
   jobs(): Promise<Job[]>
+  /** Görev çubuğu kısayolundan sayfa açma isteği */
+  onNavigate(cb: (page: string) => void): () => void
   onJobUpdate(cb: (job: Job) => void): () => void
   ueDiscover(): Promise<UeNode[]>
   testClaude(): Promise<string>

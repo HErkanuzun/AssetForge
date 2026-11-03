@@ -68,6 +68,17 @@ export default function App() {
       /* depolama kapalı */
     }
   }, [assistant])
+  // Görev çubuğu sağ tık kısayolları (uygulama zaten açıkken)
+  useEffect(
+    () =>
+      window.forge.onNavigate((p) => {
+        if (p in TITLES) {
+          setBrief(null)
+          setPage(p as Page)
+        }
+      }),
+    []
+  )
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key.toLowerCase() === 'j') {

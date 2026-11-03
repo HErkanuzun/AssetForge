@@ -70,7 +70,7 @@ It is built for indie developers, technical artists and students who want **cons
 ## Download and install
 
 1. Download **`AssetForge-Setup-x.y.z.exe`** from the [latest release](https://github.com/HErkanuzun/AssetForge/releases/latest).
-2. Run the installer. The build is not code-signed yet, so Windows SmartScreen may warn you: click **More info → Run anyway**.
+2. Run the installer. The build is not code-signed yet, so Windows SmartScreen may warn you: click **More info → Run anyway**. The installer (Turkish or English, following Windows) lets you choose the folder, all users or just you, and whether to add a desktop shortcut. Once AssetForge is pinned to the taskbar, right-click its icon to jump to the Workshop, Library, Animation, Jobs or Settings.
 3. Open **Settings** and add the API keys you plan to use. Keys are stored encrypted with Windows DPAPI on your machine.
 4. Pick a project folder and start in the **Workshop** ("Ne üretelim?").
 
@@ -96,7 +96,8 @@ git clone https://github.com/HErkanuzun/AssetForge.git
 cd AssetForge
 npm install
 npm run dev     # development with hot reload
-npm run dist    # build the Windows installer into dist/
+npm run dist    # build the Windows installer into dist/ and archive it in versions/
+npm run versions -- --download  # fill versions/ with every release (installer, source, notes)
 npm run check   # typecheck, lint, format check and tests (same as CI)
 ```
 

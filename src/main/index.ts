@@ -8,6 +8,7 @@ import { connectCancel, connectStart } from './connect'
 import { buildDiagnostics, saveDiagnostics } from './diagnostics'
 import { initLog, logDir, writeLog } from './log'
 import { hardenApp, isInside, openInsideProject, showInsideProject } from './security'
+import { createJobTaskbar, pageFromArgv, setupJumpList } from './taskbar'
 import { approve, createConv, deleteConv, listConvs, loadConv, sendAgent, stopConv } from './agent/assistant'
 import { mcpStatus, mcpTest } from './agent/mcpClient'
 import { mcpServerRunning, mcpUrl, syncMcpServer } from './agent/mcpServer'
@@ -36,19 +37,25 @@ if (!devHook && !app.requestSingleInstanceLock()) {
   app.quit()
   process.exit(0)
 }
-app.on('second-instance', () => {
+app.on('second-instance', (_e, argv) => {
   if (!win) return
   if (win.isMinimized()) win.restore()
   win.focus()
+  // Görev çubuğu sağ tık kısayolu: --page=<ad> ile açılan sayfaya git
+  const page = pageFromArgv(argv)
+  if (page) win.webContents.send('nav:page', page)
 })
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'forge', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } }])
 
 let win: BrowserWindow | null = null
 
+const taskbarJob = createJobTaskbar(() => win)
+
 const runner = new Runner(
   (job: Job) => {
     win?.webContents.send('job:update', job)
+    taskbarJob(job)
     // Geliştirme: FORGE_AUTORUN ile başlatılan iş bitince sonucu yazdırıp kapan
     if (process.env.FORGE_AUTORUN && ['done', 'failed', 'canceled'].includes(job.status)) {
       console.log('[autorun] ' + JSON.stringify(job, null, 1))
@@ -87,7 +94,7 @@ function createWindow(): void {
   win.webContents.on('render-process-gone', (_e, d) => console.error('[renderer] süreç kapandı:', d.reason, d.exitCode))
   win.on('unresponsive', () => console.warn('[renderer] pencere yanıt vermiyor'))
   win.on('responsive', () => console.info('[renderer] pencere yeniden yanıt veriyor'))
-  const page = process.env.FORGE_PAGE ?? ''
+  const page = process.env.FORGE_PAGE ?? pageFromArgv(process.argv) ?? ''
   if (process.env['ELECTRON_RENDERER_URL']) win.loadURL(process.env['ELECTRON_RENDERER_URL'] + (page ? '#' + page : ''))
   else win.loadFile(path.join(__dirname, '../renderer/index.html'), { hash: page })
 
@@ -301,6 +308,7 @@ app.on('child-process-gone', (_e, d) => {
 
 app.whenReady().then(() => {
   hardenApp()
+  setupJumpList()
   registerFileProtocol()
   registerIpc()
   createWindow()
