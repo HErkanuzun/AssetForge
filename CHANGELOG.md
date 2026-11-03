@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-11-03
+
 ### Added
 - **New installer design** in AssetForge's colors: a dark welcome and finish page with the logo and the app's orange gradient, a dark header strip on every page, and its own uninstaller artwork. The installer follows the Windows language (Turkish or English).
 - **Setup options page:** choose whether to add a desktop shortcut (the Start menu entry is always added and shows up in Windows search). The page explains how to pin AssetForge to the taskbar; Windows does not let installers pin apps by themselves.

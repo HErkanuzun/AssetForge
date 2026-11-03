@@ -11,7 +11,7 @@
 [![Lisans: AGPL-3.0](https://img.shields.io/badge/lisans-AGPL--3.0-blue)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078d4)
 ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.x-313131?logo=unrealengine)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-0.4.4%20alpha-orange)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-0.4.5%20alpha-orange)
 
 [English](README.md) · **Türkçe** · [Español](README.es.md) · [简体中文](README.zh-CN.md)
 
@@ -129,7 +129,7 @@ Yeni bir yapay zekâ servisi eklemek için `src/shared/nodes.ts`'e node tanımı
 
 ## Sürümler ve yol haritası
 
-Proje [Semantik Sürümleme](https://semver.org/lang/tr/) kullanır. Şu anki sürüm **0.4.4 (alpha)**; 1.0 için tahmini süre yaklaşık 6 ay. Ayrıntılar: [ROADMAP.md](ROADMAP.md) · Değişiklikler: [CHANGELOG.md](CHANGELOG.md)
+Proje [Semantik Sürümleme](https://semver.org/lang/tr/) kullanır. Şu anki sürüm **0.4.5 (alpha)**; 1.0 için tahmini süre yaklaşık 6 ay. Ayrıntılar: [ROADMAP.md](ROADMAP.md) · Değişiklikler: [CHANGELOG.md](CHANGELOG.md)
 
 ## Katkı
 
