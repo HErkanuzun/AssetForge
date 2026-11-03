@@ -255,9 +255,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
           <div className="as-empty">
             <ForgeMark size={48} />
             <h3>Oyununu birlikte yapalım</h3>
-            <p className="muted small">
-              Asset üretir, sonuçlara bakıp eleştiririm, animasyon çıkarırım, Unreal’da sahne kurarım. Para harcayan ya da geri alınamayan her adımda önce onay isterim.
-            </p>
+            <p className="muted small">Asset üretir, sonuçlara bakıp eleştiririm, animasyon çıkarırım, Unreal’da sahne kurarım. Para harcayan ya da geri alınamayan her adımda önce onay isterim.</p>
             {SUGGEST.map((s) => (
               <button key={s} className="as-sug" onClick={() => send(s)}>
                 {s}
@@ -266,7 +264,12 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
           </div>
         )}
         {conv?.view.map((v, i) => {
-          if (v.kind === 'event') return <div key={i} className="event">{v.text}</div>
+          if (v.kind === 'event')
+            return (
+              <div key={i} className="event">
+                {v.text}
+              </div>
+            )
           if (v.kind === 'tool') return <ToolCard key={v.id + i} t={v} convId={conv.id} />
           if (v.kind === 'user')
             return (

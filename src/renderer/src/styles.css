@@ -131,10 +131,7 @@ p {
   display: flex;
   height: 100%;
   position: relative;
-  background:
-    radial-gradient(1100px 600px at -10% -20%, rgba(255, 106, 43, 0.13), transparent 60%),
-    radial-gradient(900px 700px at 110% 120%, rgba(76, 201, 255, 0.08), transparent 60%),
-    var(--bg);
+  background: radial-gradient(1100px 600px at -10% -20%, rgba(255, 106, 43, 0.13), transparent 60%), radial-gradient(900px 700px at 110% 120%, rgba(76, 201, 255, 0.08), transparent 60%), var(--bg);
 }
 .rail {
   width: 84px;
@@ -549,7 +546,7 @@ select.input {
   background: var(--panel2);
 }
 .table tr.active {
-  background: rgba(255,106,43,.16) !important;
+  background: rgba(255, 106, 43, 0.16) !important;
 }
 .kind {
   font-size: 11px;
@@ -588,7 +585,7 @@ select.input {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255,106,43,.16);
+  background: rgba(255, 106, 43, 0.16);
   border: 1px solid #5a3510;
   border-radius: var(--radius);
   padding: 8px 12px;
@@ -784,16 +781,24 @@ select.input {
   outline: 2px solid var(--accent);
 }
 .fnode.r-running {
-  box-shadow: 0 0 0 2px #0ea5e955, 0 4px 14px #0006;
+  box-shadow:
+    0 0 0 2px #0ea5e955,
+    0 4px 14px #0006;
 }
 .fnode.r-done {
-  box-shadow: 0 0 0 2px #22c55e55, 0 4px 14px #0006;
+  box-shadow:
+    0 0 0 2px #22c55e55,
+    0 4px 14px #0006;
 }
 .fnode.r-failed {
-  box-shadow: 0 0 0 2px #ef4444aa, 0 4px 14px #0006;
+  box-shadow:
+    0 0 0 2px #ef4444aa,
+    0 4px 14px #0006;
 }
 .fnode.r-retrying {
-  box-shadow: 0 0 0 2px #eab30888, 0 4px 14px #0006;
+  box-shadow:
+    0 0 0 2px #eab30888,
+    0 4px 14px #0006;
 }
 .fnode-head {
   padding: 6px 10px 4px;
@@ -1167,10 +1172,8 @@ select.input {
   padding: 44px 48px 34px;
   border: 1px solid rgba(255, 140, 80, 0.18);
   background:
-    radial-gradient(700px 380px at 82% 30%, rgba(255, 106, 43, 0.35), transparent 65%),
-    radial-gradient(500px 300px at 95% 100%, rgba(226, 35, 95, 0.32), transparent 70%),
-    radial-gradient(600px 400px at 0% 100%, rgba(76, 201, 255, 0.12), transparent 70%),
-    linear-gradient(180deg, #120d12, #0a0b10);
+    radial-gradient(700px 380px at 82% 30%, rgba(255, 106, 43, 0.35), transparent 65%), radial-gradient(500px 300px at 95% 100%, rgba(226, 35, 95, 0.32), transparent 70%),
+    radial-gradient(600px 400px at 0% 100%, rgba(76, 201, 255, 0.12), transparent 70%), linear-gradient(180deg, #120d12, #0a0b10);
   box-shadow: var(--shadow);
 }
 .hero-art {
@@ -2144,7 +2147,10 @@ select.input {
   border-radius: 12px;
   background: #040507;
   border: 1px solid var(--line);
-  font: 11px/1.5 'Cascadia Mono', Consolas, monospace;
+  font:
+    11px/1.5 'Cascadia Mono',
+    Consolas,
+    monospace;
   color: #a7f3d0;
   white-space: pre-wrap;
 }

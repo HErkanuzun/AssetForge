@@ -131,8 +131,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (waiting) {
           deferred.current.delete(job.assetId)
           countDeferred()
-          for (const w of waiting)
-            window.forge.run.start(w.pipelineId, w.assetIds).catch((e: Error) => toast('Bekleyen iş başlatılamadı: ' + e.message, 'error'))
+          for (const w of waiting) window.forge.run.start(w.pipelineId, w.assetIds).catch((e: Error) => toast('Bekleyen iş başlatılamadı: ' + e.message, 'error'))
         }
       }
       if ((job.status === 'failed' || job.status === 'canceled') && prev !== job.status && deferred.current.has(job.assetId)) {
@@ -153,7 +152,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <Ctx.Provider
-      value={{ project, settings, jobs, selectedAssets, setSelectedAssets, update, saveNow, reload, setSettings, setProject, toast, toasts, refreshJobs, thumbs, refreshThumbs, startRun, deferredCount }}
+      value={{
+        project,
+        settings,
+        jobs,
+        selectedAssets,
+        setSelectedAssets,
+        update,
+        saveNow,
+        reload,
+        setSettings,
+        setProject,
+        toast,
+        toasts,
+        refreshJobs,
+        thumbs,
+        refreshThumbs,
+        startRun,
+        deferredCount
+      }}
     >
       {children}
     </Ctx.Provider>

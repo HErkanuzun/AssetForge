@@ -23,14 +23,7 @@ export interface AnimSystemInfo {
 
 export const SPEED = { walk: 1.5, jog: 3.2, run: 5.0 }
 
-function clip(
-  key: string,
-  label: string,
-  group: string,
-  role: AnimClipRole,
-  prompt: string,
-  o: Partial<AnimSystemClip> = {}
-): AnimSystemClip {
+function clip(key: string, label: string, group: string, role: AnimClipRole, prompt: string, o: Partial<AnimSystemClip> = {}): AnimSystemClip {
   const loop = o.loop ?? (role === 'idle' || role === 'loop' || role === 'jump_loop')
   return {
     key,
@@ -50,8 +43,7 @@ function clip(
   }
 }
 
-const idle = (o: Partial<AnimSystemClip> = {}) =>
-  clip('idle', 'Bekleme', 'Döngüler', 'idle', '{S} stands still and breathes calmly, shifting weight slightly.', { seconds: 3, ...o })
+const idle = (o: Partial<AnimSystemClip> = {}) => clip('idle', 'Bekleme', 'Döngüler', 'idle', '{S} stands still and breathes calmly, shifting weight slightly.', { seconds: 3, ...o })
 
 function locoLoop(gait: 'walk' | 'jog' | 'run', dir: 0 | 90 | -90 | 180, o: Partial<AnimSystemClip> = {}): AnimSystemClip {
   const v = SPEED[gait]
@@ -123,10 +115,7 @@ export const ANIM_SYSTEMS: AnimSystemInfo[] = [
     auto: '4 yön × 2 hız + bekleme üretir; her klibi istenen yön ve hızda kök yolu ile kilitler, ölçülen gerçek değerlere yerleştirir, 180 klibini -180’e de kopyalar, sync marker ekler.',
     limits: 'Çapraz yönler (45°) iki komşu klibin karışımıyla oluşur; çok hassas oyunlarda 8 yön önerilir (kartı genişletebilirsin).',
     axes: { x: { name: 'Direction', min: -180, max: 180, grid: 8 }, y: { name: 'Speed', min: 0, max: 400, grid: 4 } },
-    clips: () => [
-      idle({ rootMotion: 'inplace' }),
-      ...(['walk', 'jog'] as const).flatMap((g) => ([0, 90, -90, 180] as const).map((d) => locoLoop(g, d, { rootMotion: 'inplace' })))
-    ]
+    clips: () => [idle({ rootMotion: 'inplace' }), ...(['walk', 'jog'] as const).flatMap((g) => ([0, 90, -90, 180] as const).map((d) => locoLoop(g, d, { rootMotion: 'inplace' })))]
   },
   {
     kind: 'statemachine',
@@ -191,7 +180,8 @@ export const ANIM_SYSTEMS: AnimSystemInfo[] = [
     when: 'AAA kalitesinde lokomosyon: ani durma, dönme, pivot, kavis — Unreal 5.4+ (Game Animation Sample bunu kullanır).',
     pro: '“Dans kartı” denen bir çekim listesi kullanılır: her hız için döngüler, başlangıçlar (0/90/180), duruşlar, yerinde dönüşler, pivotlar, daireler. Hepsi root motion’lı ve aynı stilde olmalı. GASP’ta ~500 klip var.',
     auto: 'Dans kartını tek stil öznesiyle üretir: döngüleri tam hızda kök yoluyla, başlangıç/duruş/pivotları komşu döngünün ve beklemenin pozlarıyla kilitleyerek (poz eşleme) zincirler. Unreal’da Schema (trajektori + ayak/kalça kanalları) ve Database’i kurup tüm klipleri ekler.',
-    limits: 'Karakter Blueprint’inde Motion Matching düğümü + trajektori bileşeni gerekir (GASP’tan kopyalanabilir). Kalite veri miktarıyla artar: kartı varyasyonlarla büyütmek (aynı klip farklı tohum) önerilir.',
+    limits:
+      'Karakter Blueprint’inde Motion Matching düğümü + trajektori bileşeni gerekir (GASP’tan kopyalanabilir). Kalite veri miktarıyla artar: kartı varyasyonlarla büyütmek (aynı klip farklı tohum) önerilir.',
     clips: () => {
       const w = SPEED.walk
       const j = SPEED.jog
@@ -207,18 +197,60 @@ export const ANIM_SYSTEMS: AnimSystemInfo[] = [
         locoLoop('jog', -90),
         locoLoop('jog', 90),
         g('walk_start_0', 'Yürü başla', 'Başlangıçlar', 'start', '{S} starts walking forward from standing still.', { speed: 0, speedEnd: w, from: 'idle', to: 'walk_fwd', seconds: 1.4 }),
-        g('walk_start_l90', 'Yürü başla 90° sol', 'Başlangıçlar', 'start', '{S} turns 90 degrees to the left and starts walking.', { speed: 0, speedEnd: w, turn: -90, from: 'idle', to: 'walk_fwd', seconds: 1.6 }),
-        g('walk_start_r90', 'Yürü başla 90° sağ', 'Başlangıçlar', 'start', '{S} turns 90 degrees to the right and starts walking.', { speed: 0, speedEnd: w, turn: 90, from: 'idle', to: 'walk_fwd', seconds: 1.6 }),
-        g('walk_start_180', 'Yürü başla 180°', 'Başlangıçlar', 'start', '{S} turns around 180 degrees and starts walking.', { speed: 0, speedEnd: w, turn: 180, from: 'idle', to: 'walk_fwd', seconds: 1.8 }),
+        g('walk_start_l90', 'Yürü başla 90° sol', 'Başlangıçlar', 'start', '{S} turns 90 degrees to the left and starts walking.', {
+          speed: 0,
+          speedEnd: w,
+          turn: -90,
+          from: 'idle',
+          to: 'walk_fwd',
+          seconds: 1.6
+        }),
+        g('walk_start_r90', 'Yürü başla 90° sağ', 'Başlangıçlar', 'start', '{S} turns 90 degrees to the right and starts walking.', {
+          speed: 0,
+          speedEnd: w,
+          turn: 90,
+          from: 'idle',
+          to: 'walk_fwd',
+          seconds: 1.6
+        }),
+        g('walk_start_180', 'Yürü başla 180°', 'Başlangıçlar', 'start', '{S} turns around 180 degrees and starts walking.', {
+          speed: 0,
+          speedEnd: w,
+          turn: 180,
+          from: 'idle',
+          to: 'walk_fwd',
+          seconds: 1.8
+        }),
         g('jog_start_0', 'Koş başla', 'Başlangıçlar', 'start', '{S} starts jogging forward from standing still.', { speed: 0, speedEnd: j, from: 'idle', to: 'jog_fwd', seconds: 1.3 }),
-        g('jog_start_180', 'Koş başla 180°', 'Başlangıçlar', 'start', '{S} turns around 180 degrees and starts jogging.', { speed: 0, speedEnd: j, turn: 180, from: 'idle', to: 'jog_fwd', seconds: 1.7 }),
+        g('jog_start_180', 'Koş başla 180°', 'Başlangıçlar', 'start', '{S} turns around 180 degrees and starts jogging.', {
+          speed: 0,
+          speedEnd: j,
+          turn: 180,
+          from: 'idle',
+          to: 'jog_fwd',
+          seconds: 1.7
+        }),
         g('walk_stop', 'Yürü dur', 'Duruşlar', 'stop', '{S} walking forward comes to a stop and stands still.', { speed: w, speedEnd: 0, from: 'walk_fwd', to: 'idle', seconds: 1.4 }),
         g('jog_stop', 'Koş dur', 'Duruşlar', 'stop', '{S} jogging forward slows down and comes to a stop.', { speed: j, speedEnd: 0, from: 'jog_fwd', to: 'idle', seconds: 1.5 }),
         g('turn_l90', 'Yerinde 90° sol', 'Dönüşler', 'turn', '{S} standing still turns in place 90 degrees to the left.', { turn: -90, from: 'idle', to: 'idle', seconds: 1.4 }),
         g('turn_r90', 'Yerinde 90° sağ', 'Dönüşler', 'turn', '{S} standing still turns in place 90 degrees to the right.', { turn: 90, from: 'idle', to: 'idle', seconds: 1.4 }),
         g('turn_180', 'Yerinde 180°', 'Dönüşler', 'turn', '{S} standing still turns around 180 degrees in place.', { turn: 180, from: 'idle', to: 'idle', seconds: 1.8 }),
-        g('walk_pivot', 'Yürü pivot 180°', 'Pivotlar', 'pivot', '{S} walking forward plants a foot and quickly turns around to walk the opposite way.', { speed: w, speedEnd: w, turn: 180, from: 'walk_fwd', to: 'walk_fwd', seconds: 1.6 }),
-        g('jog_pivot', 'Koş pivot 180°', 'Pivotlar', 'pivot', '{S} jogging forward plants a foot and quickly turns around to jog the opposite way.', { speed: j, speedEnd: j, turn: 180, from: 'jog_fwd', to: 'jog_fwd', seconds: 1.5 }),
+        g('walk_pivot', 'Yürü pivot 180°', 'Pivotlar', 'pivot', '{S} walking forward plants a foot and quickly turns around to walk the opposite way.', {
+          speed: w,
+          speedEnd: w,
+          turn: 180,
+          from: 'walk_fwd',
+          to: 'walk_fwd',
+          seconds: 1.6
+        }),
+        g('jog_pivot', 'Koş pivot 180°', 'Pivotlar', 'pivot', '{S} jogging forward plants a foot and quickly turns around to jog the opposite way.', {
+          speed: j,
+          speedEnd: j,
+          turn: 180,
+          from: 'jog_fwd',
+          to: 'jog_fwd',
+          seconds: 1.5
+        }),
         g('walk_circle_l', 'Yürü kavis sol', 'Kavisler', 'loop', '{S} walks in a wide circle to the left.', { speed: w, turn: -40, seconds: 1.2 }),
         g('walk_circle_r', 'Yürü kavis sağ', 'Kavisler', 'loop', '{S} walks in a wide circle to the right.', { speed: w, turn: 40, seconds: 1.2 }),
         g('jog_circle_l', 'Koş kavis sol', 'Kavisler', 'loop', '{S} jogs in a wide circle to the left.', { speed: j, turn: -35, seconds: 0.8 }),

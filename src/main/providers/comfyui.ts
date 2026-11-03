@@ -26,11 +26,7 @@ export async function comfyGenerate(opts: {
   const wfFile = opts.workflowPath || resourcePath('comfyui', 'default_workflow_api.json')
   if (!fs.existsSync(wfFile)) throw new Error(`ComfyUI workflow bulunamadı: ${wfFile}`)
   const seed = opts.seed >= 0 ? opts.seed : Math.floor(Math.random() * 2 ** 31)
-  const wfText = fs
-    .readFileSync(wfFile, 'utf8')
-    .replaceAll('{{PROMPT}}', esc(opts.prompt))
-    .replaceAll('{{NEGATIVE}}', esc(opts.negative))
-    .replaceAll('"{{SEED}}"', String(seed))
+  const wfText = fs.readFileSync(wfFile, 'utf8').replaceAll('{{PROMPT}}', esc(opts.prompt)).replaceAll('{{NEGATIVE}}', esc(opts.negative)).replaceAll('"{{SEED}}"', String(seed))
   const workflow = JSON.parse(wfText)
   const base = opts.url.replace(/\/$/, '')
 
@@ -57,7 +53,9 @@ export async function comfyGenerate(opts: {
     const entry = hist[prompt_id]
     if (entry) {
       if (entry.status?.status_str === 'error') throw new Error('ComfyUI workflow hata verdi (ComfyUI konsoluna bakın)')
-      const images = Object.values(entry.outputs).flatMap((o) => o.images ?? []).filter((i) => i.type === 'output')
+      const images = Object.values(entry.outputs)
+        .flatMap((o) => o.images ?? [])
+        .filter((i) => i.type === 'output')
       if (images.length) {
         ensureDir(opts.outDir)
         const files: string[] = []

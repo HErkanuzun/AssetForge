@@ -38,6 +38,13 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "lint": "oxlint src tests --deny-warnings",
+    "lint:py": "ruff check resources",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
     "start": "electron-vite preview",
     "dist": "electron-vite build && electron-builder --win",
     "version": "node scripts/sync-version.mjs && git add README.md README.tr.md README.es.md README.zh-CN.md ROADMAP.md llms.txt CHANGELOG.md",
@@ -64,8 +71,11 @@
     "electron": "^45.2.1",
     "electron-builder": "^26.18.0",
     "electron-vite": "^6.0.0",
+    "oxlint": "^1.90.0",
+    "prettier": "^3.9.10",
     "typescript": "^7.0.2",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "vitest": "^4.1.12"
   },
   "build": {
     "appId": "com.assetforge.app",

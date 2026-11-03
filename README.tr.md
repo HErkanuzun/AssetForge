@@ -107,6 +107,7 @@ cd AssetForge
 npm install
 npm run dev     # geliştirme
 npm run dist    # Windows kurulum dosyası (dist/)
+npm run check   # tip kontrolü, lint, biçim ve testler (CI ile aynı)
 ```
 
 ## Mimari

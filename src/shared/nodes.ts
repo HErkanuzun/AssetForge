@@ -272,8 +272,7 @@ export const NODE_DEFS: NodeDef[] = [
     type: 'prompt.generate',
     label: 'Prompt Motoru',
     category: 'prompt',
-    description:
-      'Claude, Proje Kitabı + asset bilgisi + hedef servisin kurallarıyla prompt yazar. Kalite kontrol başarısız olursa geri bildirimle yeniden yazar.',
+    description: 'Claude, Proje Kitabı + asset bilgisi + hedef servisin kurallarıyla prompt yazar. Kalite kontrol başarısız olursa geri bildirimle yeniden yazar.',
     inputs: [{ id: 'asset', label: 'Asset', type: 'asset' }],
     outputs: [{ id: 'prompt', label: 'Prompt', type: 'prompt' }],
     params: [
@@ -405,8 +404,7 @@ export const NODE_DEFS: NodeDef[] = [
     type: 'blender.process',
     label: 'Blender Temizlik',
     category: 'process',
-    description:
-      'Blender arka planda: ölçeği asset boyutuna oturtur, pivotu tabana alır, bütçeye göre azaltır, isimlendirir, FBX çıkarır ve kalite kontrol için önizleme render eder.',
+    description: 'Blender arka planda: ölçeği asset boyutuna oturtur, pivotu tabana alır, bütçeye göre azaltır, isimlendirir, FBX çıkarır ve kalite kontrol için önizleme render eder.',
     inputs: [{ id: 'model', label: 'Model', type: 'model' }],
     outputs: [{ id: 'model', label: 'Model', type: 'model' }],
     params: [
@@ -429,8 +427,7 @@ export const NODE_DEFS: NodeDef[] = [
     type: 'qa.review',
     label: 'Kalite Kontrol',
     category: 'qa',
-    description:
-      'Teknik kontrol (poligon, UV, ölçü) + Claude görsel inceleme. Puan düşükse en yakın Prompt Motoruna geri bildirim gönderip hattı yeniden çalıştırır.',
+    description: 'Teknik kontrol (poligon, UV, ölçü) + Claude görsel inceleme. Puan düşükse en yakın Prompt Motoruna geri bildirim gönderip hattı yeniden çalıştırır.',
     inputs: [{ id: 'subject', label: 'İncelenecek', type: 'media' }],
     outputs: [
       { id: 'subject', label: 'Onaylı', type: 'media' },
@@ -479,8 +476,7 @@ export const NODE_DEFS: NodeDef[] = [
     type: 'anim.kimodo',
     label: 'Kimodo Hareket',
     category: 'anim',
-    description:
-      'NVIDIA Kimodo ile metinden insan hareketi üretir (SOMA iskeleti), Blender’da Manny adlarına çevirip root motion’lı FBX yapar. Unreal export ana karaktere otomatik retarget eder.',
+    description: 'NVIDIA Kimodo ile metinden insan hareketi üretir (SOMA iskeleti), Blender’da Manny adlarına çevirip root motion’lı FBX yapar. Unreal export ana karaktere otomatik retarget eder.',
     inputs: [{ id: 'asset', label: 'Asset', type: 'asset' }],
     outputs: [{ id: 'anim', label: 'Animasyon', type: 'anim' }],
     params: [
@@ -495,8 +491,7 @@ export const NODE_DEFS: NodeDef[] = [
     type: 'export.ue',
     label: 'Unreal Export',
     category: 'output',
-    description:
-      'Dosyaları isimlendirme kurallarıyla export klasörüne koyar; Unreal açıksa Python Remote Execution ile otomatik import eder.',
+    description: 'Dosyaları isimlendirme kurallarıyla export klasörüne koyar; Unreal açıksa Python Remote Execution ile otomatik import eder.',
     inputs: [{ id: 'subject', label: 'Asset', type: 'media' }],
     outputs: [],
     params: [

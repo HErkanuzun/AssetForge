@@ -19,6 +19,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
       - run: npx electron-vite build
       - run: npx electron-builder --win --publish never
       - name: Release notes from CHANGELOG.md

@@ -89,14 +89,7 @@ export interface AnimResult {
 }
 
 /** Kimodo BVH → Manny adlı iskelet + root motion → FBX animasyon */
-export function runBlenderAnim(opts: {
-  blenderPath: string
-  bvh: string
-  out: string
-  rootMotion: string
-  log: (m: string) => void
-  signal?: AbortSignal
-}): Promise<AnimResult> {
+export function runBlenderAnim(opts: { blenderPath: string; bvh: string; out: string; rootMotion: string; log: (m: string) => void; signal?: AbortSignal }): Promise<AnimResult> {
   if (!opts.blenderPath || !fs.existsSync(opts.blenderPath)) {
     return Promise.reject(new Error('Blender bulunamadı. Ayarlar → Blender yolu'))
   }

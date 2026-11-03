@@ -95,6 +95,7 @@ cd AssetForge
 npm install
 npm run dev     # 开发模式
 npm run dist    # 在 dist/ 生成 Windows 安装程序
+npm run check   # 类型检查、lint、格式检查和测试（与 CI 相同）
 ```
 
 ## 版本与路线图

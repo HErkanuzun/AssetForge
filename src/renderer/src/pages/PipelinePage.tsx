@@ -146,7 +146,7 @@ function Editor({ goJobs }: { goJobs: () => void }) {
   }
 
   const createFrom = (tplId: string) => {
-    const tpl = tplId === 'empty' ? null : PIPELINE_TEMPLATES.find((t) => t.id === tplId) ?? p.pipelines.find((t) => t.id === tplId)
+    const tpl = tplId === 'empty' ? null : (PIPELINE_TEMPLATES.find((t) => t.id === tplId) ?? p.pipelines.find((t) => t.id === tplId))
     const pl: Pipeline = tpl
       ? { ...structuredClone(tpl), id: newPipelineId(), name: tpl.name + ' (kopya)' }
       : { id: newPipelineId(), name: 'Yeni hat', description: '', nodes: [{ id: 'asset', type: 'asset.input', position: { x: 40, y: 150 }, params: {} }], edges: [] }
@@ -198,13 +198,7 @@ function Editor({ goJobs }: { goJobs: () => void }) {
           Sil
         </button>
         <div className="spacer" />
-        {pipelineJobs.length > 0 && (
-          <Select
-            value={shownJob?.id ?? ''}
-            onChange={setJobId}
-            options={pipelineJobs.slice(0, 30).map((j) => ({ value: j.id, label: `${j.assetName} — ${j.status}` }))}
-          />
-        )}
+        {pipelineJobs.length > 0 && <Select value={shownJob?.id ?? ''} onChange={setJobId} options={pipelineJobs.slice(0, 30).map((j) => ({ value: j.id, label: `${j.assetName} — ${j.status}` }))} />}
         <button className="btn primary" onClick={() => setShowRun(true)}>
           ▶ Çalıştır
         </button>

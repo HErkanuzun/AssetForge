@@ -127,8 +127,7 @@ export default function HomePage() {
             <span className="grad-text">Anlat, gerisini fabrika yapsın.</span>
           </h1>
           <p>
-            Fikrini yaz ya da bir görsel bırak. Yönetmen sana birkaç soru sorar: stil, renk, poligon bütçesi, oyun dünyası. Sonra modelden sese, tozdan animasyona kadar
-            bütün seti tek seferde üretir.
+            Fikrini yaz ya da bir görsel bırak. Yönetmen sana birkaç soru sorar: stil, renk, poligon bütçesi, oyun dünyası. Sonra modelden sese, tozdan animasyona kadar bütün seti tek seferde üretir.
           </p>
           <div className="composer">
             <textarea

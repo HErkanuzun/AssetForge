@@ -1,4 +1,28 @@
-import type { AnimSystem, AnimSystemClipState, AnimSystemKind, AgentConversation, ConnectEvent, ConnectService, AgentEvent, AgentInput, McpServerStatus, AnimSegment, AssetKind, AssetSpec, Bible, Brief, BriefEvent, BriefInput, ImportResult, Job, KimodoStatus, Project, SettingsPatch, SettingsPublic, UeNode } from '../shared/types'
+import type {
+  AnimSystem,
+  AnimSystemClipState,
+  AnimSystemKind,
+  AgentConversation,
+  ConnectEvent,
+  ConnectService,
+  AgentEvent,
+  AgentInput,
+  McpServerStatus,
+  AnimSegment,
+  AssetKind,
+  AssetSpec,
+  Bible,
+  Brief,
+  BriefEvent,
+  BriefInput,
+  ImportResult,
+  Job,
+  KimodoStatus,
+  Project,
+  SettingsPatch,
+  SettingsPublic,
+  UeNode
+} from '../shared/types'
 
 export interface ForgeApi {
   settings: {

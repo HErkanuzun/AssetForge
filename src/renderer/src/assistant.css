@@ -131,7 +131,10 @@
   margin-bottom: 3px;
 }
 .md code {
-  font: 11.5px 'Cascadia Mono', Consolas, monospace;
+  font:
+    11.5px 'Cascadia Mono',
+    Consolas,
+    monospace;
   padding: 1px 5px;
   border-radius: 5px;
   background: rgba(255, 255, 255, 0.07);
@@ -143,7 +146,10 @@
   border-radius: 9px;
   background: #050609;
   border: 1px solid var(--line);
-  font: 11px/1.5 'Cascadia Mono', Consolas, monospace;
+  font:
+    11px/1.5 'Cascadia Mono',
+    Consolas,
+    monospace;
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 260px;
@@ -236,7 +242,10 @@
   border-radius: 10px;
   background: #050609;
   border: 1px solid var(--line);
-  font: 11.5px/1.5 'Cascadia Mono', Consolas, monospace;
+  font:
+    11.5px/1.5 'Cascadia Mono',
+    Consolas,
+    monospace;
   white-space: pre-wrap;
   word-break: break-all;
   color: #c7f0dd;

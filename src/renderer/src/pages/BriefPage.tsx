@@ -215,7 +215,12 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
             </div>
           )}
           {brief.view.map((v, i) => {
-            if (v.kind === 'event') return <div key={i} className="event">{v.text}</div>
+            if (v.kind === 'event')
+              return (
+                <div key={i} className="event">
+                  {v.text}
+                </div>
+              )
             if (v.kind === 'assistant')
               return (
                 <div key={i} className="msg ai">
@@ -232,7 +237,9 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
                     {v.text && <div className="bubble">{v.text}</div>}
                     {(v.images?.length || v.links?.length) && (
                       <div className="msg-attach">
-                        {v.images?.map((f) => <img key={f} src={forgeUrl(f)} alt="" />)}
+                        {v.images?.map((f) => (
+                          <img key={f} src={forgeUrl(f)} alt="" />
+                        ))}
                         {v.links?.map((l) => {
                           const a = assetsById.get(l)
                           return (
@@ -443,11 +450,16 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
               <h4>Poligon bütçesi</h4>
               <div className="row between">
                 <b style={{ fontSize: 18, fontFamily: 'var(--font-display)' }}>{spec.triBudget.toLocaleString('tr-TR')}</b>
-                <span className="muted small">üçgen · LOD1 {Math.round(spec.triBudget * 0.5).toLocaleString('tr-TR')} · LOD2 {Math.round(spec.triBudget * 0.25).toLocaleString('tr-TR')}</span>
+                <span className="muted small">
+                  üçgen · LOD1 {Math.round(spec.triBudget * 0.5).toLocaleString('tr-TR')} · LOD2 {Math.round(spec.triBudget * 0.25).toLocaleString('tr-TR')}
+                </span>
               </div>
               <div className="budget">
                 <div className="budget-track">
-                  <div className="budget-mark" style={{ left: `calc(${Math.min(100, (Math.log10(Math.max(500, spec.triBudget)) - Math.log10(500)) / (Math.log10(150000) - Math.log10(500)) * 100)}% - 1px)` }} />
+                  <div
+                    className="budget-mark"
+                    style={{ left: `calc(${Math.min(100, ((Math.log10(Math.max(500, spec.triBudget)) - Math.log10(500)) / (Math.log10(150000) - Math.log10(500))) * 100)}% - 1px)` }}
+                  />
                 </div>
                 <div className="budget-scale">
                   <span>500 · mobil</span>
@@ -465,7 +477,13 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
               <div className="sw-row">
                 {spec.palette.map((c) => {
                   const hex = resolveColor(c)
-                  return hex ? <div key={c} className="sw" style={{ background: hex }} title={c} /> : <span key={c} className="chip">{c}</span>
+                  return hex ? (
+                    <div key={c} className="sw" style={{ background: hex }} title={c} />
+                  ) : (
+                    <span key={c} className="chip">
+                      {c}
+                    </span>
+                  )
                 })}
               </div>
             </div>
@@ -497,7 +515,11 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
                               dinamik · {k.dynamic.layers} katman · {k.dynamic.idleRpm}–{k.dynamic.maxRpm} RPM
                             </span>
                           )}
-                          {k.motion && <span className="chip pink">{k.motion.seconds} sn{k.motion.loop ? ' · döngü' : ''}</span>}
+                          {k.motion && (
+                            <span className="chip pink">
+                              {k.motion.seconds} sn{k.motion.loop ? ' · döngü' : ''}
+                            </span>
+                          )}
                           {k.existingId && <span className="chip ok">kütüphanede var</span>}
                           {k.priority && <span className="chip">{k.priority}</span>}
                         </div>

@@ -131,7 +131,7 @@ def build_engine_metasound(dest, name, waves, bases):
         return pin_out(st, "Semitones")
 
     players = []
-    for wave, base in zip(waves, bases):
+    for wave, base in zip(waves, bases, strict=False):
         wp = node("UE", "Wave Player", "Mono")
         link(on_play, pin_in(wp, "Play"), "OnPlay→Play")
         default(pin_in(wp, "Wave Asset"), "object", wave)
@@ -447,7 +447,7 @@ for item in MANIFEST["items"]:  # noqa: F821 — MANIFEST üstte eklenir
             tex_assets[role] = tex
             entry["imported"] += paths
 
-        master = MANIFEST.get("master_material") or ""
+        master = MANIFEST.get("master_material") or ""  # noqa: F821 — MANIFEST üstte eklenir
         if master and tex_assets and item["type"] in ("static_mesh", "skeletal_mesh"):
             parent = unreal.load_asset(master)
             if parent:

@@ -110,7 +110,7 @@ try:
         bs = fresh(("BS1D_" if is1d else "BS_") + name, dest, unreal.BlendSpace1D if is1d else unreal.BlendSpace, f)
         set_axes(bs, S.get("axes"))
         samples = []
-        for key, (a, c) in anims.items():
+        for a, c in anims.values():
             x, y = c["sample"].get("x", 0), c["sample"].get("y", 0)
             samples.append(sample(a, x, y))
             if not is1d and abs(abs(x) - 180) < 0.5 and c["role"] != "idle":
@@ -129,7 +129,7 @@ try:
         center = anims.get("aim_cc")
         if not center:
             raise RuntimeError("merkez poz (aim_cc) yok")
-        for key, (a, c) in anims.items():
+        for a, _c in anims.values():
             a.set_editor_property("additive_anim_type", unreal.AdditiveAnimationType.AAT_ROTATION_OFFSET_MESH_SPACE)
             a.set_editor_property("ref_pose_type", unreal.AdditiveBasePoseType.ABPT_ANIM_FRAME)
             a.set_editor_property("ref_pose_seq", center[0])
@@ -191,7 +191,7 @@ try:
         db.set_editor_property("schema", sch)
         eal.save_loaded_asset(db, False)
         # Database'e ekleme Python'a açık değil → her klibe BranchIn notify (Database = PSD) + kaydet = otomatik senkron
-        for key, (a, c) in anims.items():
+        for a, _c in anims.values():
             names = [str(n) for n in lib.get_animation_notify_track_names(a)]
             if "PoseSearch" in names:
                 lib.remove_animation_notify_track(a, "PoseSearch")
@@ -215,7 +215,7 @@ try:
     else:
         notes.append("Klipler hazırlandı (döngü bayrağı, root motion, sync marker)")
 
-    for key, (a, c) in anims.items():
+    for a, c in anims.values():
         mk = c.get("markers") or {}
         if mk.get("L") or mk.get("R"):
             notes.append("  %s: L %d · R %d marker%s" % (a.get_name(), len(mk.get("L") or []), len(mk.get("R") or []), " · döngü" if c["loop"] else ""))

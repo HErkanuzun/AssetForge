@@ -167,14 +167,7 @@ export interface QAReport {
   technical: string[]
 }
 
-export type MeshyResource =
-  | 'text-to-3d'
-  | 'image-to-3d'
-  | 'multi-image-to-3d'
-  | 'retexture'
-  | 'remesh'
-  | 'rigging'
-  | 'text-to-image'
+export type MeshyResource = 'text-to-3d' | 'image-to-3d' | 'multi-image-to-3d' | 'retexture' | 'remesh' | 'rigging' | 'text-to-image'
 
 export interface ModelStats {
   tris: number
@@ -375,10 +368,7 @@ export interface Brief {
 }
 
 export type BriefEvent =
-  | { type: 'delta'; briefId: string; text: string }
-  | { type: 'thinking'; briefId: string; on: boolean }
-  | { type: 'brief'; brief: Brief }
-  | { type: 'error'; briefId: string; error: string }
+  { type: 'delta'; briefId: string; text: string } | { type: 'thinking'; briefId: string; on: boolean } | { type: 'brief'; brief: Brief } | { type: 'error'; briefId: string; error: string }
 
 export interface BriefInput {
   text: string
@@ -622,10 +612,7 @@ export interface AgentInput {
 }
 
 export type AgentEvent =
-  | { type: 'delta'; convId: string; text: string }
-  | { type: 'thinking'; convId: string; on: boolean }
-  | { type: 'conv'; conv: AgentConversation }
-  | { type: 'error'; convId: string; error: string }
+  { type: 'delta'; convId: string; text: string } | { type: 'thinking'; convId: string; on: boolean } | { type: 'conv'; conv: AgentConversation } | { type: 'error'; convId: string; error: string }
 
 /** Hızlı bağlantı: tarayıcıda giriş / anahtar sayfası */
 export type ConnectService = 'anthropic' | 'meshy' | 'elevenlabs' | 'huggingface' | 'openrouter'

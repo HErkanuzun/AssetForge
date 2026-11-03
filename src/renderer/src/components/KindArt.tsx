@@ -24,7 +24,10 @@ function Figure({ kind, g }: { kind: AssetKind; g: string }) {
       return (
         <g>
           <ellipse cx="100" cy="212" rx="46" ry="7" fill="#000" opacity=".35" />
-          <path d="M100 52c-14 0-23 10-23 24 0 9 4 15 9 19l-24 14c-8 5-11 13-11 22l-4 52h20l6-44 4 77h16l7-50 7 50h16l4-77 6 44h20l-4-52c0-9-3-17-11-22l-24-14c5-4 9-10 9-19 0-14-9-24-23-24z" fill={fill} />
+          <path
+            d="M100 52c-14 0-23 10-23 24 0 9 4 15 9 19l-24 14c-8 5-11 13-11 22l-4 52h20l6-44 4 77h16l7-50 7 50h16l4-77 6 44h20l-4-52c0-9-3-17-11-22l-24-14c5-4 9-10 9-19 0-14-9-24-23-24z"
+            fill={fill}
+          />
           <path d="M78 74c4-16 40-18 45 0" stroke={line} strokeWidth="2.5" fill="none" />
           <rect x="120" y="104" width="22" height="40" rx="6" fill="#000" opacity=".25" />
         </g>
@@ -68,13 +71,7 @@ function Figure({ kind, g }: { kind: AssetKind; g: string }) {
         <g>
           {[0, 1, 2].map((r) =>
             [0, 1, 2].map((c) => (
-              <path
-                key={`${r}${c}`}
-                d={`M${100 + (c - r) * 34} ${78 + (c + r) * 20}l34 20-34 20-34-20z`}
-                fill={fill}
-                opacity={0.55 + ((r + c) % 3) * 0.18}
-                stroke="rgba(255,255,255,.35)"
-              />
+              <path key={`${r}${c}`} d={`M${100 + (c - r) * 34} ${78 + (c + r) * 20}l34 20-34 20-34-20z`} fill={fill} opacity={0.55 + ((r + c) % 3) * 0.18} stroke="rgba(255,255,255,.35)" />
             ))
           )}
           <path d="M66 98c10 4 20-2 30 2s18 6 30 0" stroke={line} strokeWidth="2" fill="none" opacity=".6" />

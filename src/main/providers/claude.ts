@@ -23,10 +23,7 @@ const PRICES: Record<string, [number, number]> = {
 // Sunucu tarafı yedek model (refusal fallback) desteği olan modeller
 export const FALLBACK_MODELS = new Set(['claude-fable-5-1', 'claude-opus-5-5', 'claude-sonnet-5-5'])
 
-export function usageCost(
-  model: string,
-  u: { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number | null; cache_read_input_tokens?: number | null }
-): number {
+export function usageCost(model: string, u: { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number | null; cache_read_input_tokens?: number | null }): number {
   const [pin, pout] = PRICES[model] ?? PRICES['claude-opus-5-5']
   const inputTokens = u.input_tokens + (u.cache_creation_input_tokens ?? 0) * 1.25 + (u.cache_read_input_tokens ?? 0) * 0.1
   return (inputTokens * pin + u.output_tokens * pout) / 1_000_000
@@ -51,14 +48,14 @@ export async function callClaude<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn()
   } catch (e) {
-    if (e instanceof Anthropic.AuthenticationError) throw new Error('Claude API anahtarı geçersiz (Ayarlar)')
-    if (e instanceof Anthropic.PermissionDeniedError) throw new Error('Claude: bu model/özellik için yetki yok')
-    if (e instanceof Anthropic.NotFoundError) throw new Error(`Claude modeli bulunamadı: ${getSettings().claudeModel}`)
-    if (e instanceof Anthropic.RateLimitError) throw new Error('Claude istek sınırı aşıldı; biraz sonra tekrar deneyin veya eşzamanlı iş sayısını düşürün')
-    if (e instanceof Anthropic.APIConnectionError) throw new Error('Claude sunucusuna bağlanılamadı (internet bağlantısı?)')
-    if (e instanceof Anthropic.APIError) throw new Error(`Claude hatası (${e.status}): ${e.message}`)
+    if (e instanceof Anthropic.AuthenticationError) throw new Error('Claude API anahtarı geçersiz (Ayarlar)', { cause: e })
+    if (e instanceof Anthropic.PermissionDeniedError) throw new Error('Claude: bu model/özellik için yetki yok', { cause: e })
+    if (e instanceof Anthropic.NotFoundError) throw new Error(`Claude modeli bulunamadı: ${getSettings().claudeModel}`, { cause: e })
+    if (e instanceof Anthropic.RateLimitError) throw new Error('Claude istek sınırı aşıldı; biraz sonra tekrar deneyin veya eşzamanlı iş sayısını düşürün', { cause: e })
+    if (e instanceof Anthropic.APIConnectionError) throw new Error('Claude sunucusuna bağlanılamadı (internet bağlantısı?)', { cause: e })
+    if (e instanceof Anthropic.APIError) throw new Error(`Claude hatası (${e.status}): ${e.message}`, { cause: e })
     const msg = (e as Error).message ?? String(e)
-    if (/authentication method/i.test(msg)) throw new Error('Claude API anahtarı girilmemiş (Ayarlar → Claude)')
+    if (/authentication method/i.test(msg)) throw new Error('Claude API anahtarı girilmemiş (Ayarlar → Claude)', { cause: e })
     throw e
   }
 }
@@ -86,15 +83,15 @@ async function structured<S extends z.ZodType>(
   const useFallback = p.builtin && FALLBACK_MODELS.has(model)
   const res = await callClaude(() =>
     clientFor(p).beta.messages.parse(
-    {
-      model,
-      max_tokens: maxTokens,
-      system,
-      messages: [{ role: 'user', content }],
-      output_config: { format: betaZodOutputFormat(schema), effort },
-      ...(useFallback ? { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' as const } : {})
-    },
-    { timeout: 15 * 60 * 1000 }
+      {
+        model,
+        max_tokens: maxTokens,
+        system,
+        messages: [{ role: 'user', content }],
+        output_config: { format: betaZodOutputFormat(schema), effort },
+        ...(useFallback ? { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' as const } : {})
+      },
+      { timeout: 15 * 60 * 1000 }
     )
   )
   if (res.stop_reason === 'refusal') {
@@ -174,13 +171,7 @@ Principles:
 - Respect the target service's rules and character limit strictly. If information is missing, make reasonable choices consistent with the bible instead of asking.
 - When reviewer feedback from a previous attempt is provided, fix every listed problem explicitly in the new prompt.`
 
-export async function generatePrompt(input: {
-  bible: Bible
-  asset: AssetSpec
-  targetId: string
-  extra: string
-  feedback: string[]
-}): Promise<CallResult<GeneratedPrompt>> {
+export async function generatePrompt(input: { bible: Bible; asset: AssetSpec; targetId: string; extra: string; feedback: string[] }): Promise<CallResult<GeneratedPrompt>> {
   const target = PROMPT_TARGETS[input.targetId]
   if (!target) throw new Error(`Bilinmeyen prompt hedefi: ${input.targetId}`)
   const system: Anthropic.Beta.BetaTextBlockParam[] = [
@@ -336,7 +327,7 @@ export async function testClaude(): Promise<string> {
     })
   )
   const t = res.content.find((c) => c.type === 'text')
-  return t && t.type === 'text' ? t.text : res.stop_reason ?? ''
+  return t && t.type === 'text' ? t.text : (res.stop_reason ?? '')
 }
 
 // ---------------------------------------------------------------------------

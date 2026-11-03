@@ -9,7 +9,7 @@ function chain(id: string, name: string, description: string, nodes: NodeSpec[],
     id: nid,
     type,
     position: { x: 40 + i * 235, y: 120 + (i % 2) * 110 },
-    params: { ...defaultParams(type), ...(params ?? {}) }
+    params: { ...defaultParams(type), ...params }
   }))
   const pedges: PipelineEdge[] = edges.map(([s, sh, t, th]) => ({
     id: `${s}.${sh}->${t}.${th}`,
@@ -109,7 +109,7 @@ export const PIPELINE_TEMPLATES: Pipeline[] = [
   chain(
     'tpl_existing_model',
     'Mevcut Model → Temizlik → Unreal',
-    "Elinizdeki modeli (ör. önceki Meshy çıktıları) boyuta ölçekler, bütçeye indirir, kalite kontrolden geçirir ve Unreal'a aktarır. \"Yerel Model\" node'unda dosya yolunu ayarlayın.",
+    'Elinizdeki modeli (ör. önceki Meshy çıktıları) boyuta ölçekler, bütçeye indirir, kalite kontrolden geçirir ve Unreal\'a aktarır. "Yerel Model" node\'unda dosya yolunu ayarlayın.',
     [
       ['file', 'model.file'],
       ['blender', 'blender.process'],
@@ -141,7 +141,6 @@ export const PIPELINE_TEMPLATES: Pipeline[] = [
     ]
   )
 ]
-
 
 // Brief'ten otomatik kurulan üretim hatları
 PIPELINE_TEMPLATES.push(
@@ -178,7 +177,14 @@ PIPELINE_TEMPLATES.push(
     'Araç gövdesi: referans görsel → kalite kapısı → görsel→3D → Blender (boyut, bütçe, pivot) → kalite kontrol → Unreal. Süspansiyon/teker rigi Araç modülünde.',
     [
       ['asset', 'asset.input'],
-      ['prompt', 'prompt.generate', { target: 'meshy_image_ref', extra: 'This is a game vehicle: show the full vehicle from a three-quarter front view, wheels clearly visible and separated from the body, doors and windows readable.' }],
+      [
+        'prompt',
+        'prompt.generate',
+        {
+          target: 'meshy_image_ref',
+          extra: 'This is a game vehicle: show the full vehicle from a three-quarter front view, wheels clearly visible and separated from the body, doors and windows readable.'
+        }
+      ],
       ['img', 'image.meshy', { aspect_ratio: '4:3' }],
       ['qa_img', 'qa.review'],
       ['gen', 'model.meshy.image3d'],
@@ -333,7 +339,10 @@ export function parseTriBudget(text: string): number {
 /** Türkçe karakterleri sadeleştirip PascalCase güvenli isim üretir. */
 export function safeName(s: string): string {
   const map: Record<string, string> = { ç: 'c', Ç: 'C', ğ: 'g', Ğ: 'G', ı: 'i', İ: 'I', ö: 'o', Ö: 'O', ş: 's', Ş: 'S', ü: 'u', Ü: 'U', â: 'a', î: 'i', û: 'u' }
-  const ascii = s.replace(/[çÇğĞıİöÖşŞüÜâîû]/g, (c) => map[c] ?? c).normalize('NFKD').replace(/[^\x00-\x7F]/g, '')
+  const ascii = s
+    .replace(/[çÇğĞıİöÖşŞüÜâîû]/g, (c) => map[c] ?? c)
+    .normalize('NFKD')
+    .replace(/[^\p{ASCII}]/gu, '')
   return ascii
     .split(/[^A-Za-z0-9]+/)
     .filter(Boolean)

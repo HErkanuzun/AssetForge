@@ -98,8 +98,7 @@ const TOOLS: Anthropic.Beta.BetaTool[] = [
   },
   {
     name: 'set_kit',
-    description:
-      'Replace the production kit: every additional asset the main asset needs in the game world (sounds, VFX, textures, animations, extra models). Send the full list each time.',
+    description: 'Replace the production kit: every additional asset the main asset needs in the game world (sounds, VFX, textures, animations, extra models). Send the full list each time.',
     input_schema: z.toJSONSchema(KitSchema) as Anthropic.Beta.BetaTool.InputSchema,
     eager_input_streaming: true
   },

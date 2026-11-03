@@ -50,7 +50,10 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
   const selAssets = p.assets.filter((a) => selected.has(a.id))
   const kindCounts = selAssets.reduce<Record<string, number>>((m, a) => ((m[a.kind] = (m[a.kind] ?? 0) + 1), m), {})
   const dominant = (Object.entries(kindCounts).sort((a, b) => b[1] - a[1])[0]?.[0] as AssetKind) ?? 'model'
-  const suggested = p.pipelines.find((pl) => pl.id === (selAssets.find((a) => a.kind === dominant) ? suggestPipeline(selAssets.find((a) => a.kind === dominant)!) : suggestPipeline({ kind: dominant })))?.id ?? p.pipelines[0]?.id ?? ''
+  const suggested =
+    p.pipelines.find((pl) => pl.id === (selAssets.find((a) => a.kind === dominant) ? suggestPipeline(selAssets.find((a) => a.kind === dominant)!) : suggestPipeline({ kind: dominant })))?.id ??
+    p.pipelines[0]?.id ??
+    ''
   const runPipeline = pipelineId || suggested
 
   const importFile = async () => {
@@ -132,8 +135,8 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
           <div className="empty-card">
             <h3>Henüz asset yok</h3>
             <p className="muted">
-              Asset listenizi (ör. <span className="mono">Oyun_Asset_Listesi.xlsx</span>) içe aktarın. Modeller, Sesler, Karakterler, Yaratıklar sayfaları asset olarak; Palet ve Malzemeler sayfaları Proje
-              Kitabına aktarılır.
+              Asset listenizi (ör. <span className="mono">Oyun_Asset_Listesi.xlsx</span>) içe aktarın. Modeller, Sesler, Karakterler, Yaratıklar sayfaları asset olarak; Palet ve Malzemeler sayfaları
+              Proje Kitabına aktarılır.
             </p>
             <AsyncButton className="primary" onClick={importFile}>
               📥 İçe aktar

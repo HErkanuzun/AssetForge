@@ -43,7 +43,7 @@ async function post(p: LlmProvider, body: unknown, signal?: AbortSignal): Promis
     res = await fetch(endpoint(p), { method: 'POST', headers: headers(p), body: JSON.stringify(body), signal })
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e
-    throw new Error(`${p.name} sunucusuna bağlanılamadı (${endpoint(p)}). Sunucu açık mı?`)
+    throw new Error(`${p.name} sunucusuna bağlanılamadı (${endpoint(p)}). Sunucu açık mı?`, { cause: e })
   }
   if (!res.ok) {
     const t = (await res.text()).slice(0, 600)
@@ -64,7 +64,10 @@ export function toOaParts(content: { type: string; text?: string; source?: { typ
 }
 
 function extractJson(text: string): unknown {
-  const t = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '')
+  const t = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/```\s*$/, '')
   try {
     return JSON.parse(t)
   } catch {
@@ -186,14 +189,15 @@ export async function oaChatStream(
   if (thinking) on.thinking(false)
   // Bazı yerel modeller düşünceyi <think>…</think> ile metne gömer
   content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
-  const toolCalls = calls
-    .filter((c) => c && c.name)
-    .map((c, i) => ({ id: c.id || `call_${Date.now()}_${i}`, type: 'function' as const, function: { name: c.name, arguments: c.args || '{}' } }))
+  const toolCalls = calls.filter((c) => c && c.name).map((c, i) => ({ id: c.id || `call_${Date.now()}_${i}`, type: 'function' as const, function: { name: c.name, arguments: c.args || '{}' } }))
   return { content, toolCalls, finish: toolCalls.length ? 'tool_calls' : finish }
 }
 
 export async function oaTest(p: LlmProvider): Promise<string> {
   const res = await post(p, { model: p.model, messages: [{ role: 'user', content: 'Sadece "hazır" yaz.' }], max_tokens: 20 })
   const data = (await res.json()) as { choices?: { message?: { content?: string } }[]; model?: string }
-  return `${data.model ?? p.model}: ${(data.choices?.[0]?.message?.content ?? '').replace(/<think>[\s\S]*?<\/think>/g, '').trim().slice(0, 60)}`
+  return `${data.model ?? p.model}: ${(data.choices?.[0]?.message?.content ?? '')
+    .replace(/<think>[\s\S]*?<\/think>/g, '')
+    .trim()
+    .slice(0, 60)}`
 }

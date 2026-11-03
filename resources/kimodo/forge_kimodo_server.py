@@ -32,7 +32,7 @@ import forge_motion as fm
 from kimodo import load_model
 from kimodo.constraints import load_constraints_lst
 from kimodo.exports.bvh import save_motion_bvh
-from kimodo.skeleton import SOMASkeleton30, global_rots_to_local_rots
+from kimodo.skeleton import SOMASkeleton30
 from kimodo.tools import seed_everything
 
 ap = argparse.ArgumentParser()

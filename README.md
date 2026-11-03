@@ -97,6 +97,7 @@ cd AssetForge
 npm install
 npm run dev     # development with hot reload
 npm run dist    # build the Windows installer into dist/
+npm run check   # typecheck, lint, format check and tests (same as CI)
 ```
 
 ## How it works

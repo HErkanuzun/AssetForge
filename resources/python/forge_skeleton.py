@@ -121,7 +121,7 @@ def bake_root_motion(arm_obj, frame_start, frame_end):
         scene.frame_set(f)
         pelvis_mats.append(pb_pel.matrix.copy())
     start = pelvis_mats[0].to_translation()
-    for f, pm in zip(frames, pelvis_mats):
+    for f, pm in zip(frames, pelvis_mats, strict=False):
         scene.frame_set(f)
         t = pm.to_translation()
         m = pb_root.bone.matrix_local.copy()

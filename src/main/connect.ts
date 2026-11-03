@@ -8,15 +8,20 @@ import type { AddressInfo } from 'node:net'
 import type { ConnectEvent, ConnectService, LlmProvider } from '../shared/types'
 import { getSettings, setSettings } from './settings'
 
-type KeyService = Exclude<ConnectService, 'openrouter'>
+export type KeyService = Exclude<ConnectService, 'openrouter'>
 
 const TIMEOUT_MS = 10 * 60 * 1000
 
-const KEY_PAGES: Record<KeyService, { url: string; pattern: RegExp }> = {
+export const KEY_PAGES: Record<KeyService, { url: string; pattern: RegExp }> = {
   anthropic: { url: 'https://platform.claude.com/settings/keys', pattern: /^sk-ant-[A-Za-z0-9_-]{20,}$/ },
   meshy: { url: 'https://www.meshy.ai/settings/api', pattern: /^msy_[A-Za-z0-9_-]{16,}$/ },
   elevenlabs: { url: 'https://elevenlabs.io/app/settings/api-keys', pattern: /^(sk_[A-Za-z0-9]{30,}|[a-f0-9]{32})$/ },
   huggingface: { url: 'https://huggingface.co/settings/tokens/new?tokenType=read&tokenName=AssetForge', pattern: /^hf_[A-Za-z0-9]{20,}$/ }
+}
+
+/** Panodaki metin bu servisin anahtarına benziyor mu? (doğrulama ayrıca API ile yapılır) */
+export function looksLikeKey(service: KeyService, text: string): boolean {
+  return KEY_PAGES[service].pattern.test(text.trim())
 }
 
 const OPENROUTER_PRESET: Omit<LlmProvider, 'id'> = {
@@ -66,7 +71,7 @@ async function startClipboard(service: KeyService, emit: (e: ConnectEvent) => vo
 
   const check = async (text: string) => {
     const key = text.trim()
-    if (!page.pattern.test(key) || tried.has(key)) return
+    if (!looksLikeKey(service, key) || tried.has(key)) return
     tried.add(key)
     checking = true
     emit({ service, phase: 'checking', message: 'Anahtar yakalandı, doğrulanıyor…' })

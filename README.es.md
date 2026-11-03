@@ -95,6 +95,7 @@ cd AssetForge
 npm install
 npm run dev     # desarrollo
 npm run dist    # instalador de Windows en dist/
+npm run check   # tipos, lint, formato y pruebas (igual que CI)
 ```
 
 ## Versiones y hoja de ruta

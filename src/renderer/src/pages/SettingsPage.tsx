@@ -9,13 +9,31 @@ import QuickConnect from '../components/QuickConnect'
 type Section = 'connect' | 'models' | 'project' | 'tools' | 'anim' | 'unreal' | 'mcp' | 'about'
 
 const SECTIONS: { id: Section; label: string; icon: IconName; desc: string; keywords: string }[] = [
-  { id: 'connect', label: 'Hesaplar ve API', icon: 'link', desc: 'Claude, Meshy, ElevenLabs, Hugging Face ve OpenRouter bağlantıları', keywords: 'anahtar key api giriş claude anthropic meshy elevenlabs hugging face openrouter bağlan token' },
-  { id: 'models', label: 'Yapay zeka modelleri', icon: 'spark', desc: 'Claude modeli, yerel ve ek modeller, görev atamaları', keywords: 'model claude ollama lm studio openrouter llm görev atama asistan prompt görsel vision web arama' },
+  {
+    id: 'connect',
+    label: 'Hesaplar ve API',
+    icon: 'link',
+    desc: 'Claude, Meshy, ElevenLabs, Hugging Face ve OpenRouter bağlantıları',
+    keywords: 'anahtar key api giriş claude anthropic meshy elevenlabs hugging face openrouter bağlan token'
+  },
+  {
+    id: 'models',
+    label: 'Yapay zeka modelleri',
+    icon: 'spark',
+    desc: 'Claude modeli, yerel ve ek modeller, görev atamaları',
+    keywords: 'model claude ollama lm studio openrouter llm görev atama asistan prompt görsel vision web arama'
+  },
   { id: 'project', label: 'Proje ve üretim', icon: 'folder', desc: 'Proje klasörü, eşzamanlı iş sayısı, ses formatı', keywords: 'proje klasör iş sayısı concurrency ses format wav mp3 çıktı' },
   { id: 'tools', label: 'Yerel araçlar', icon: 'wand', desc: 'Blender ve ComfyUI', keywords: 'blender comfyui workflow doku texture yerel' },
   { id: 'anim', label: 'Animasyon', icon: 'anim', desc: 'NVIDIA Kimodo kurulumu ve servis', keywords: 'kimodo animasyon hareket motion wsl docker cuda hugging face llama' },
   { id: 'unreal', label: 'Unreal Engine', icon: 'cube', desc: 'Remote Execution bağlantısı ve IK Rig', keywords: 'unreal ue5 remote execution python ik rig manny quinn retarget' },
-  { id: 'mcp', label: 'MCP ve dış araçlar', icon: 'terminal', desc: 'Claude Code / Desktop bağlantısı, dış MCP sunucuları', keywords: 'mcp claude code desktop sunucu server token port blender mcp araç' },
+  {
+    id: 'mcp',
+    label: 'MCP ve dış araçlar',
+    icon: 'terminal',
+    desc: 'Claude Code / Desktop bağlantısı, dış MCP sunucuları',
+    keywords: 'mcp claude code desktop sunucu server token port blender mcp araç'
+  },
   { id: 'about', label: 'Hakkında', icon: 'gauge', desc: 'Sürüm, lisans ve destek', keywords: 'sürüm versiyon hakkında lisans github hata bildir destek' }
 ]
 
@@ -337,7 +355,11 @@ export default function SettingsPage() {
             {badge(x.id)}
           </button>
         ))}
-        {!shown.length && <div className="dim small" style={{ padding: '6px 10px' }}>Sonuç yok</div>}
+        {!shown.length && (
+          <div className="dim small" style={{ padding: '6px 10px' }}>
+            Sonuç yok
+          </div>
+        )}
         <div className="set-foot dim small">v{__APP_VERSION__} · Anahtarlar bu bilgisayarda şifreli saklanır.</div>
       </nav>
       <div className="split-main set-main">

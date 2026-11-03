@@ -30,7 +30,7 @@ export default function BiblePage() {
     toast(`Claude ${pdfs.length} belgeyi okuyor… (1-3 dk sürebilir)`)
     try {
       const { data, usd } = await window.forge.extractBible(pdfs, b, usedCategories.join(', '))
-      set({ ...data, technical: { ...b.technical, ...(data.technical ?? {}) } })
+      set({ ...data, technical: { ...b.technical, ...data.technical } })
       toast(`Proje Kitabı güncellendi ($${usd.toFixed(3)})`, 'ok')
     } catch (e) {
       toast((e as Error).message, 'error')

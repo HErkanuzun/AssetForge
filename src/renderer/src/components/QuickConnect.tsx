@@ -39,11 +39,10 @@ export default function QuickConnect() {
           toast(e.message, 'ok')
         }
       }),
-    []
+    [setSettings, toast]
   )
 
-  const connected = (id: ConnectService) =>
-    id === 'openrouter' ? s.llmProviders.some((p) => p.baseUrl.includes('openrouter.ai') && p.hasKey) : s.hasKeys[id]
+  const connected = (id: ConnectService) => (id === 'openrouter' ? s.llmProviders.some((p) => p.baseUrl.includes('openrouter.ai') && p.hasKey) : s.hasKeys[id])
 
   const start = async (id: ConnectService) => {
     setEv({ service: id, phase: 'waiting', message: 'Tarayıcı açılıyor…' })
@@ -60,8 +59,8 @@ export default function QuickConnect() {
     <section className="card">
       <h2>Hızlı bağlantı</h2>
       <p className="muted small">
-        “Bağlan”a basın: servisin sayfası tarayıcıda açılır. Giriş yapıp anahtarı kopyalamanız yeterli — AssetForge panodan yakalar, doğrular ve şifreli kaydeder. Elle yapıştırmak isterseniz
-        aşağıdaki alanlar da duruyor.
+        “Bağlan”a basın: servisin sayfası tarayıcıda açılır. Giriş yapıp anahtarı kopyalamanız yeterli — AssetForge panodan yakalar, doğrular ve şifreli kaydeder. Elle yapıştırmak isterseniz aşağıdaki
+        alanlar da duruyor.
       </p>
       <div className="qc-grid">
         {TILES.map((t) => {

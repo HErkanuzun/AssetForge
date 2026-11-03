@@ -121,11 +121,6 @@ function contextLine(input: AgentInput, p: Project): string {
   return `[Bağlam: kullanıcı ${PAGES[c.page] ?? c.page} sayfasında${c.briefId ? `, açık brief ${c.briefId}` : ''}${sel.length ? `; seçili asset'ler: ${sel.join(', ')}` : ''}]`
 }
 
-function summarizeInput(name: string, input: unknown): string {
-  const s = JSON.stringify(input ?? {})
-  return s.length > 160 ? s.slice(0, 160) + '…' : s
-}
-
 interface Deps {
   runner: Runner
   notify: (p: Project) => void
@@ -133,14 +128,7 @@ interface Deps {
 }
 
 /** Bir aracı doğrula → (gerekirse) onay al → çalıştır; görünümü günceller */
-async function execTool(
-  dir: string,
-  c: AgentConversation,
-  tools: AgentTool[],
-  call: { id: string; name: string; input: unknown },
-  deps: Deps,
-  signal: AbortSignal
-): Promise<ToolResult> {
+async function execTool(dir: string, c: AgentConversation, tools: AgentTool[], call: { id: string; name: string; input: unknown }, deps: Deps, signal: AbortSignal): Promise<ToolResult> {
   const item: Extract<AgentViewItem, { kind: 'tool' }> = { kind: 'tool', id: call.id, name: call.name, input: call.input, status: 'running' }
   c.view.push(item)
   const push = () => {
@@ -188,7 +176,13 @@ async function execTool(
     item.result = r.text.length > 4000 ? r.text.slice(0, 4000) + '…' : r.text
     // Görseller arayüzde forge:// ile gösterilir → proje klasörü dışındakileri kopyala
     item.images = (r.images ?? []).map((f) => {
-      if (path.resolve(f).toLowerCase().startsWith(path.resolve(dir).toLowerCase() + path.sep)) return f
+      if (
+        path
+          .resolve(f)
+          .toLowerCase()
+          .startsWith(path.resolve(dir).toLowerCase() + path.sep)
+      )
+        return f
       const dest = path.join(ensureDir(path.join(dirOf(dir), 'media')), `${Date.now()}_${path.basename(f)}`)
       fs.copyFileSync(f, dest)
       return dest
@@ -374,17 +368,7 @@ async function anthropicLoop(
   c.view.push({ kind: 'event', text: `Tur sınırına (${MAX_ROUNDS}) ulaşıldı; devam etmek için yaz.` })
 }
 
-async function openaiLoop(
-  dir: string,
-  c: AgentConversation,
-  p: LlmProvider,
-  tools: AgentTool[],
-  sys: string,
-  userText: string,
-  images: string[],
-  deps: Deps,
-  signal: AbortSignal
-): Promise<void> {
+async function openaiLoop(dir: string, c: AgentConversation, p: LlmProvider, tools: AgentTool[], sys: string, userText: string, images: string[], deps: Deps, signal: AbortSignal): Promise<void> {
   const history = c.history as OaMessage[]
   const last = history[history.length - 1]
   if (last?.role === 'assistant' && last.tool_calls?.length) {

@@ -140,7 +140,10 @@ export default function LibraryPage() {
             disabled={!pl}
             onClick={async () => {
               try {
-                await startRun(pl, selAssets.map((a) => a.id))
+                await startRun(
+                  pl,
+                  selAssets.map((a) => a.id)
+                )
                 toast(`${selAssets.length} iş başlatıldı`, 'ok')
                 setSelectedAssets([])
               } catch (e) {

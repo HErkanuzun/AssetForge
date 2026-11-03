@@ -71,7 +71,7 @@ elif mode == "inplace":
             scene.frame_set(f)
             mats.append(pb.matrix.copy())
         start = mats[0].to_translation()
-        for f, m in zip(range(f0, f1 + 1), mats):
+        for f, m in zip(range(f0, f1 + 1), mats, strict=False):
             scene.frame_set(f)
             t = m.to_translation()
             m2 = m.copy()

@@ -49,7 +49,11 @@ function cellText(v: ExcelJS.CellValue): string {
   if (typeof v === 'number' || typeof v === 'boolean') return String(v)
   if (v instanceof Date) return v.toISOString().slice(0, 10)
   if (typeof v === 'object') {
-    if ('richText' in v) return v.richText.map((r) => r.text).join('').trim()
+    if ('richText' in v)
+      return v.richText
+        .map((r) => r.text)
+        .join('')
+        .trim()
     if ('text' in v) return String(v.text).trim()
     if ('result' in v) return cellText(v.result as ExcelJS.CellValue)
   }

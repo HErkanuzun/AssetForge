@@ -73,13 +73,7 @@ export function getTask(resource: MeshyResource, id: string, signal?: AbortSigna
   return request<MeshyTask>('GET', `/openapi/${VERSION[resource]}/${resource}/${id}`, undefined, signal)
 }
 
-export async function waitTask(
-  resource: MeshyResource,
-  id: string,
-  onProgress: (p: number, note: string) => void,
-  signal?: AbortSignal,
-  timeoutMs = 40 * 60 * 1000
-): Promise<MeshyTask> {
+export async function waitTask(resource: MeshyResource, id: string, onProgress: (p: number, note: string) => void, signal?: AbortSignal, timeoutMs = 40 * 60 * 1000): Promise<MeshyTask> {
   const start = Date.now()
   for (;;) {
     const t = await getTask(resource, id, signal)

@@ -162,9 +162,7 @@ function registerIpc(): void {
     const b = loadBrief(dir(), id)
     return b ? { ...b, history: [] } : null
   })
-  handle('brief:send', (id: string, input: BriefInput) =>
-    sendBrief(dir(), loadProject(dir()), id, input, (ev) => win?.webContents.send('brief:event', ev))
-  )
+  handle('brief:send', (id: string, input: BriefInput) => sendBrief(dir(), loadProject(dir()), id, input, (ev) => win?.webContents.send('brief:event', ev)))
   handle('brief:patch', (id: string, patch: Partial<Pick<Brief, 'title' | 'kit' | 'status' | 'committedAssetIds'>>) => {
     const b = loadBrief(dir(), id)
     if (!b) throw new Error('Brief bulunamadı')
@@ -200,7 +198,12 @@ function registerIpc(): void {
     const p = loadProject(dir())
     const sys = getSystem(dir(), id)
     const ch = p.assets.find((a) => a.id === sys.characterId)
-    const { data, usd } = await planAnimSystem(p.bible, { kind: sys.kind, title: animSystemInfo(sys.kind).title, style: sys.style, clips: sys.clips.map(({ assetId: _a, ...c }) => c) }, ch ? `${ch.name}: ${ch.description}` : '', request)
+    const { data, usd } = await planAnimSystem(
+      p.bible,
+      { kind: sys.kind, title: animSystemInfo(sys.kind).title, style: sys.style, clips: sys.clips.map(({ assetId: _a, ...c }) => c) },
+      ch ? `${ch.name}: ${ch.description}` : '',
+      request
+    )
     const next = saveSystem(sysCtx(), { ...applyPlan(sys, data), description: request || sys.description })
     return { system: next, rationale: data.rationale, usd }
   })

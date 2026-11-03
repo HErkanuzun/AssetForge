@@ -472,7 +472,11 @@ const executors: Record<string, Executor> = {
       .filter((x) => x > 0)
     if (!texts.length && ctx.asset.extra['Kimodo']) {
       texts = ctx.asset.extra['Kimodo'].split(/\r?\n/).filter(Boolean)
-      if (!secs.length && ctx.asset.extra['Süre']) secs = ctx.asset.extra['Süre'].split(/[\s,;]+/).map(Number).filter((x) => x > 0)
+      if (!secs.length && ctx.asset.extra['Süre'])
+        secs = ctx.asset.extra['Süre']
+          .split(/[\s,;]+/)
+          .map(Number)
+          .filter((x) => x > 0)
     }
     if (!texts.length) {
       const { data, usd } = await generatePrompt({ bible: ctx.bible, asset: ctx.asset, targetId: 'kimodo_motion', extra: str(p.extra), feedback: ctx.feedback })

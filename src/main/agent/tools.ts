@@ -189,11 +189,31 @@ export function builtinTools(): AgentTool[] {
           `PROJE: ${p.bible.projectName || p.name} · ${p.bible.genre} · ${p.bible.setting}`,
           `Sanat yönü: ${clip(p.bible.artDirection, 400)}`,
           `Gerçekçilik: ${p.bible.realism}`,
-          `Asset: ${p.assets.length} — türler: ${by((a) => a.kind).map(([k, n]) => `${k} ${n}`).join(', ')} — durumlar: ${by((a) => a.status).map(([k, n]) => `${k} ${n}`).join(', ')}`,
+          `Asset: ${p.assets.length} — türler: ${by((a) => a.kind)
+            .map(([k, n]) => `${k} ${n}`)
+            .join(', ')} — durumlar: ${by((a) => a.status)
+            .map(([k, n]) => `${k} ${n}`)
+            .join(', ')}`,
           `Hatlar: ${p.pipelines.map((x) => `${x.id} (${x.name})`).join('; ')}`,
-          `Süren işler: ${jobs.filter((j) => j.status === 'running' || j.status === 'queued').map((j) => `${j.assetName} [${j.pipelineName}]`).join('; ') || 'yok'}`,
-          `Son başarısızlar: ${jobs.filter((j) => j.status === 'failed').slice(0, 5).map((j) => `${j.assetName}: ${clip(j.error ?? '', 120)}`).join(' | ') || 'yok'}`,
-          `Brief'ler: ${listBriefs(ctx.dir).slice(0, 8).map((b) => `${b.id} "${b.spec.name || b.title}" (${b.status})`).join('; ') || 'yok'}`,
+          `Süren işler: ${
+            jobs
+              .filter((j) => j.status === 'running' || j.status === 'queued')
+              .map((j) => `${j.assetName} [${j.pipelineName}]`)
+              .join('; ') || 'yok'
+          }`,
+          `Son başarısızlar: ${
+            jobs
+              .filter((j) => j.status === 'failed')
+              .slice(0, 5)
+              .map((j) => `${j.assetName}: ${clip(j.error ?? '', 120)}`)
+              .join(' | ') || 'yok'
+          }`,
+          `Brief'ler: ${
+            listBriefs(ctx.dir)
+              .slice(0, 8)
+              .map((b) => `${b.id} "${b.spec.name || b.title}" (${b.status})`)
+              .join('; ') || 'yok'
+          }`,
           `Servisler: Claude anahtarı ${getSecret('anthropic') ? 'var' : 'YOK'} · Meshy ${getSecret('meshy') ? 'var' : 'YOK'} · ElevenLabs ${getSecret('elevenlabs') ? 'var' : 'YOK'} · Blender ${s.blenderPath && fs.existsSync(s.blenderPath) ? 'bulundu' : 'YOK'} · Kimodo ${km?.healthy ? 'hazır' : km?.running ? 'açılıyor' : 'kapalı'} · Unreal ${ue.length ? ue.map((n) => `${n.projectName} (UE ${n.engineVersion})`).join(', ') : 'açık değil'}`
         ].join('\n')
       }
@@ -215,7 +235,9 @@ export function builtinTools(): AgentTool[] {
         const list = p.assets.filter(
           (a) => (!d.kind || a.kind === d.kind) && (!d.status || a.status === d.status) && (!q || `${a.id} ${a.name} ${a.description} ${a.category}`.toLocaleLowerCase('tr').includes(q))
         )
-        const rows = list.slice(0, d.limit ?? 120).map((a) => `${a.id} | ${a.name} | ${a.kind} | ${a.status || '—'} | ${a.category}${a.parentId ? ` | ana: ${a.parentId}` : ''}${a.triBudget ? ` | ${a.triBudget} üçgen` : ''}`)
+        const rows = list
+          .slice(0, d.limit ?? 120)
+          .map((a) => `${a.id} | ${a.name} | ${a.kind} | ${a.status || '—'} | ${a.category}${a.parentId ? ` | ana: ${a.parentId}` : ''}${a.triBudget ? ` | ${a.triBudget} üçgen` : ''}`)
         return `${list.length} asset${list.length > rows.length ? ` (ilk ${rows.length})` : ''}\n${rows.join('\n')}`
       }
     }),
@@ -343,7 +365,10 @@ export function builtinTools(): AgentTool[] {
         moodKeywords: z.array(z.string()).optional(),
         forbidden: z.array(z.string()).optional(),
         audioDirection: z.string().optional(),
-        palette: z.array(z.object({ code: z.string(), group: z.string(), name: z.string(), hex: z.string(), usage: z.string() })).optional().describe('Verilirse paletin tamamının yerine geçer'),
+        palette: z
+          .array(z.object({ code: z.string(), group: z.string(), name: z.string(), hex: z.string(), usage: z.string() }))
+          .optional()
+          .describe('Verilirse paletin tamamının yerine geçer'),
         defaultTriBudget: z.number().optional(),
         ueContentRoot: z.string().optional(),
         masterMaterial: z.string().optional()
@@ -446,7 +471,10 @@ export function builtinTools(): AgentTool[] {
       schema: z.object({
         characterId: z.string(),
         name: z.string(),
-        segments: z.array(z.object({ text: z.string(), seconds: z.number().min(1).max(10) })).min(1).max(8),
+        segments: z
+          .array(z.object({ text: z.string(), seconds: z.number().min(1).max(10) }))
+          .min(1)
+          .max(8),
         loop: z.boolean().optional(),
         rootMotion: z.enum(['root', 'inplace', 'raw']).optional()
       }),
@@ -497,7 +525,9 @@ export function builtinTools(): AgentTool[] {
         if (d.systemId) {
           const sys = getSystem(ctx.dir, d.systemId)
           const st = new Map(systemStates(ctx.dir, sys).map((x) => [x.key, x]))
-          const lines = [`${sys.id} · ${sys.name} · ${animSystemInfo(sys.kind).title} (${animSystemInfo(sys.kind).ue}) · stil: "${sys.style}" · karakter ${sys.characterId}${sys.producing ? ' · ÜRETİLİYOR' : ''}`]
+          const lines = [
+            `${sys.id} · ${sys.name} · ${animSystemInfo(sys.kind).title} (${animSystemInfo(sys.kind).ue}) · stil: "${sys.style}" · karakter ${sys.characterId}${sys.producing ? ' · ÜRETİLİYOR' : ''}`
+          ]
           for (const c of sys.clips) {
             const s = st.get(c.key)
             const m = s?.motion?.measured

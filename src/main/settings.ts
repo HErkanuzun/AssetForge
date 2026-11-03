@@ -84,7 +84,7 @@ export function getSettings(): SettingsFile {
     /* ilk açılış */
   }
   const d = defaults()
-  cache = { ...d, ...loaded, secrets: { ...(loaded.secrets ?? {}) } }
+  cache = { ...d, ...loaded, secrets: { ...loaded.secrets } }
   savedProjectDir = cache.projectDir
   // Geliştirme kancası: yalnızca bu oturum için; dosyaya yazılmaz
   if (process.env.FORGE_PROJECT_DIR) cache.projectDir = process.env.FORGE_PROJECT_DIR

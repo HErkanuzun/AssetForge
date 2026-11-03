@@ -81,13 +81,25 @@ export async function close(id?: string): Promise<void> {
   }
 }
 
-const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 20) || 'mcp'
+const slug = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '')
+    .slice(0, 20) || 'mcp'
 
 /** Etkin tüm MCP sunucularının araçları (bağlanamayanlar atlanır) */
 export async function externalTools(dir: string): Promise<AgentTool[]> {
   const out: AgentTool[] = []
   const servers = getSettings().mcpServers.filter((s) => s.enabled)
-  const conns = await Promise.all(servers.map((s) => ensure(s).then((c) => [s, c] as const, () => null)))
+  const conns = await Promise.all(
+    servers.map((s) =>
+      ensure(s).then(
+        (c) => [s, c] as const,
+        () => null
+      )
+    )
+  )
   for (const pair of conns) {
     if (!pair) continue
     const [cfg, conn] = pair

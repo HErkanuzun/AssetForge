@@ -19,7 +19,7 @@ function decode(buf: Buffer): string {
 
 function run(cmd: string, args: string[], opts: { env?: Record<string, string>; log?: LogFn; timeoutMs?: number } = {}): Promise<{ code: number; out: string }> {
   return new Promise((resolve) => {
-    const proc = spawn(cmd, args, { windowsHide: true, env: { ...process.env, ...(opts.env ?? {}) } })
+    const proc = spawn(cmd, args, { windowsHide: true, env: { ...process.env, ...opts.env } })
     let out = ''
     let pending = ''
     const onData = (d: Buffer) => {

@@ -105,24 +105,11 @@ export default function App() {
 
   let body
   if (!project) body = <div className="stage-empty">Yükleniyor…</div>
-  else if (page === 'home')
-    body = brief ? <BriefPage key={brief.id} id={brief.id} firstMessage={brief.first} onBack={() => setBrief(null)} /> : <HomePage />
+  else if (page === 'home') body = brief ? <BriefPage key={brief.id} id={brief.id} firstMessage={brief.first} onBack={() => setBrief(null)} /> : <HomePage />
   else if (page === 'library') body = <LibraryPage />
   else if (page === 'anim') body = <AnimPage />
   else
-    body = (
-      <div className="legacy">
-        {page === 'bible' ? (
-          <BiblePage />
-        ) : page === 'pipeline' ? (
-          <PipelinePage goJobs={() => setPage('jobs')} />
-        ) : page === 'jobs' ? (
-          <JobsPage />
-        ) : (
-          <SettingsPage />
-        )}
-      </div>
-    )
+    body = <div className="legacy">{page === 'bible' ? <BiblePage /> : page === 'pipeline' ? <PipelinePage goJobs={() => setPage('jobs')} /> : page === 'jobs' ? <JobsPage /> : <SettingsPage />}</div>
 
   return (
     <NavCtx.Provider value={nav}>

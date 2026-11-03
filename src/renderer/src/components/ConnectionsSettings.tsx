@@ -20,7 +20,17 @@ const MCP_PRESETS: { label: string; s: Omit<McpServerConfig, 'id'> }[] = [
   },
   {
     label: 'Dosya sistemi',
-    s: { name: 'Dosyalar', transport: 'stdio', command: 'npx', args: '-y @modelcontextprotocol/server-filesystem C:/Projelerim/MyGame', env: '', url: '', headers: '', enabled: true, autoApprove: false }
+    s: {
+      name: 'Dosyalar',
+      transport: 'stdio',
+      command: 'npx',
+      args: '-y @modelcontextprotocol/server-filesystem C:/Projelerim/MyGame',
+      env: '',
+      url: '',
+      headers: '',
+      enabled: true,
+      autoApprove: false
+    }
   },
   { label: 'Özel (komut)', s: { name: 'Araç', transport: 'stdio', command: '', args: '', env: '', url: '', headers: '', enabled: true, autoApprove: false } },
   { label: 'Özel (HTTP)', s: { name: 'Sunucu', transport: 'http', command: '', args: '', env: '', url: 'http://127.0.0.1:8000/mcp', headers: '', enabled: true, autoApprove: false } }
@@ -74,99 +84,107 @@ export function ModelSettings() {
   ))
 
   return (
-      <section className="card">
-        <h2>Sağlayıcılar</h2>
-        <p className="muted small">
-          Claude varsayılandır. Yerel modeller (Ollama, LM Studio, vLLM) ya da başka API’ler (OpenRouter, OpenAI uyumlu her uç) eklenebilir ve görevlere ayrı ayrı atanabilir. Yerel modellerde
-          araç kullanımı (tool calling) destekleyen bir model seçin — ör. Qwen3, Llama 3.3/4, Mistral Small 3.
-        </p>
-        <div className="prov">
-          <b>Claude (Anthropic)</b>
-          <span className="muted small">Anthropic API · anahtar “Hesaplar ve API”de</span>
-          <select className="input" value={s.claudeModel} onChange={(e) => patch({ claudeModel: e.target.value })} title="Claude modeli">
-            {CLAUDE_MODELS.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
+    <section className="card">
+      <h2>Sağlayıcılar</h2>
+      <p className="muted small">
+        Claude varsayılandır. Yerel modeller (Ollama, LM Studio, vLLM) ya da başka API’ler (OpenRouter, OpenAI uyumlu her uç) eklenebilir ve görevlere ayrı ayrı atanabilir. Yerel modellerde araç
+        kullanımı (tool calling) destekleyen bir model seçin — ör. Qwen3, Llama 3.3/4, Mistral Small 3.
+      </p>
+      <div className="prov">
+        <b>Claude (Anthropic)</b>
+        <span className="muted small">Anthropic API · anahtar “Hesaplar ve API”de</span>
+        <select className="input" value={s.claudeModel} onChange={(e) => patch({ claudeModel: e.target.value })} title="Claude modeli">
+          {CLAUDE_MODELS.map((m) => (
+            <option key={m.value} value={m.value}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+        <span className="chip ok" style={{ justifySelf: 'start' }}>
+          görsel ✓
+        </span>
+        <button className="btn" disabled={testing === 'claude'} onClick={() => test('claude')}>
+          {testing === 'claude' ? <span className="spinner" /> : 'Test'}
+        </button>
+      </div>
+      {custom.map((p) => (
+        <div key={p.id} className="prov" style={{ gridTemplateColumns: '1fr 1.5fr 1.1fr 0.9fr auto' }}>
+          <input className="input" value={p.name} onChange={(e) => editProvider(p.id, { name: e.target.value })} title="Ad" />
+          <input
+            className="input"
+            value={p.baseUrl}
+            placeholder={p.kind === 'anthropic' ? 'boş = api.anthropic.com' : 'http://127.0.0.1:11434/v1'}
+            onChange={(e) => editProvider(p.id, { baseUrl: e.target.value })}
+            title="Adres"
+          />
+          <input className="input" value={p.model} placeholder="model adı" onChange={(e) => editProvider(p.id, { model: e.target.value })} title="Model" />
+          <div className="row">
+            <input
+              className="input"
+              type="password"
+              placeholder={p.hasKey ? '•••• kayıtlı' : 'anahtar (ops.)'}
+              value={keys[p.id] ?? ''}
+              onChange={(e) => setKeys({ ...keys, [p.id]: e.target.value })}
+              onBlur={async () => {
+                if (keys[p.id] === undefined) return
+                await patch({ providerKeys: { [p.id]: keys[p.id] } })
+                setKeys(({ [p.id]: _x, ...rest }) => rest)
+                toast('Anahtar kaydedildi', 'ok')
+              }}
+            />
+          </div>
+          <div className="row">
+            <button className="btn" disabled={testing === p.id} onClick={() => test(p.id)}>
+              {testing === p.id ? <span className="spinner" /> : 'Test'}
+            </button>
+            <button className="btn ghost" title="Sil" onClick={() => setProviders(custom.filter((x) => x.id !== p.id))}>
+              <Icon name="trash" size={14} />
+            </button>
+          </div>
+          <div className="row small muted" style={{ gridColumn: '1 / -1' }}>
+            <select className="input" style={{ width: 200, height: 30, padding: '0 8px' }} value={p.kind} onChange={(e) => editProvider(p.id, { kind: e.target.value as LlmProvider['kind'] })}>
+              <option value="openai">OpenAI uyumlu API</option>
+              <option value="anthropic">Anthropic uyumlu API</option>
+            </select>
+            <Toggle value={p.vision} onChange={(v) => editProvider(p.id, { vision: v })} label="Görsel girdi destekliyor" />
+          </div>
+        </div>
+      ))}
+      <div className="presets">
+        {PRESETS.map((x) => (
+          <button key={x.label} className="btn" onClick={() => setProviders([...custom, { ...x.p, id: rid('llm') }])}>
+            <Icon name="plus" size={13} /> {x.label}
+          </button>
+        ))}
+      </div>
+
+      <h3 style={{ marginTop: 10 }}>Görev atamaları</h3>
+      <div className="kv2" style={{ gridTemplateColumns: '190px 1fr', alignItems: 'center' }}>
+        <span>Yapımcı asistanı</span>
+        <select className="input" value={s.llmRoles.assistant} onChange={(e) => setRole('assistant', e.target.value)}>
+          {roleOpts}
+        </select>
+        <span>Prompt motoru · Proje Kitabı · hareket</span>
+        <select className="input" value={s.llmRoles.prompts} onChange={(e) => setRole('prompts', e.target.value)}>
+          {roleOpts}
+        </select>
+        <span>Görsel kalite kontrol</span>
+        <select className="input" value={s.llmRoles.vision} onChange={(e) => setRole('vision', e.target.value)}>
+          {s.llmProviders
+            .filter((p) => p.vision)
+            .map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} · {p.model}
               </option>
             ))}
-          </select>
-          <span className="chip ok" style={{ justifySelf: 'start' }}>
-            görsel ✓
-          </span>
-          <button className="btn" disabled={testing === 'claude'} onClick={() => test('claude')}>
-            {testing === 'claude' ? <span className="spinner" /> : 'Test'}
-          </button>
-        </div>
-        {custom.map((p) => (
-          <div key={p.id} className="prov" style={{ gridTemplateColumns: '1fr 1.5fr 1.1fr 0.9fr auto' }}>
-            <input className="input" value={p.name} onChange={(e) => editProvider(p.id, { name: e.target.value })} title="Ad" />
-            <input className="input" value={p.baseUrl} placeholder={p.kind === 'anthropic' ? 'boş = api.anthropic.com' : 'http://127.0.0.1:11434/v1'} onChange={(e) => editProvider(p.id, { baseUrl: e.target.value })} title="Adres" />
-            <input className="input" value={p.model} placeholder="model adı" onChange={(e) => editProvider(p.id, { model: e.target.value })} title="Model" />
-            <div className="row">
-              <input
-                className="input"
-                type="password"
-                placeholder={p.hasKey ? '•••• kayıtlı' : 'anahtar (ops.)'}
-                value={keys[p.id] ?? ''}
-                onChange={(e) => setKeys({ ...keys, [p.id]: e.target.value })}
-                onBlur={async () => {
-                  if (keys[p.id] === undefined) return
-                  await patch({ providerKeys: { [p.id]: keys[p.id] } })
-                  setKeys(({ [p.id]: _x, ...rest }) => rest)
-                  toast('Anahtar kaydedildi', 'ok')
-                }}
-              />
-            </div>
-            <div className="row">
-              <button className="btn" disabled={testing === p.id} onClick={() => test(p.id)}>
-                {testing === p.id ? <span className="spinner" /> : 'Test'}
-              </button>
-              <button className="btn ghost" title="Sil" onClick={() => setProviders(custom.filter((x) => x.id !== p.id))}>
-                <Icon name="trash" size={14} />
-              </button>
-            </div>
-            <div className="row small muted" style={{ gridColumn: '1 / -1' }}>
-              <select className="input" style={{ width: 200, height: 30, padding: '0 8px' }} value={p.kind} onChange={(e) => editProvider(p.id, { kind: e.target.value as LlmProvider['kind'] })}>
-                <option value="openai">OpenAI uyumlu API</option>
-                <option value="anthropic">Anthropic uyumlu API</option>
-              </select>
-              <Toggle value={p.vision} onChange={(v) => editProvider(p.id, { vision: v })} label="Görsel girdi destekliyor" />
-            </div>
-          </div>
-        ))}
-        <div className="presets">
-          {PRESETS.map((x) => (
-            <button key={x.label} className="btn" onClick={() => setProviders([...custom, { ...x.p, id: rid('llm') }])}>
-              <Icon name="plus" size={13} /> {x.label}
-            </button>
-          ))}
-        </div>
-
-        <h3 style={{ marginTop: 10 }}>Görev atamaları</h3>
-        <div className="kv2" style={{ gridTemplateColumns: '190px 1fr', alignItems: 'center' }}>
-          <span>Yapımcı asistanı</span>
-          <select className="input" value={s.llmRoles.assistant} onChange={(e) => setRole('assistant', e.target.value)}>
-            {roleOpts}
-          </select>
-          <span>Prompt motoru · Proje Kitabı · hareket</span>
-          <select className="input" value={s.llmRoles.prompts} onChange={(e) => setRole('prompts', e.target.value)}>
-            {roleOpts}
-          </select>
-          <span>Görsel kalite kontrol</span>
-          <select className="input" value={s.llmRoles.vision} onChange={(e) => setRole('vision', e.target.value)}>
-            {s.llmProviders
-              .filter((p) => p.vision)
-              .map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} · {p.model}
-                </option>
-              ))}
-          </select>
-          <span>Web araması (Claude)</span>
-          <Toggle value={s.webSearch} onChange={(v) => patch({ webSearch: v })} label="Referans ve teknik araştırma için" />
-        </div>
-        <p className="dim small" style={{ marginTop: 8 }}>Brief sohbeti şimdilik Claude ile çalışır.</p>
-      </section>
+        </select>
+        <span>Web araması (Claude)</span>
+        <Toggle value={s.webSearch} onChange={(v) => patch({ webSearch: v })} label="Referans ve teknik araştırma için" />
+      </div>
+      <p className="dim small" style={{ marginTop: 8 }}>
+        Brief sohbeti şimdilik Claude ile çalışır.
+      </p>
+    </section>
   )
 }
 
@@ -193,8 +211,8 @@ export function McpSettings() {
       <section className="card">
         <h2>Claude’u bağla — AssetForge MCP sunucusu</h2>
         <p className="muted small">
-          AssetForge kendi araçlarını (asset oluşturma, üretim başlatma, sonuçları görme, animasyon, Unreal Python) MCP üzerinden dışarı açar. Claude Code ya da Claude Desktop bağlanınca
-          projeni sohbetten yönetebilir. Yalnızca bu bilgisayardan (127.0.0.1) ve aşağıdaki gizli anahtarla erişilir.
+          AssetForge kendi araçlarını (asset oluşturma, üretim başlatma, sonuçları görme, animasyon, Unreal Python) MCP üzerinden dışarı açar. Claude Code ya da Claude Desktop bağlanınca projeni
+          sohbetten yönetebilir. Yalnızca bu bilgisayardan (127.0.0.1) ve aşağıdaki gizli anahtarla erişilir.
         </p>
         <div className="row" style={{ marginBottom: 8 }}>
           <Toggle value={s.mcpExpose.enabled} onChange={(v) => patch({ mcpExpose: { ...s.mcpExpose, enabled: v } }).then(refreshMcp)} label="Sunucu açık" />
@@ -240,9 +258,7 @@ export function McpSettings() {
 
       <section className="card">
         <h2>Dış araç sunucuları (MCP)</h2>
-        <p className="muted small">
-          Blender MCP, Unreal MCP, dosya sistemi, arama gibi MCP sunucularını ekle; araçları Yapımcı’ya katılır. “Onaysız çalıştır” kapalıyken her çağrı için onay istenir.
-        </p>
+        <p className="muted small">Blender MCP, Unreal MCP, dosya sistemi, arama gibi MCP sunucularını ekle; araçları Yapımcı’ya katılır. “Onaysız çalıştır” kapalıyken her çağrı için onay istenir.</p>
         {s.mcpServers.map((x) => {
           const st = mcp?.servers.find((y) => y.id === x.id)
           return (
