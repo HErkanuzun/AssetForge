@@ -86,6 +86,8 @@ export interface ForgeApi {
   connect: {
     start(service: ConnectService): Promise<void>
     cancel(): Promise<void>
+    /** Bekleyen bağlantıda panodaki metni hemen dene */
+    tryClipboard(): Promise<void>
     onEvent(cb: (e: ConnectEvent) => void): () => void
   }
   diag: {

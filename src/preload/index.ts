@@ -91,6 +91,7 @@ const api: ForgeApi = {
   connect: {
     start: (service) => call('connect:start', service),
     cancel: () => call('connect:cancel'),
+    tryClipboard: () => call('connect:tryClipboard'),
     onEvent: (cb) => {
       const listener = (_e: unknown, ev: Parameters<typeof cb>[0]) => cb(ev)
       ipcRenderer.on('connect:event', listener)

@@ -625,4 +625,6 @@ export interface ConnectEvent {
   service: ConnectService
   phase: 'waiting' | 'checking' | 'done' | 'error' | 'canceled'
   message: string
+  /** Hata olsa da pano izlenmeye devam ediyor */
+  pending?: boolean
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { describe, expect, it } from 'vitest'
-import { looksLikeKey } from '../src/main/connect'
+import { findKey, looksLikeKey, plausibleToken } from '../src/main/connect'
 import { pcmToWav, sniffImage, truncateWords } from '../src/main/util'
 
 describe('Hızlı bağlantı anahtar tanıma', () => {
@@ -20,6 +20,21 @@ describe('Hızlı bağlantı anahtar tanıma', () => {
 
   it('panodaki baştaki/sondaki boşlukları yok sayar', () => {
     expect(looksLikeKey('huggingface', `  hf_${'x'.repeat(34)}\n`)).toBe(true)
+  })
+
+  it('kopyalanan satırın içindeki anahtarı bulur', () => {
+    const msy = 'msy_' + 'A1b2'.repeat(8)
+    expect(findKey('meshy', `MESHY_API_KEY="${msy}"`)).toBe(msy)
+    expect(findKey('meshy', `API key:\n${msy}\n`)).toBe(msy)
+    expect(findKey('elevenlabs', 'commit ' + 'a'.repeat(40))).toBeNull()
+    expect(findKey('huggingface', 'hf_kisa')).toBeNull()
+    expect(findKey('meshy', 'x'.repeat(5000) + msy)).toBeNull()
+  })
+
+  it('elle denemede yalnızca tek parça metin kabul edilir', () => {
+    expect(plausibleToken('  abcDEF123_-.:abcDEF123\n')).toBe(true)
+    expect(plausibleToken('kisa')).toBe(false)
+    expect(plausibleToken('iki kelime anahtar olamaz değil mi')).toBe(false)
   })
 
   it('bir servisin anahtarını başka servis sanmaz', () => {

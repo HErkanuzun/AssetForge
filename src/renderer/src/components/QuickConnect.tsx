@@ -54,14 +54,14 @@ export default function QuickConnect() {
     }
   }
 
-  const busy = ev && (ev.phase === 'waiting' || ev.phase === 'checking') ? ev.service : null
+  const busy = ev && (ev.phase === 'waiting' || ev.phase === 'checking' || ev.pending) ? ev.service : null
 
   return (
     <section className="card">
       <h2>Hızlı bağlantı</h2>
       <p className="muted small">
-        “Bağlan”a basın: servisin sayfası tarayıcıda açılır. Giriş yapıp anahtarı kopyalamanız yeterli — AssetForge panodan yakalar, doğrular ve şifreli kaydeder. Elle yapıştırmak isterseniz aşağıdaki
-        alanlar da duruyor.
+        “Bağlan”a basın: servisin sayfası tarayıcıda açılır. Giriş yapıp anahtarı kopyalamanız yeterli (sayfadaki Kopyala düğmesi de Ctrl+C de olur) — AssetForge panodan yakalar, doğrular ve şifreli
+        kaydeder. Yakalanmazsa “Panodakini dene”ye basın ya da aşağıdaki alanlara elle yapıştırın.
       </p>
       <div className="qc-grid">
         {TILES.map((t) => {
@@ -83,9 +83,19 @@ export default function QuickConnect() {
               )}
               <div className="row" style={{ marginTop: 'auto' }}>
                 {active ? (
-                  <button className="btn ghost" onClick={() => window.forge.connect.cancel()}>
-                    İptal
-                  </button>
+                  <>
+                    <button
+                      className="btn"
+                      disabled={mine?.phase === 'checking'}
+                      title="Anahtarı kopyaladınız ama yakalanmadıysa panodaki metni şimdi doğrular"
+                      onClick={() => window.forge.connect.tryClipboard()}
+                    >
+                      Panodakini dene
+                    </button>
+                    <button className="btn ghost" onClick={() => window.forge.connect.cancel()}>
+                      İptal
+                    </button>
+                  </>
                 ) : (
                   <button className={`btn ${on ? '' : 'primary'}`} disabled={!!busy} onClick={() => start(t.id)}>
                     {on ? 'Yeniden bağla' : t.id === 'openrouter' ? 'Giriş yap ve bağlan' : 'Bağlan'}

@@ -7,23 +7,46 @@ import http from 'node:http'
 import crypto from 'node:crypto'
 import type { AddressInfo } from 'node:net'
 import type { ConnectEvent, ConnectService, LlmProvider } from '../shared/types'
+import { writeLog } from './log'
 import { getSettings, setSettings } from './settings'
 
 export type KeyService = Exclude<ConnectService, 'openrouter'>
 
 const TIMEOUT_MS = 10 * 60 * 1000
 
-export const KEY_PAGES: Record<KeyService, { url: string; pattern: RegExp }> = {
-  anthropic: { url: 'https://platform.claude.com/settings/keys', pattern: /^sk-ant-[A-Za-z0-9_-]{20,}$/ },
-  meshy: { url: 'https://www.meshy.ai/settings/api', pattern: /^msy_[A-Za-z0-9_-]{16,}$/ },
-  elevenlabs: { url: 'https://elevenlabs.io/app/settings/api-keys', pattern: /^(sk_[A-Za-z0-9]{30,}|[a-f0-9]{32})$/ },
-  huggingface: { url: 'https://huggingface.co/settings/tokens/new?tokenType=read&tokenName=AssetForge', pattern: /^hf_[A-Za-z0-9]{20,}$/ }
+export const KEY_PAGES: Record<KeyService, { name: string; url: string; key: string; hint: string }> = {
+  anthropic: { name: 'Claude', url: 'https://platform.claude.com/settings/keys', key: 'sk-ant-[A-Za-z0-9_-]{20,}', hint: 'sk-ant-' },
+  meshy: { name: 'Meshy', url: 'https://www.meshy.ai/settings/api', key: 'msy_[A-Za-z0-9_-]{16,}', hint: 'msy_' },
+  elevenlabs: { name: 'ElevenLabs', url: 'https://elevenlabs.io/app/settings/api-keys', key: 'sk_[A-Za-z0-9]{30,}|[a-f0-9]{32}', hint: 'sk_' },
+  huggingface: { name: 'Hugging Face', url: 'https://huggingface.co/settings/tokens/new?tokenType=read&tokenName=AssetForge', key: 'hf_[A-Za-z0-9]{20,}', hint: 'hf_' }
 }
 
-/** Panodaki metin bu servisin anahtarına benziyor mu? (doğrulama ayrıca API ile yapılır) */
-export function looksLikeKey(service: KeyService, text: string): boolean {
-  return KEY_PAGES[service].pattern.test(text.trim())
+const KEY_CHAR = '[A-Za-z0-9_-]'
+
+/**
+ * Metnin içindeki bu servise ait anahtar. Kopyala düğmeleri bazen tırnak, satır sonu ya da
+ * `MESHY_API_KEY=…` gibi bir satır kopyalar; anahtar bunların içinden de bulunur.
+ */
+export function findKey(service: KeyService, text: string): string | null {
+  if (text.length > 4000) return null
+  return text.match(new RegExp(`(?<!${KEY_CHAR})(?:${KEY_PAGES[service].key})(?!${KEY_CHAR})`))?.[0] ?? null
 }
+
+/** Panodaki metnin tamamı bu servisin anahtarı mı? (doğrulama ayrıca API ile yapılır) */
+export function looksLikeKey(service: KeyService, text: string): boolean {
+  const t = text.trim()
+  return findKey(service, t) === t
+}
+
+/** "Panodakini dene" ile elle denenebilecek, tek parça anahtar benzeri metin */
+export function plausibleToken(text: string): boolean {
+  return /^[A-Za-z0-9_.:-]{16,300}$/.test(text.trim())
+}
+
+/** Servis anahtarı açıkça reddetti (ağ hatasından farklı: aynı anahtar bir daha denenmez) */
+class KeyRejected extends Error {}
+
+const log = (service: ConnectService, text: string) => writeLog('info', `[connect] ${service}: ${text}`)
 
 const OPENROUTER_PRESET: Omit<LlmProvider, 'id'> = {
   name: 'OpenRouter',
@@ -33,13 +56,18 @@ const OPENROUTER_PRESET: Omit<LlmProvider, 'id'> = {
   vision: true
 }
 
-let active: { service: ConnectService; stop: () => void } | null = null
+let active: { service: ConnectService; stop: () => void; tryNow?: () => Promise<void> } | null = null
 
 export function connectCancel(): void {
   if (!active) return
   const a = active
   active = null
   a.stop()
+}
+
+/** Bekleyen bağlantıda panodaki metni hemen dene (biçimi tanınmasa da) */
+export async function connectTryClipboard(): Promise<void> {
+  await active?.tryNow?.()
 }
 
 export async function connectStart(service: ConnectService, emit: (e: ConnectEvent) => void, onDone: () => void): Promise<void> {
@@ -63,48 +91,82 @@ async function startClipboard(service: KeyService, emit: (e: ConnectEvent) => vo
     clearTimeout(deadline)
     if (canceled) emit({ service, phase: 'canceled', message: 'İptal edildi' })
   }
-  const me = { service, stop: () => stop(true) }
-  active = me
   const finish = () => {
     if (active === me) active = null
     stop(false)
   }
 
-  const check = async (text: string) => {
-    const key = text.trim()
-    if (!looksLikeKey(service, key) || tried.has(key)) return
-    tried.add(key)
+  /**
+   * Otomatik yakalamada yalnızca servisin anahtar biçimi kabul edilir (girişte kopyalanan
+   * parola servise gönderilmesin). Elle "Panodakini dene"de tek parça her metin denenir.
+   */
+  const check = async (text: string, manual = false) => {
+    const raw = text.trim()
+    const key = findKey(service, raw) ?? (manual && plausibleToken(raw) ? raw : null)
+    if (!key) {
+      if (!raw && !manual) return
+      log(service, raw ? `panoda anahtara benzemeyen metin (${raw.length} karakter)` : 'pano boş')
+      emit({
+        service,
+        phase: 'waiting',
+        message: raw
+          ? `Kopyalanan metin ${page.name} anahtarına benzemiyor (“${page.hint}” ile başlar). Anahtarın kendisini kopyalayın; emin değilseniz “Panodakini dene”ye basın.`
+          : 'Pano boş. Sayfadaki anahtarı kopyalayıp tekrar deneyin.'
+      })
+      return
+    }
+    if (!manual && tried.has(key)) {
+      emit({ service, phase: 'error', pending: true, message: `Bu anahtarı ${page.name} az önce reddetti. Yeni bir anahtar oluşturup onu kopyalayın.` })
+      return
+    }
     checking = true
+    log(service, `anahtar yakalandı (${manual ? 'elle' : 'otomatik'}), doğrulanıyor`)
     emit({ service, phase: 'checking', message: 'Anahtar yakalandı, doğrulanıyor…' })
     try {
       const info = await verifyKey(service, key)
       if (active !== me) return
       setSettings({ secrets: { [service]: key } })
       // Anahtar panoda açıkta kalmasın
-      if ((await clipboard.readText()).trim() === key) clipboard.clear()
+      if ((await clipboard.readText()).includes(key)) clipboard.clear()
+      log(service, 'bağlandı')
       finish()
       emit({ service, phase: 'done', message: info })
       onDone()
     } catch (e) {
-      if (active === me) emit({ service, phase: 'error', message: `${(e as Error).message} — başka bir anahtar kopyalayabilirsiniz, beklemeye devam ediyorum.` })
+      // Ağ hatasında aynı anahtar tekrar kopyalanınca yeniden denenir
+      if (e instanceof KeyRejected) tried.add(key)
+      log(service, `doğrulanamadı: ${(e as Error).message}`)
+      if (active === me) emit({ service, phase: 'error', pending: true, message: `${(e as Error).message} — başka bir anahtar kopyalayabilirsiniz, beklemeye devam ediyorum.` })
     } finally {
       checking = false
     }
   }
 
+  const me = {
+    service,
+    stop: () => stop(true),
+    tryNow: async () => {
+      if (checking) return
+      last = await clipboard.readText().catch(() => '')
+      await check(last, true)
+    }
+  }
+  active = me
+
   // Kullanıcı anahtarı önceden kopyalamış olabilir
-  last = await clipboard.readText()
+  last = await clipboard.readText().catch(() => '')
+  log(service, 'anahtar sayfası açılıyor, pano izleniyor')
   await shell.openExternal(page.url)
   emit({ service, phase: 'waiting', message: 'Tarayıcıda giriş yapın, yeni anahtar oluşturup Kopyala’ya basın — AssetForge otomatik yakalar.' })
-  void check(last)
+  if (findKey(service, last.trim())) void check(last)
 
   timer = setInterval(async () => {
-    if (checking) return
+    if (checking || active !== me) return
     const t = await clipboard.readText().catch(() => last)
-    if (t === last || active !== me) return
+    if (t === last) return
     last = t
     void check(t)
-  }, 700)
+  }, 500)
   deadline = setTimeout(() => {
     if (active !== me) return
     finish()
@@ -116,7 +178,7 @@ async function verifyKey(service: KeyService, key: string): Promise<string> {
   const get = (url: string, headers: Record<string, string>) => fetch(url, { headers, signal: AbortSignal.timeout(15000) })
   const fail = async (r: Response) => {
     const body = await r.text().catch(() => '')
-    return new Error(r.status === 401 || r.status === 403 ? 'Anahtar reddedildi' : `Servis yanıtı ${r.status} ${body.slice(0, 120)}`)
+    return r.status === 401 || r.status === 403 ? new KeyRejected('Anahtar reddedildi') : new Error(`Servis yanıtı ${r.status} ${body.slice(0, 120)}`)
   }
   switch (service) {
     case 'anthropic': {
@@ -139,7 +201,7 @@ async function verifyKey(service: KeyService, key: string): Promise<string> {
       // Kısıtlı anahtar: geçerli ama abonelik okuma izni yok
       const body = await r.text().catch(() => '')
       if (body.includes('missing_permissions')) return 'ElevenLabs bağlandı (kısıtlı anahtar)'
-      throw r.status === 401 ? new Error('Anahtar reddedildi') : new Error(`Servis yanıtı ${r.status}`)
+      throw r.status === 401 ? new KeyRejected('Anahtar reddedildi') : new Error(`Servis yanıtı ${r.status}`)
     }
     case 'huggingface': {
       const r = await get('https://huggingface.co/api/whoami-v2', { Authorization: `Bearer ${key}` })

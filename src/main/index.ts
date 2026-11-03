@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { AgentInput, AssetKind, Bible, Brief, BriefInput, ConnectEvent, ConnectService, Job, Project, SettingsPatch } from '../shared/types'
-import { connectCancel, connectStart } from './connect'
+import { connectCancel, connectStart, connectTryClipboard } from './connect'
 import { buildDiagnostics, saveDiagnostics } from './diagnostics'
 import { initLog, logDir, writeLog } from './log'
 import { hardenApp, isInside, openInsideProject, showInsideProject } from './security'
@@ -283,6 +283,7 @@ function registerIpc(): void {
     )
   )
   handle('connect:cancel', () => connectCancel())
+  handle('connect:tryClipboard', () => connectTryClipboard())
 
   handle('shell:openPath', (p: string) => openInsideProject(p, dir()))
   handle('shell:showItem', (p: string) => showInsideProject(p, dir()))
