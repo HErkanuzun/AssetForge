@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-11-03
+
 ### Changed
 - **License: AssetForge is now free and open-source software under the GNU AGPL-3.0** (`AGPL-3.0-only`), with a commercial license available for closed-source use of the code ([COMMERCIAL.md](COMMERCIAL.md)). Everyone, including studios, can use the app and its generated assets commercially. Versions up to 0.4.2 remain under the PolyForm Noncommercial License 1.0.0.
 - Every source file carries an `SPDX-License-Identifier` header, checked by a test.
