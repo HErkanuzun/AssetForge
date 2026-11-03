@@ -11,7 +11,7 @@
 [![许可证: AGPL-3.0](https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-AGPL--3.0-blue)](LICENSE)
 ![平台](https://img.shields.io/badge/%E5%B9%B3%E5%8F%B0-Windows%2010%2F11-0078d4)
 ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.x-313131?logo=unrealengine)
-![版本](https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.4.5%20alpha-orange)
+![版本](https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.4.6%20alpha-orange)
 
 [English](README.md) · [Türkçe](README.tr.md) · [Español](README.es.md) · **简体中文**
 
@@ -100,7 +100,7 @@ npm run check   # 类型检查、lint、格式检查和测试（与 CI 相同）
 
 ## 版本与路线图
 
-本项目采用 [语义化版本](https://semver.org/lang/zh-CN/)。当前版本 **0.4.5（alpha）**，预计约 6 个月后发布 1.0。详情见 [ROADMAP.md](ROADMAP.md)，更新记录见 [CHANGELOG.md](CHANGELOG.md)。
+本项目采用 [语义化版本](https://semver.org/lang/zh-CN/)。当前版本 **0.4.6（alpha）**，预计约 6 个月后发布 1.0。详情见 [ROADMAP.md](ROADMAP.md)，更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 参与贡献
 

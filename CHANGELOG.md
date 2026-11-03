@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-11-03
+
 ### Added
 - **Animation quality check:** the Quality Check node now reads the generated BVH and measures foot sliding, feet sinking into the floor, jitter and single-frame pops, plus how closely the clip matches the requested speed, direction, turn angle and loop seam. Idle and aim clips must stay in place. Thresholds were tuned on NVIDIA Kimodo's own demo motions. Runs locally, no service cost.
 - **Audio quality check:** for WAV output it measures silence, clipping, loudness, silence at the start, length against the requested duration, and for loops the seam (clicks and level jumps). Engine sound sets are judged by their weakest file.
