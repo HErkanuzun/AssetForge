@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Excel (.xlsx) / CSV asset listesi içe aktarıcı.
 // Her sayfada "ID" / "Kod" başlıklı satırı bulur, sütunları Türkçe/İngilizce eş anlamlılarla eşler.
 import ExcelJS from 'exceljs'

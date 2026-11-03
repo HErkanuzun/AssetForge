@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // AssetForge araç kaydı — hem uygulama içi Yapımcı asistanı hem de dışarıya açılan MCP sunucusu bu araçları kullanır.
 import fs from 'node:fs'
 import path from 'node:path'

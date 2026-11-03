@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AnimSegment, AssetSpec, KimodoStatus } from '../../../shared/types'
 import { useNav } from '../App'

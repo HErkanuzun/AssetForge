@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Çizgi ikonlar (24×24, stroke tabanlı)
 import type { SVGProps } from 'react'
 

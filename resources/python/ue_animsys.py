@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 # AssetForge — animasyon sistemini Unreal Editor içinde kuran betik.
 # AssetForge başına SYSTEM değişkenini ekler:
 # SYSTEM = {"kind": "blendspace2d", "name": "Lokomosyon", "dest": "/Game/.../AnimSystems/Lokomosyon",

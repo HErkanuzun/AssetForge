@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Yapımcı — her ekrandan açılan, projeyi araçlarla yöneten asistan paneli
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { AgentConversation, AgentViewItem } from '../../../shared/types'

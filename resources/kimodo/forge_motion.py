@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 # AssetForge — Kimodo çıktısını oyun klibine çeviren yardımcılar (sunucu tarafından içe aktarılır).
 #
 #  * Kısıtlar: yoğun kök yolu (hız/yön/dönüş), poz eşleme (bir klibin ilk/son pozu başka klibin ucuna),

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 # AssetForge — Blender arka plan işleme betiği.
 # Kullanım: blender -b --factory-startup -P blender_process.py -- --in model.glb --out SM_X.fbx [seçenekler]
 # Adımlar: içe aktar → (birleştir) → boyuta ölçekle → bütçeye indir → pivot → isimlendir → export → önizleme render → istatistik JSON

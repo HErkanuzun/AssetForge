@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Klip rolünden Kimodo isteği: kare kare kök yolu (hız/yön/dönüş) + poz eşleme kısıtları.
 // Açı kuralı (AssetForge/Unreal): sağ = +. Kimodo dünyası: Y yukarı, metre, bakış 0 → +Z, sağ → -X.
 

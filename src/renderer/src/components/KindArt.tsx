@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Asset türleri için büyük SVG illüstrasyonlar (karo kartları ve küçük resmi olmayan asset'ler)
 import { useId } from 'react'
 import type { AssetKind } from '../../../shared/types'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Animasyon sistemleri kataloğu — oyunlarda yaygın kullanılan yapılar, ne işe yaradıkları,
 // profesyonellerin nasıl ürettiği ve AssetForge'un neyi otomatikleştirdiği.
 // Klip promptlarında {S} = sistemin stil öznesi ("A person", "A tired soldier" ...).

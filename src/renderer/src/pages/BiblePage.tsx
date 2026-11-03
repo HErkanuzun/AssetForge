@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import type { Bible, CategoryRule, TextureRes } from '../../../shared/types'
 import { AsyncButton, Field, NumberInput, Select, TextArea, TextInput, Toggle } from '../components/ui'
 import { useStore } from '../store'

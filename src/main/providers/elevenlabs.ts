@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // ElevenLabs ses efekti API'si (https://elevenlabs.io/docs/api-reference/text-to-sound-effects/convert)
 import { getSecret } from '../settings'
 import { pcmToWav, sleep } from '../util'

@@ -8,7 +8,7 @@
 
 [![下载 Windows 版](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-Windows%20%E5%AE%89%E8%A3%85%E7%A8%8B%E5%BA%8F-ff6a3d?style=for-the-badge&logo=windows)](https://github.com/HErkanuzun/AssetForge/releases/latest)
 
-[![许可证: PolyForm Noncommercial](https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE.md)
+[![许可证: AGPL-3.0](https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-AGPL--3.0-blue)](LICENSE)
 ![平台](https://img.shields.io/badge/%E5%B9%B3%E5%8F%B0-Windows%2010%2F11-0078d4)
 ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.x-313131?logo=unrealengine)
 ![版本](https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.4.2%20alpha-orange)
@@ -23,7 +23,7 @@
 
 ## AssetForge 是什么？
 
-AssetForge 是一款 **Windows 桌面应用，可将一段简短的文字描述转换为虚幻引擎 5 可用的生产级游戏资产**。非商业用途免费。它把多个 AI 服务串联成一条基于节点的管线：
+AssetForge 是一款 **Windows 桌面应用，可将一段简短的文字描述转换为虚幻引擎 5 可用的生产级游戏资产**。免费且开源。它把多个 AI 服务串联成一条基于节点的管线：
 
 | 步骤 | 服务 | 产出 |
 |---|---|---|
@@ -102,16 +102,21 @@ npm run check   # 类型检查、lint、格式检查和测试（与 CI 相同）
 
 本项目采用 [语义化版本](https://semver.org/lang/zh-CN/)。当前版本 **0.4.2（alpha）**，预计约 6 个月后发布 1.0。详情见 [ROADMAP.md](ROADMAP.md)，更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
+## 参与贡献
+
+欢迎提交错误报告、想法、翻译和 pull request（英文或土耳其文）。请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，遵守 [行为准则](CODE_OF_CONDUCT.md)，并按 [SECURITY.md](SECURITY.md) 私下报告安全问题。
+
 ## 许可证
 
-AssetForge 以 **源码可用** 方式按 [PolyForm Noncommercial License 1.0.0](LICENSE.md) 发布。具有约束力的是英文许可证原文，以下摘要仅供参考。
+AssetForge 是基于 [GNU Affero 通用公共许可证 v3.0](LICENSE)（AGPL-3.0-only）的 **免费开源软件**。具有约束力的是英文许可证原文，以下摘要仅供参考。
 
-- ✅ 个人使用、学习、业余项目、研究和教学免费
-- ✅ 非营利组织、教育机构和公共研究机构免费
-- ✅ 可在非商业用途下修改并分享修改版本，但须保留许可证和声明
-- ❌ 禁止商业用途：出售、转售、再许可、作为付费服务提供、作为自有产品营销或捆绑进商业产品
-- ❌ 禁止对修改版或更名版进行出售或以此牟利
+- ✅ 对所有人免费：个人、工作室、学校和公司，包括商业游戏项目
+- ✅ 你生成的资产不受 AGPL 约束。可如何使用它们取决于生成它们的 AI 服务和模型的条款（见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)）
+- ✅ 可以修改并分享修改版本，但须以 AGPL 公开修改后的源代码
+- ⚠️ 如果通过网络向他人提供修改版本，必须向他们提供其源代码（AGPL 第 13 条）
 
-如需商业许可，请在 GitHub 上提交 issue 或联系作者。
+**商业许可：** 如需在闭源产品或服务中使用 AssetForge 代码，或以 AGPL 以外的条款使用，请见 [COMMERCIAL.md](COMMERCIAL.md)。贡献须遵循 [CLA](CLA.md)，详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+0.4.2 及之前的版本以 PolyForm Noncommercial License 1.0.0 发布。自 0.4.3 起，AssetForge 采用 AGPL-3.0。
 
 版权所有 © 2026 Hasan Erkan Uzun。Unreal Engine、Meshy、ElevenLabs、ComfyUI、Blender、Claude 和 NVIDIA Kimodo 均为其各自所有者的商标，AssetForge 与上述公司无关联。各服务均受其自身条款约束。

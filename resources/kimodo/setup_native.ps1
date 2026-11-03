@@ -1,4 +1,5 @@
-﻿# AssetForge — NVIDIA Kimodo'yu Windows'ta doğrudan (WSL/Docker olmadan) kurar ve çalıştırır.
+﻿# SPDX-License-Identifier: AGPL-3.0-only
+# AssetForge — NVIDIA Kimodo'yu Windows'ta doğrudan (WSL/Docker olmadan) kurar ve çalıştırır.
 # Kullanım: powershell -ExecutionPolicy Bypass -File setup_native.ps1 -Step <adım> -Root <klasör> [-Port 9551]
 #   env     : uv ile Python 3.12 sanal ortamı + CUDA'lı PyTorch
 #   clone   : kimodo deposu

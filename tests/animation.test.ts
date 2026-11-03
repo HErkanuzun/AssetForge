@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import { describe, expect, it } from 'vitest'
 import { ANIM_SYSTEMS, newAnimSystem, productionPhases, sampleFor, stylePrompt, wrap } from '../src/shared/animSystems'
 import { buildKimodoRequest, buildPath, framesFor, generationSeconds, type KimodoSpec } from '../src/main/anim/motion'

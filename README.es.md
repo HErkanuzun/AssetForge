@@ -8,7 +8,7 @@
 
 [![Descargar para Windows](https://img.shields.io/badge/Descargar-Instalador%20Windows-ff6a3d?style=for-the-badge&logo=windows)](https://github.com/HErkanuzun/AssetForge/releases/latest)
 
-[![Licencia: PolyForm Noncommercial](https://img.shields.io/badge/licencia-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE.md)
+[![Licencia: AGPL-3.0](https://img.shields.io/badge/licencia-AGPL--3.0-blue)](LICENSE)
 ![Plataforma](https://img.shields.io/badge/plataforma-Windows%2010%2F11-0078d4)
 ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.x-313131?logo=unrealengine)
 ![Versión](https://img.shields.io/badge/versi%C3%B3n-0.4.2%20alpha-orange)
@@ -23,7 +23,7 @@
 
 ## ¿Qué es AssetForge?
 
-AssetForge es una **aplicación de escritorio para Windows que convierte una breve descripción de texto en assets listos para producción en Unreal Engine 5**. Es gratuita para uso no comercial. Encadena servicios de IA en un único pipeline basado en nodos:
+AssetForge es una **aplicación de escritorio para Windows que convierte una breve descripción de texto en assets listos para producción en Unreal Engine 5**. Es gratuita y de código abierto. Encadena servicios de IA en un único pipeline basado en nodos:
 
 | Paso | Servicio | Resultado |
 |---|---|---|
@@ -102,16 +102,21 @@ npm run check   # tipos, lint, formato y pruebas (igual que CI)
 
 El proyecto usa [Versionado Semántico](https://semver.org/lang/es/). Versión actual: **0.4.2 (alpha)**. Tiempo estimado hasta la 1.0: unos 6 meses. Detalles en [ROADMAP.md](ROADMAP.md) y cambios en [CHANGELOG.md](CHANGELOG.md).
 
+## Contribuir
+
+Se agradecen reportes de errores, ideas, traducciones y pull requests (en inglés o turco). Empieza por [CONTRIBUTING.md](CONTRIBUTING.md). Respeta el [Código de conducta](CODE_OF_CONDUCT.md) e informa de problemas de seguridad en privado como se indica en [SECURITY.md](SECURITY.md).
+
 ## Licencia
 
-AssetForge se distribuye con **código disponible** bajo la [PolyForm Noncommercial License 1.0.0](LICENSE.md). El texto vinculante es el archivo de licencia en inglés; este resumen es solo informativo.
+AssetForge es **software libre y de código abierto** bajo la [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only). El texto vinculante es el archivo de licencia en inglés; este resumen es solo informativo.
 
-- ✅ Gratis para uso personal, estudio, proyectos de hobby, investigación y enseñanza
-- ✅ Gratis para organizaciones sin ánimo de lucro, centros educativos e instituciones públicas de investigación
-- ✅ Puedes modificarlo y compartir versiones modificadas con fines no comerciales, manteniendo la licencia y los avisos
-- ❌ Prohibido el uso comercial: vender, revender, sublicenciar, ofrecerlo como servicio de pago, comercializarlo como producto propio o incluirlo en un producto comercial
-- ❌ Prohibido vender o lucrarse con versiones modificadas o renombradas
+- ✅ Gratis para todos: particulares, estudios, escuelas y empresas, incluidos proyectos de juegos comerciales
+- ✅ Los assets que generes no están cubiertos por la AGPL. Lo que puedes hacer con ellos depende de los servicios y modelos de IA que los crearon (ver [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md))
+- ✅ Puedes modificarlo y compartir tus cambios, siempre que compartas su código fuente bajo la AGPL
+- ⚠️ Si ofreces una versión modificada a otros a través de una red, debes ofrecerles su código fuente (sección 13 de la AGPL)
 
-Para una licencia comercial, abre un issue o contacta con el autor a través de GitHub.
+**Licencia comercial:** para usar el código de AssetForge en un producto o servicio de código cerrado, o con condiciones distintas de la AGPL, consulta [COMMERCIAL.md](COMMERCIAL.md). Las contribuciones se aceptan bajo el [CLA](CLA.md); ver [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Las versiones hasta la 0.4.2 se publicaron bajo la PolyForm Noncommercial License 1.0.0. Desde la 0.4.3, AssetForge es AGPL-3.0.
 
 Copyright © 2026 Hasan Erkan Uzun. Unreal Engine, Meshy, ElevenLabs, ComfyUI, Blender, Claude y NVIDIA Kimodo son marcas de sus respectivos propietarios. AssetForge no está afiliado a ellos. Cada servicio está sujeto a sus propios términos.

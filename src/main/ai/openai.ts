@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // OpenAI uyumlu sohbet uçları: Ollama, LM Studio, vLLM, OpenRouter, OpenAI…
 // (Claude çağrıları Anthropic SDK ile claude.ts'te yapılır; bu dosya yalnızca diğer sağlayıcılar içindir.)
 import { z } from 'zod'

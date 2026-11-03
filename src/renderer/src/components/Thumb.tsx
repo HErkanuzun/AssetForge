@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import type { AssetKind, Job } from '../../../shared/types'
 import { forgeUrl, useStore } from '../store'
 import KindArt from './KindArt'

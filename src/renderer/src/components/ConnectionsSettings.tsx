@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Ayarlar: yapay zeka sağlayıcıları ve görev atamaları (ModelSettings), MCP sunucusu ve dış araçlar (McpSettings)
 import { useEffect, useState } from 'react'
 import type { LlmProvider, LlmRoles, McpServerConfig, McpServerStatus } from '../../../shared/types'

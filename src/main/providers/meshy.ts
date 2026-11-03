@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Meshy REST API istemcisi (https://docs.meshy.ai)
 import path from 'node:path'
 import type { MeshyResource } from '../../shared/types'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import { describe, expect, it } from 'vitest'
 import { looksLikeKey } from '../src/main/connect'
 import { pcmToWav, sniffImage, truncateWords } from '../src/main/util'

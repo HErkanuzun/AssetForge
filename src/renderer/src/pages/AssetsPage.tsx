@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import { useMemo, useState } from 'react'
 import type { AssetKind, AssetSpec } from '../../../shared/types'
 import { AsyncButton, Field, NumberInput, Select, TextArea, TextInput } from '../components/ui'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import { describe, expect, it } from 'vitest'
 import { ancestors, descendants, nearestPrompt, topoSort } from '../src/main/engine/graph'
 import { NODE_DEF_MAP, NODE_DEFS, defaultParams, portsCompatible } from '../src/shared/nodes'

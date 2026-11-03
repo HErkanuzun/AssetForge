@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Node editöründeki tüm node tiplerinin tanımı. Hem arayüz hem çalıştırma motoru bunu kullanır.
 
 export type PortType = 'asset' | 'prompt' | 'image' | 'model' | 'audio' | 'anim' | 'media' | 'report'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // CHANGELOG.md'den tek bir sürümün bölümünü çıkarır: node scripts/release-notes.mjs 0.4.2 > notes.md
 import { readFileSync } from 'node:fs'
 

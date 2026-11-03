@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Pipeline grafiği üzerinde saf yardımcılar (Electron'a bağımlı değil, test edilir).
 import type { Pipeline } from '../../shared/types'
 

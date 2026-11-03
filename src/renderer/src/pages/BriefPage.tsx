@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { AssetSpec, Brief, BriefOption, KitItem } from '../../../shared/types'
 import { suggestPipeline } from '../../../shared/templates'

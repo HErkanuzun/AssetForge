@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Pipeline çalıştırma motoru: topolojik sıra, QA geri bildirim döngüsü, iş kuyruğu, iptal.
 import path from 'node:path'
 import { NODE_DEF_MAP } from '../../shared/nodes'

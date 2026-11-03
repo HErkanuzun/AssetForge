@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Brief Chat (Atölye): üretim öncesi Claude ile form gibi akan sohbet.
 // Claude soruları tıklanabilir seçeneklerle sorar (ask_question), brief kartını canlı doldurur (update_brief),
 // ana asset'in oyun dünyasında ihtiyaç duyduğu her şeyi bir üretim kitine çevirir (set_kit) ve

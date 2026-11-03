@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { ForgeApi } from './api'
 

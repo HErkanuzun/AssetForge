@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Yerel ComfyUI sunucusu ile görsel üretimi (API formatında workflow JSON).
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'

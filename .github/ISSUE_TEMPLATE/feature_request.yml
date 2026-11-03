@@ -1,0 +1,27 @@
+name: Feature request / Özellik isteği
+description: Suggest an idea or improvement / Bir fikir ya da iyileştirme öner
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve? / Hangi sorunu çözer?
+      placeholder: When I make … I have to … / … yaparken … zorunda kalıyorum
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Proposed solution / Önerilen çözüm
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or workarounds / Alternatifler
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contributing / Katkı
+      options:
+        - label: I would like to implement this myself / Bunu kendim geliştirmek isterim

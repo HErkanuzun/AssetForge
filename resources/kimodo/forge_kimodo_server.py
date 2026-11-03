@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 # AssetForge — NVIDIA Kimodo için kalıcı üretim servisi (Docker konteyneri içinde çalışır).
 # Model bir kez yüklenir; AssetForge HTTP ile hareket ister, BVH metni olarak geri alır.
 #

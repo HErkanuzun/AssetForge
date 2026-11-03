@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 # AssetForge — iskelet adlarını Unreal 5 Manny/Quinn standardına çevirir.
 # Desteklenen kaynaklar: Mixamo, Meshy otomatik rig, NVIDIA Kimodo SOMA (somaskel77).
 # Blender içinden kullanılır (bpy gerekir).

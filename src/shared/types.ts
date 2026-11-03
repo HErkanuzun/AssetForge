@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Uygulamanın her katmanında (main, preload, arayüz) paylaşılan veri tipleri.
 
 export type AssetKind = 'model' | 'character' | 'creature' | 'vehicle' | 'weapon' | 'texture' | 'image' | 'sfx' | 'music' | 'vfx' | 'animation'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Unreal Editor Python Remote Execution köprüsü.
 // UE tarafında: Python Editor Script Plugin açık + Project Settings → Python → "Enable Remote Execution".
 // Protokol: UDP multicast (239.0.0.1:6766) ile keşif, ardından UE bizim açtığımız TCP sunucusuna bağlanır.

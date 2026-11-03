@@ -8,7 +8,7 @@
 
 [![Windows için indir](https://img.shields.io/badge/%C4%B0ndir-Windows%20kurulum-ff6a3d?style=for-the-badge&logo=windows)](https://github.com/HErkanuzun/AssetForge/releases/latest)
 
-[![Lisans: PolyForm Noncommercial](https://img.shields.io/badge/lisans-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE.md)
+[![Lisans: AGPL-3.0](https://img.shields.io/badge/lisans-AGPL--3.0-blue)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078d4)
 ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.x-313131?logo=unrealengine)
 ![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-0.4.2%20alpha-orange)
@@ -23,7 +23,7 @@
 
 ## AssetForge nedir?
 
-AssetForge, **kısa bir metin tarifini Unreal Engine 5 için üretime hazır oyun asset'lerine dönüştüren** bir Windows masaüstü uygulamasıdır. Ticari olmayan kullanım için ücretsizdir. Yapay zekâ servislerini tek bir node tabanlı hatta birleştirir:
+AssetForge, **kısa bir metin tarifini Unreal Engine 5 için üretime hazır oyun asset'lerine dönüştüren** ücretsiz ve açık kaynaklı bir Windows masaüstü uygulamasıdır. Yapay zekâ servislerini tek bir node tabanlı hatta birleştirir:
 
 | Adım | Servis | Çıktı |
 |---|---|---|
@@ -130,16 +130,21 @@ Yeni bir yapay zekâ servisi eklemek için `src/shared/nodes.ts`'e node tanımı
 
 Proje [Semantik Sürümleme](https://semver.org/lang/tr/) kullanır. Şu anki sürüm **0.4.2 (alpha)**; 1.0 için tahmini süre yaklaşık 6 ay. Ayrıntılar: [ROADMAP.md](ROADMAP.md) · Değişiklikler: [CHANGELOG.md](CHANGELOG.md)
 
+## Katkı
+
+Hata bildirimleri, fikirler, çeviriler ve pull request'ler memnuniyetle karşılanır; İngilizce ya da Türkçe yazabilirsin. [CONTRIBUTING.md](CONTRIBUTING.md) ile başla. [Davranış kurallarına](CODE_OF_CONDUCT.md) uy, güvenlik açıklarını [SECURITY.md](SECURITY.md)'de anlatıldığı gibi gizli bildir.
+
 ## Lisans
 
-AssetForge, [PolyForm Noncommercial 1.0.0](LICENSE.md) lisansıyla **kaynağı açık** olarak sunulur. Bağlayıcı metin İngilizce lisans dosyasıdır; aşağıdaki özet bilgi içindir.
+AssetForge, [GNU Affero Genel Kamu Lisansı v3.0](LICENSE) (AGPL-3.0-only) ile **ücretsiz ve açık kaynaklıdır**. Bağlayıcı metin İngilizce lisans dosyasıdır; aşağıdaki özet bilgi içindir.
 
-- ✅ Kişisel kullanım, öğrenme, hobi projeleri, araştırma ve eğitim için ücretsiz
-- ✅ Kâr amacı gütmeyen kuruluşlar, okullar ve kamu araştırma kurumları için ücretsiz
-- ✅ Ticari olmayan amaçlarla değiştirip paylaşabilirsin (lisans ve bildirimler korunarak)
-- ❌ Ticari kullanım yok: satış, yeniden satış, alt lisanslama, ücretli hizmet olarak sunma, kendi ürünün gibi pazarlama, ticari bir ürüne ekleme
-- ❌ Ufak değişikliklerle ya da yeni isimle satış veya kâr elde etme yasak
+- ✅ Herkes için ücretsiz: bireyler, stüdyolar, okullar ve şirketler; ticari oyun projeleri dahil
+- ✅ Ürettiğin asset'ler AGPL kapsamında değildir. Onlarla ne yapabileceğin, onları üreten yapay zekâ servislerinin ve modellerin koşullarına bağlıdır ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md))
+- ✅ Değiştirip paylaşabilirsin; değişikliklerinin kaynak kodunu da AGPL ile paylaşman şartıyla
+- ⚠️ Değiştirilmiş bir sürümü başkalarına ağ üzerinden hizmet olarak sunarsan, kaynak kodunu onlara da sunman gerekir (AGPL madde 13)
 
-Ticari lisans için GitHub üzerinden issue aç veya geliştiriciyle iletişime geç.
+**Ticari lisans:** AssetForge kodunu kapalı kaynaklı bir ürün ya da hizmette veya AGPL dışı koşullarla kullanmak için [COMMERCIAL.md](COMMERCIAL.md). Katkılar [CLA](CLA.md) ile kabul edilir; bkz. [CONTRIBUTING.md](CONTRIBUTING.md).
+
+0.4.2'ye kadarki sürümler PolyForm Noncommercial 1.0.0 lisansıyla yayınlandı. 0.4.3'ten itibaren AssetForge AGPL-3.0'dır.
 
 Telif hakkı © 2026 Hasan Erkan Uzun. Unreal Engine, Meshy, ElevenLabs, ComfyUI, Blender, Claude ve NVIDIA Kimodo ilgili sahiplerinin markalarıdır; AssetForge bu şirketlerle bağlantılı değildir. Her servis kendi kullanım koşullarına tabidir.

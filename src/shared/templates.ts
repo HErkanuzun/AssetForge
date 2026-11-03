@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import type { Bible, Pipeline, PipelineEdge, PipelineNode, Project } from './types'
 import { defaultParams } from './nodes'
 

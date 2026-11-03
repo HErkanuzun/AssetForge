@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // `npm version` sırasında çalışır (package.json "version" betiği):
 // yeni sürüm numarasını README'lere, ROADMAP'e ve llms.txt'ye yazar,
 // CHANGELOG'daki [Unreleased] maddelerini yeni sürümün başlığı altına taşır.

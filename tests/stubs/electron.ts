@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Testlerde gerçek Electron yerine kullanılan en küçük sahte modül.
 import os from 'node:os'
 import path from 'node:path'

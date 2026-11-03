@@ -1,0 +1,67 @@
+name: Bug report / Hata bildirimi
+description: Something does not work as expected / Bir şey beklendiği gibi çalışmıyor
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! English or Turkish is fine. **Security problems:** please follow [SECURITY.md](https://github.com/HErkanuzun/AssetForge/blob/main/SECURITY.md) instead of opening an issue.
+        Teşekkürler! İngilizce ya da Türkçe yazabilirsin. **Güvenlik açıkları** için issue açma, SECURITY.md'yi izle.
+  - type: input
+    id: version
+    attributes:
+      label: AssetForge version / sürüm
+      description: Settings → About (Ayarlar → Hakkında)
+      placeholder: v0.4.3
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area / Alan
+      options:
+        - Brief chat / Atölye
+        - Pipeline / Hatlar
+        - Animation / Animasyon (Kimodo)
+        - Unreal Engine import
+        - Blender
+        - Meshy
+        - ElevenLabs
+        - ComfyUI
+        - Producer agent / MCP
+        - Settings / Ayarlar
+        - Installer / Kurulum
+        - Other / Diğer
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened? / Ne oldu?
+      description: Include the error message if there is one. / Hata mesajı varsa ekle.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / Tekrar adımları
+      placeholder: |
+        1. …
+        2. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected / Beklenen
+  - type: input
+    id: env
+    attributes:
+      label: Environment / Ortam
+      description: Windows version, GPU, Unreal / Blender versions if relevant
+      placeholder: Windows 11 24H2, RTX 4080, UE 5.6, Blender 4.5
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots / Loglar ya da ekran görüntüleri
+      description: Remove API keys and tokens before pasting. / Yapıştırmadan önce API anahtarlarını ve token'ları sil.

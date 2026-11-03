@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Animasyon sistemleri: kayıt, klip → ANM asset senkronu, poz eşlemeli faz faz üretim, Unreal kurulumu.
 
 import fs from 'node:fs'

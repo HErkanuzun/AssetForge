@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // NVIDIA Kimodo (metinden insan hareketi) — kurulum, servis yönetimi ve üretim istemcisi.
 // İki çalıştırma yolu:
 //   native : Windows'ta doğrudan Python 3.12 + CUDA PyTorch (BIOS sanallaştırması gerekmez)

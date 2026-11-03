@@ -8,7 +8,7 @@
 
 [![Download for Windows](https://img.shields.io/badge/Download-Windows%20installer-ff6a3d?style=for-the-badge&logo=windows)](https://github.com/HErkanuzun/AssetForge/releases/latest)
 
-[![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE.md)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078d4)
 ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.x-313131?logo=unrealengine)
 ![Electron](https://img.shields.io/badge/Electron-React%20%2B%20TypeScript-47848f?logo=electron)
@@ -25,7 +25,7 @@
 
 ## What is AssetForge?
 
-AssetForge is a free (for non-commercial use) **desktop app for Windows that turns a short text brief into production-ready game assets for Unreal Engine 5**. It chains AI services into one node-based pipeline:
+AssetForge is a free and open-source **desktop app for Windows that turns a short text brief into production-ready game assets for Unreal Engine 5**. It chains AI services into one node-based pipeline:
 
 | Step | Service | Output |
 |---|---|---|
@@ -119,7 +119,7 @@ To add a new AI service, add a node definition in `src/shared/nodes.ts` and an e
 ## FAQ
 
 **Is AssetForge free?**
-Yes, for personal, hobby, research and educational use, and for non-profit and educational organizations. Commercial use needs a separate license (see [License](#license)).
+Yes. It is open source under the AGPL-3.0, free for everyone, including studios making commercial games. The assets you generate are yours to use under the terms of the AI services that made them. A commercial license is only needed to put AssetForge's code into closed-source products (see [License](#license)).
 
 **Can it generate Unreal Engine motion matching data?**
 Yes. It generates a full locomotion clip set with NVIDIA Kimodo, then creates a Pose Search Schema and Database in UE5 and adds every clip automatically.
@@ -148,17 +148,22 @@ AssetForge uses [Semantic Versioning](https://semver.org). The current version i
 
 Full plan: [ROADMAP.md](ROADMAP.md) · Changes: [CHANGELOG.md](CHANGELOG.md)
 
+## Contributing
+
+Bug reports, ideas, translations and pull requests are welcome, in English or Turkish. Start with [CONTRIBUTING.md](CONTRIBUTING.md). Please follow the [Code of Conduct](CODE_OF_CONDUCT.md), and report security problems privately as described in [SECURITY.md](SECURITY.md).
+
 ## License
 
-AssetForge is **source-available** under the [PolyForm Noncommercial License 1.0.0](LICENSE.md).
+AssetForge is **free and open-source software** under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only).
 
-- ✅ Free for personal use, study, hobby projects, research and teaching
-- ✅ Free for non-profit, educational and public research organizations
-- ✅ You may modify it and share modified versions for non-commercial purposes, keeping the license and notices
-- ❌ No commercial use: selling, reselling, sublicensing, paid services, marketing it as your own product, or bundling it into a commercial product
-- ❌ No selling or monetizing modified or rebranded versions
+- ✅ Free for everyone: individuals, studios, schools and companies, including commercial game projects
+- ✅ The assets you generate are not covered by the AGPL. What you may do with them depends on the AI services and models that produced them (see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md))
+- ✅ Modify it and share your changes, as long as you share their source code under the AGPL
+- ⚠️ If you offer a modified version to others over a network, you must offer them its source code (AGPL section 13)
 
-For a commercial license, open an issue or contact the author through GitHub.
+**Commercial license:** to use AssetForge's code in a closed-source product or service, or under terms other than the AGPL, see [COMMERCIAL.md](COMMERCIAL.md). Contributions are accepted under the [CLA](CLA.md), see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Versions up to 0.4.2 were released under the PolyForm Noncommercial License 1.0.0. From 0.4.3 on, AssetForge is AGPL-3.0.
 
 Copyright © 2026 Hasan Erkan Uzun. Unreal Engine, Meshy, ElevenLabs, ComfyUI, Blender, Claude and NVIDIA Kimodo are trademarks of their respective owners. AssetForge is not affiliated with them. Each service is subject to its own terms.
 

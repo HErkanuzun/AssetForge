@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Ayarlar: solda kategori menüsü (arama ile), sağda yalnızca seçili kategori
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { AsyncButton, Field, NumberInput, Select, TextInput } from '../components/ui'
@@ -308,19 +309,30 @@ export default function SettingsPage() {
             <span className="muted">Sürüm</span>
             <span>v{__APP_VERSION__} (alpha)</span>
             <span className="muted">Lisans</span>
-            <span>PolyForm Noncommercial 1.0.0</span>
+            <span>GNU AGPL-3.0 — ücretsiz ve açık kaynak, ticari oyun projeleri dahil</span>
+            <span className="muted">Üretilen asset’ler</span>
+            <span>Sizindir; onları üreten servislerin (Meshy, ElevenLabs…) koşullarına tabidir</span>
             <span className="muted">Anahtarlar</span>
             <span>Windows DPAPI ile bu bilgisayarda şifreli</span>
           </div>
-          <div className="row" style={{ marginTop: 12 }}>
+          <div className="row" style={{ marginTop: 12, flexWrap: 'wrap' }}>
             <a className="btn" href="https://github.com/HErkanuzun/AssetForge" target="_blank" rel="noreferrer">
               GitHub
             </a>
-            <a className="btn" href="https://github.com/HErkanuzun/AssetForge/issues/new" target="_blank" rel="noreferrer">
+            <a className="btn" href="https://github.com/HErkanuzun/AssetForge/issues/new/choose" target="_blank" rel="noreferrer">
               Sorun bildir
             </a>
             <a className="btn ghost" href="https://github.com/HErkanuzun/AssetForge/releases" target="_blank" rel="noreferrer">
               Sürüm notları
+            </a>
+            <a className="btn ghost" href="https://github.com/HErkanuzun/AssetForge/blob/main/LICENSE" target="_blank" rel="noreferrer">
+              Lisans metni
+            </a>
+            <a className="btn ghost" href="https://github.com/HErkanuzun/AssetForge/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noreferrer">
+              Üçüncü taraf lisansları
+            </a>
+            <a className="btn ghost" href="https://github.com/HErkanuzun/AssetForge/blob/main/COMMERCIAL.md" target="_blank" rel="noreferrer">
+              Ticari lisans
             </a>
           </div>
         </Card>

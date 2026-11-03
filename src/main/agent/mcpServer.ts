@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // AssetForge'u MCP sunucusu olarak dışarı açar: Claude Code, Claude Desktop ya da herhangi bir MCP istemcisi
 // projeyi okuyup asset üretebilir, işleri izleyebilir, Unreal'a komut gönderebilir.
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'

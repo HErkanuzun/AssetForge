@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Klip hareket bilgisi deposu: <proje>/anim/<assetId>.motion.json
 // (ölçüm, ayak basışları, döngü penceresi ve poz eşleme için kanonik uç pozlar)
 

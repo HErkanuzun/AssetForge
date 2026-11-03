@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Ayarlar → Hızlı bağlantı: tek tıkla servisin giriş/anahtar sayfasını açar, anahtar kendiliğinden kaydedilir
 import { useEffect, useState } from 'react'
 import type { ConnectEvent, ConnectService } from '../../../shared/types'

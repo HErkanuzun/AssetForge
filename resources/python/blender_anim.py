@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 # AssetForge — Kimodo (NVIDIA) BVH hareketini Unreal'a hazır FBX animasyonuna çevirir.
 # Kullanım: blender -b --factory-startup -P blender_anim.py -- --in clip.bvh --out AS_SOMA_Walk.fbx --stats s.json [--root-motion root|inplace|raw]
 # Adımlar: BVH içe aktar (Y-up, cm) → kemikleri Manny adlarına çevir → root motion → küçük proxy mesh → FBX

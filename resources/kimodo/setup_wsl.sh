@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-only
 # AssetForge — Kimodo kurulumu (WSL Ubuntu içinde root olarak çalışır).
 # Kullanım: setup_wsl.sh <adım> [FORGE_DIR]
 #   docker   : Docker Engine + NVIDIA Container Toolkit

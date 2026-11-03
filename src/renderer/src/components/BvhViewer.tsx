@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Kimodo BVH önizleyici: kemiklere bağlı kapsül "manken" + zemin + yörünge kamera
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'

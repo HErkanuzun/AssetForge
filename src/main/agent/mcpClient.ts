@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Dış MCP sunucuları (Blender MCP, Unreal MCP, dosya sistemi, arama…) → Yapımcı asistanına araç olarak eklenir.
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { getDefaultEnvironment, StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'

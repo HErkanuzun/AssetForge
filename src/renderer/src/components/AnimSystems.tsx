@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { AnimSystem, AnimSystemClip, AnimSystemClipState, AnimSystemKind, AssetSpec } from '../../../shared/types'
 import { ANIM_SYSTEMS, animSystemInfo, productionPhases, sampleFor, stylePrompt } from '../../../shared/animSystems'

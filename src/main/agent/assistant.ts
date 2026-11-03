@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Yapımcı: projenin tamamını araçlarla yöneten sohbet asistanı (Claude ya da OpenAI uyumlu herhangi bir model).
 import type Anthropic from '@anthropic-ai/sdk'
 import fs from 'node:fs'

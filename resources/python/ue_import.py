@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 # AssetForge — Unreal Editor içinde çalışan import betiği.
 # AssetForge bu dosyanın başına MANIFEST değişkenini ekler. Elle çalıştırmak için export klasöründeki
 # ue_import_*.py dosyasını Unreal'da File → Execute Python Script ile açabilirsiniz.

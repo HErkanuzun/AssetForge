@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import { createContext, useContext, useEffect, useState } from 'react'
 import AssistantPanel from './components/AssistantPanel'
 import { ForgeMark, Icon, type IconName } from './components/icons'

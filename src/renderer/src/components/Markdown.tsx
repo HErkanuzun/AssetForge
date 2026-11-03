@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Asistan yanıtları için küçük, güvenli markdown görüntüleyici (HTML enjekte etmez)
 import { Fragment, type ReactNode } from 'react'
 

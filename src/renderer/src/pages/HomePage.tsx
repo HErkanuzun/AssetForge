@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import { useEffect, useRef, useState } from 'react'
 import type { AssetKind, Brief } from '../../../shared/types'
 import { useNav } from '../App'

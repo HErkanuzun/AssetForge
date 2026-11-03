@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Hızlı bağlantı: servisin giriş / anahtar sayfasını tarayıcıda açar.
 // - OpenRouter: gerçek "giriş yap → onayla" akışı (OAuth PKCE), anahtar kendiliğinden gelir.
 // - Diğerleri: kullanıcı sayfada anahtarı kopyalar, panodan yakalanır, API'ye sorularak doğrulanır, kaydedilir.

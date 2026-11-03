@@ -23,7 +23,7 @@
     "game-development"
   ],
   "author": "Hasan Erkan Uzun",
-  "license": "PolyForm-Noncommercial-1.0.0",
+  "license": "AGPL-3.0-only",
   "homepage": "https://github.com/HErkanuzun/AssetForge",
   "repository": {
     "type": "git",
@@ -44,7 +44,9 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
+    "notices": "node scripts/third-party-notices.mjs",
+    "notices:check": "node scripts/third-party-notices.mjs --check",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run notices:check",
     "start": "electron-vite preview",
     "dist": "electron-vite build && electron-builder --win",
     "version": "node scripts/sync-version.mjs && git add README.md README.tr.md README.es.md README.zh-CN.md ROADMAP.md llms.txt CHANGELOG.md",
@@ -112,7 +114,17 @@
       "shortcutName": "AssetForge",
       "license": "build/license.txt"
     },
-    "copyright": "Copyright (c) 2026 Hasan Erkan Uzun"
+    "copyright": "Copyright (c) 2026 Hasan Erkan Uzun",
+    "extraFiles": [
+      {
+        "from": "LICENSE",
+        "to": "LICENSE.txt"
+      },
+      {
+        "from": "THIRD_PARTY_NOTICES.md",
+        "to": "THIRD_PARTY_NOTICES.md"
+      }
+    ]
   },
   "productName": "AssetForge"
 }

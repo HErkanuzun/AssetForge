@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import { createContext, memo, useContext } from 'react'
 import { CATEGORY_META, NODE_DEF_MAP, PORT_COLORS, PROMPT_TARGETS } from '../../../shared/nodes'
