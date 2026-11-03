@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-11-03
+
 ### Security
 - The app window now runs in Chromium's sandbox, with a stricter Content Security Policy (no remote images, scripts or connections; no plugins, frames or forms). The app cannot be navigated away from its own page, cannot open other windows or embed web views, and denies camera, microphone, location and notification requests. Links open in the browser only when they are `https` or local.
 - Opening files from the interface is limited to the project folder; programs and scripts (`.exe`, `.bat`, `.ps1`, `.lnk` …) are shown in Explorer instead of being run. The preview protocol's folder check no longer accepts sibling folders with the same name prefix.
