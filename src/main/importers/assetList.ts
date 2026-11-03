@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Excel (.xlsx) / CSV asset listesi içe aktarıcı.
 // Her sayfada "ID" / "Kod" başlıklı satırı bulur, sütunları Türkçe/İngilizce eş anlamlılarla eşler.
-import ExcelJS from 'exceljs'
 import fs from 'node:fs'
 import path from 'node:path'
 import type { AssetKind, AssetSpec, ImportResult, MaterialEntry, PaletteEntry } from '../../shared/types'
 import { parseTriBudget } from '../../shared/templates'
+import { parseDelimited, readXlsx } from './spreadsheet'
 
 const fold = (s: string) =>
   s
@@ -44,45 +44,16 @@ function sheetKind(name: string): AssetKind | 'palette' | 'materials' | null {
   return null
 }
 
-function cellText(v: ExcelJS.CellValue): string {
-  if (v === null || v === undefined) return ''
-  if (typeof v === 'string') return v.trim()
-  if (typeof v === 'number' || typeof v === 'boolean') return String(v)
-  if (v instanceof Date) return v.toISOString().slice(0, 10)
-  if (typeof v === 'object') {
-    if ('richText' in v)
-      return v.richText
-        .map((r) => r.text)
-        .join('')
-        .trim()
-    if ('text' in v) return String(v.text).trim()
-    if ('result' in v) return cellText(v.result as ExcelJS.CellValue)
-  }
-  return String(v)
-}
-
 type Table = { name: string; rows: string[][] }
 
 async function readTables(file: string): Promise<Table[]> {
   const ext = path.extname(file).toLowerCase()
   if (ext === '.csv' || ext === '.tsv') {
-    const text = fs.readFileSync(file, 'utf8').replace(/^﻿/, '')
-    const sep = ext === '.tsv' ? '\t' : text.split('\n')[0].includes(';') ? ';' : ','
-    const rows = text.split(/\r?\n/).map((l) => l.split(sep).map((c) => c.replace(/^"|"$/g, '').trim()))
-    return [{ name: path.basename(file, ext), rows }]
+    const text = (await fs.promises.readFile(file, 'utf8')).replace(/^﻿/, '')
+    return [{ name: path.basename(file, ext), rows: parseDelimited(text, ext === '.tsv' ? '\t' : undefined) }]
   }
-  const wb = new ExcelJS.Workbook()
-  await wb.xlsx.readFile(file)
-  const tables: Table[] = []
-  wb.eachSheet((ws) => {
-    const rows: string[][] = []
-    ws.eachRow({ includeEmpty: true }, (row) => {
-      const vals = row.values as ExcelJS.CellValue[]
-      rows.push(vals.slice(1).map(cellText))
-    })
-    tables.push({ name: ws.name, rows })
-  })
-  return tables
+  if (ext === '.xls') throw new Error('Eski .xls biçimi desteklenmiyor. Dosyayı Excel’de .xlsx olarak kaydedip tekrar dene.')
+  return readXlsx(await fs.promises.readFile(file))
 }
 
 function findHeader(rows: string[][]): number {

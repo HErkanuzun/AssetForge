@@ -5,6 +5,9 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { AgentInput, AssetKind, Bible, Brief, BriefInput, ConnectEvent, ConnectService, Job, Project, SettingsPatch } from '../shared/types'
 import { connectCancel, connectStart } from './connect'
+import { buildDiagnostics, saveDiagnostics } from './diagnostics'
+import { initLog, logDir, writeLog } from './log'
+import { hardenApp, isInside, openInsideProject, showInsideProject } from './security'
 import { approve, createConv, deleteConv, listConvs, loadConv, sendAgent, stopConv } from './agent/assistant'
 import { mcpStatus, mcpTest } from './agent/mcpClient'
 import { mcpServerRunning, mcpUrl, syncMcpServer } from './agent/mcpServer'
@@ -22,6 +25,22 @@ import type { AnimSystem, AnimSystemKind } from '../shared/types'
 import { applyPlan, buildSystemInUe, deleteSystem, getSystem, listSystems, produceSystem, saveSystem, stopProduce, systemStates, type ProduceOptions } from './anim/systems'
 import { balance } from './providers/meshy'
 import { allProviders, getSettings, publicSettings, setSettings } from './settings'
+
+initLog(app.getPath('logs'))
+console.info(`[app] AssetForge ${app.getVersion()} başlıyor (Electron ${process.versions.electron}, ${process.platform} ${process.arch})`)
+
+// Tek örnek: ikinci açılış mevcut pencereyi öne getirir (MCP portu ve ayar dosyası çakışmasın).
+// Geliştirme kancaları (anlık görüntü, otomatik çalıştırma) ayrı örnek olarak çalışabilir.
+const devHook = process.env.FORGE_SNAPSHOT || process.env.FORGE_AUTORUN || process.env.FORGE_AGENT_TEST || process.env.FORGE_DIAG
+if (!devHook && !app.requestSingleInstanceLock()) {
+  app.quit()
+  process.exit(0)
+}
+app.on('second-instance', () => {
+  if (!win) return
+  if (win.isMinimized()) win.restore()
+  win.focus()
+})
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'forge', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } }])
 
@@ -56,13 +75,18 @@ function createWindow(): void {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: true,
+      webviewTag: false,
+      spellcheck: false
     }
   })
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https://')) shell.openExternal(url)
-    return { action: 'deny' }
+  // Arayüz hatalarını da günlüğe yaz (yakalanmamış istisnalar konsola "error" olarak düşer)
+  win.webContents.on('console-message', (e) => {
+    if (e.level === 'error' || e.level === 'warning') writeLog(`renderer:${e.level === 'error' ? 'error' : 'warn'}`, `${e.message} (${e.sourceId.split('/').pop()}:${e.lineNumber})`)
   })
+  win.webContents.on('render-process-gone', (_e, d) => console.error('[renderer] süreç kapandı:', d.reason, d.exitCode))
+  win.on('unresponsive', () => console.warn('[renderer] pencere yanıt vermiyor'))
+  win.on('responsive', () => console.info('[renderer] pencere yeniden yanıt veriyor'))
   const page = process.env.FORGE_PAGE ?? ''
   if (process.env['ELECTRON_RENDERER_URL']) win.loadURL(process.env['ELECTRON_RENDERER_URL'] + (page ? '#' + page : ''))
   else win.loadFile(path.join(__dirname, '../renderer/index.html'), { hash: page })
@@ -100,8 +124,7 @@ function registerFileProtocol(): void {
   protocol.handle('forge', (req) => {
     const url = new URL(req.url)
     const file = path.resolve(decodeURIComponent(url.pathname.slice(1)))
-    const root = path.resolve(getSettings().projectDir)
-    if (!file.toLowerCase().startsWith(root.toLowerCase() + path.sep)) return new Response('forbidden', { status: 403 })
+    if (!isInside(getSettings().projectDir, file)) return new Response('forbidden', { status: 403 })
     // Arayüz file:// kökenli; fetch (BVH önizleme) için CORS başlığı ekle
     return net.fetch(pathToFileURL(file).toString()).then((r) => {
       const headers = new Headers(r.headers)
@@ -254,8 +277,15 @@ function registerIpc(): void {
   )
   handle('connect:cancel', () => connectCancel())
 
-  handle('shell:openPath', (p: string) => shell.openPath(p))
-  handle('shell:showItem', (p: string) => shell.showItemInFolder(p))
+  handle('shell:openPath', (p: string) => openInsideProject(p, dir()))
+  handle('shell:showItem', (p: string) => showInsideProject(p, dir()))
+
+  // Tanılama: hata bildirimine eklenecek dosya ve günlük klasörü
+  handle('diag:save', () => saveDiagnostics(win))
+  handle('diag:openLogs', async () => {
+    const err = await shell.openPath(logDir())
+    if (err) throw new Error(err)
+  })
 }
 
 function startMcp(): Promise<void> {
@@ -265,7 +295,12 @@ function startMcp(): Promise<void> {
   )
 }
 
+app.on('child-process-gone', (_e, d) => {
+  if (d.reason !== 'clean-exit') console.error('[app] alt süreç kapandı:', d.type, d.reason, d.exitCode, d.name ?? '')
+})
+
 app.whenReady().then(() => {
+  hardenApp()
   registerFileProtocol()
   registerIpc()
   createWindow()
@@ -279,6 +314,12 @@ app.whenReady().then(() => {
       .then((r) => console.log('[agent] ' + JSON.stringify(r.view, null, 1)))
       .catch((e) => console.log('[agent error] ' + (e as Error).message))
       .finally(() => setTimeout(() => app.quit(), 300))
+  }
+  // Geliştirme: FORGE_DIAG=dosya.txt → tanılama dosyasını kaydetme penceresi olmadan yazar
+  if (process.env.FORGE_DIAG) {
+    buildDiagnostics()
+      .then((t) => fs.writeFileSync(process.env.FORGE_DIAG!, t))
+      .finally(() => app.quit())
   }
   // Geliştirme: FORGE_AUTORUN="pipelineId|assetId" → arayüzsüz uçtan uca test
   const auto = process.env.FORGE_AUTORUN

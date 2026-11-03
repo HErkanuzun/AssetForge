@@ -29,6 +29,11 @@ What AssetForge protects, so you can judge whether something is a vulnerability:
 - **MCP server** (Settings → MCP) listens on `127.0.0.1` only, checks the `Host` header against DNS rebinding, and requires a secret token. Its tools can create assets, start paid jobs and **run Python inside the Unreal Editor**, so treat the token like a password and regenerate it if it leaks.
 - **External MCP servers** you add run as local commands with your user rights. Only add servers you trust. Tool calls ask for approval unless you turn on "run without approval".
 - **Producer agent:** actions that spend service credits or cannot be undone ask for confirmation first.
+- **App window:** the interface runs in Chromium's sandbox with context isolation and a strict Content Security Policy (no remote scripts, images or connections). It cannot navigate away from the app, open new windows, embed web views or request camera, microphone or location access. Links open in your browser only if they are `https` or point to this machine.
+- **Files:** the interface can only open or reveal files inside the project folder, and files that can run code (`.exe`, `.bat`, `.ps1`, `.lnk` …) are shown in Explorer instead of being opened. The `forge://` protocol that serves previews is limited to the project folder.
+- **Installed app:** Electron fuses turn off `ELECTRON_RUN_AS_NODE`, `NODE_OPTIONS` and the inspector flags, and the app only loads its own code from `app.asar`, whose integrity is checked at startup.
+- **Logs and diagnostics:** the log file (`%APPDATA%\AssetForge\logs\main.log`) and the diagnostics file (Settings → About) mask API keys, tokens and your Windows user name. Nothing is sent anywhere automatically; you decide whether to attach the file to an issue.
+- **Dependencies:** CI fails if `npm audit` reports a known vulnerability in a package shipped with the app.
 - **Local services** (Unreal Remote Execution, ComfyUI, Kimodo) are reached over the local machine or your local network. Do not expose them to the internet.
 
 Out of scope: problems that need an attacker who already controls your Windows account, and issues in third-party services (report those to the service).

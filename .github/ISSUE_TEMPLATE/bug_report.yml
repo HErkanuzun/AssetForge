@@ -63,5 +63,7 @@ body:
   - type: textarea
     id: logs
     attributes:
-      label: Logs or screenshots / Loglar ya da ekran görüntüleri
-      description: Remove API keys and tokens before pasting. / Yapıştırmadan önce API anahtarlarını ve token'ları sil.
+      label: Diagnostics file, logs or screenshots / Tanılama dosyası, loglar ya da ekran görüntüleri
+      description: |
+        Easiest: Settings → About → "Tanılama dosyası kaydet", then drag the .txt file here. Keys, tokens and your user name are already masked in it.
+        En kolayı: Ayarlar → Hakkında → "Tanılama dosyası kaydet", sonra .txt dosyasını buraya sürükle. Anahtarlar, token'lar ve kullanıcı adın dosyada zaten gizlidir.

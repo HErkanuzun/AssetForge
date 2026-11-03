@@ -35,7 +35,7 @@ const SECTIONS: { id: Section; label: string; icon: IconName; desc: string; keyw
     desc: 'Claude Code / Desktop bağlantısı, dış MCP sunucuları',
     keywords: 'mcp claude code desktop sunucu server token port blender mcp araç'
   },
-  { id: 'about', label: 'Hakkında', icon: 'gauge', desc: 'Sürüm, lisans ve destek', keywords: 'sürüm versiyon hakkında lisans github hata bildir destek' }
+  { id: 'about', label: 'Hakkında', icon: 'gauge', desc: 'Sürüm, lisans, destek ve tanılama', keywords: 'sürüm versiyon hakkında lisans github hata bildir destek tanılama günlük log sorun' }
 ]
 
 const AUDIO = [
@@ -336,6 +336,38 @@ export default function SettingsPage() {
             </a>
           </div>
         </Card>
+      )
+      body = (
+        <>
+          {body}
+          <div style={{ height: 14 }} />
+          <Card title="Sorun bildirme">
+            <p className="muted small" style={{ marginTop: 0 }}>
+              Bir şey ters gittiyse tanılama dosyasını kaydedip GitHub’daki hata bildirimine ekle. Dosyada sürümler, sistem bilgisi, ayar özeti ve son günlük satırları bulunur. API anahtarları,
+              token’lar ve kullanıcı adın otomatik olarak gizlenir.
+            </p>
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              <AsyncButton
+                onClick={async () => {
+                  try {
+                    const f = await window.forge.diag.save()
+                    if (f) toast(`Tanılama dosyası kaydedildi: ${f}`, 'ok')
+                  } catch (e) {
+                    toast(`Tanılama dosyası kaydedilemedi: ${(e as Error).message}`, 'error')
+                  }
+                }}
+              >
+                Tanılama dosyası kaydet
+              </AsyncButton>
+              <AsyncButton className="ghost" onClick={() => window.forge.diag.openLogs().catch((e: Error) => toast(e.message, 'error'))}>
+                Günlük klasörünü aç
+              </AsyncButton>
+              <a className="btn ghost" href="https://github.com/HErkanuzun/AssetForge/issues/new?template=bug_report.yml" target="_blank" rel="noreferrer">
+                Hata bildir
+              </a>
+            </div>
+          </Card>
+        </>
       )
       break
   }

@@ -5,6 +5,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Security
+- The app window now runs in Chromium's sandbox, with a stricter Content Security Policy (no remote images, scripts or connections; no plugins, frames or forms). The app cannot be navigated away from its own page, cannot open other windows or embed web views, and denies camera, microphone, location and notification requests. Links open in the browser only when they are `https` or local.
+- Opening files from the interface is limited to the project folder; programs and scripts (`.exe`, `.bat`, `.ps1`, `.lnk` …) are shown in Explorer instead of being run. The preview protocol's folder check no longer accepts sibling folders with the same name prefix.
+- The installed app turns on Electron fuses: no `ELECTRON_RUN_AS_NODE`, `NODE_OPTIONS` or inspector flags, code is loaded only from `app.asar`, and the archive's integrity is checked at startup.
+- MCP server: the token is compared in constant time, request bodies are limited to 8 MB, and request text is decoded correctly when a multi-byte character is split across chunks.
+- No known vulnerabilities left in shipped dependencies: `exceljs` and its old `archiver` / `minimatch` / `uuid` chain (9 moderate advisories) are replaced by a small built-in .xlsx reader. CI now runs `npm audit` on shipped packages. The app ships 125 npm packages instead of 288.
+
+### Added
+- Log file at `%APPDATA%\AssetForge\logs\main.log` (rotated at 2 MB). It records errors from the app and the interface, crashed or unresponsive windows and failed child processes. API keys, tokens, OAuth codes and your user name are masked.
+- Settings → About → **Problem report**: "Tanılama dosyası kaydet" saves a diagnostics file to attach to a GitHub issue (versions, Windows, CPU, RAM, GPU, a settings summary without key values, Kimodo setup state and the latest log lines). "Günlük klasörünü aç" opens the log folder. The bug report form asks for this file.
+- Only one AssetForge window runs at a time; opening it again brings the existing window to the front instead of starting a second copy that fights over the MCP port and settings file.
+
+### Fixed
+- Images pasted or dropped into the Brief and Producer chats now show their previews (the old Content Security Policy blocked `blob:` images).
+- CSV import handles quoted fields with commas, semicolons, line breaks and `""` escapes, and detects the separator from the header row.
+- Old `.xls` files get a clear message asking to save as `.xlsx`.
+- Settings are saved atomically, so a crash while saving cannot leave a broken `settings.json`. If the file is ever unreadable, it is backed up as `settings.broken-<time>.json` instead of being silently replaced, so keys and paths can be recovered.
+
+### Changed
+- Updated three.js to 0.187, Vitest to 5, and the GitHub Actions to checkout v7, setup-node v7, setup-python v7 and action-gh-release v3.
+
 ## [0.4.3] - 2026-11-03
 
 ### Changed

@@ -4,11 +4,21 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import http from 'node:http'
 import { getSettings } from '../settings'
 import { sniffImage } from '../util'
 import { builtinTools, type ToolCtx } from './tools'
+
+const MAX_BODY = 8 * 1024 * 1024
+
+/** Sabit sürede karşılaştırma: yanıt süresinden token tahmin edilemesin */
+export function tokenMatches(given: string | null | undefined, want: string): boolean {
+  if (!given || !want) return false
+  const h = (v: string) => crypto.createHash('sha256').update(v).digest()
+  return crypto.timingSafeEqual(h(given), h(want))
+}
 
 const INSTRUCTIONS = `AssetForge: AI-driven game asset factory for an Unreal Engine 5 project.
 Use project_overview first. Assets live in a library (list_assets/get_asset/upsert_asset); production runs through pipelines (list_pipelines/run_pipeline) that call Meshy (3D), ElevenLabs (audio), ComfyUI (textures), Blender (cleanup, LODs, Manny skeleton) and import into Unreal. Check results with view_asset (rendered previews) and get_job (QA report). Animations come from NVIDIA Kimodo via generate_animation and are retargeted to the character. unreal_python runs Python in the open Unreal Editor. The user's language is Turkish.`
@@ -71,12 +81,21 @@ export async function syncMcpServer(ctx: () => Omit<ToolCtx, 'source'>, onCall: 
     const host = (req.headers.host ?? '').split(':')[0]
     if (!['127.0.0.1', 'localhost'].includes(host)) return void res.writeHead(403).end('forbidden host')
     const auth = req.headers.authorization ?? ''
-    if (auth !== `Bearer ${cfg.token}` && url.searchParams.get('token') !== cfg.token) return void res.writeHead(401).end('unauthorized')
+    const bearer = /^Bearer\s+(.+)$/i.exec(auth)?.[1]
+    if (!tokenMatches(bearer, cfg.token) && !tokenMatches(url.searchParams.get('token'), cfg.token)) return void res.writeHead(401).end('unauthorized')
     if (url.pathname !== '/mcp') return void res.writeHead(404).end('not found')
     if (req.method !== 'POST') return void res.writeHead(405, { Allow: 'POST' }).end('method not allowed')
 
-    let body = ''
-    for await (const chunk of req) body += chunk
+    if (Number(req.headers['content-length'] ?? 0) > MAX_BODY) return void res.writeHead(413).end('payload too large')
+    // Parçaları Buffer olarak topla: çok baytlı (Türkçe) karakterler parça sınırında bölünmesin
+    const chunks: Buffer[] = []
+    let size = 0
+    for await (const chunk of req as AsyncIterable<Buffer>) {
+      size += chunk.length
+      if (size > MAX_BODY) return void res.writeHead(413).end('payload too large')
+      chunks.push(chunk)
+    }
+    const body = Buffer.concat(chunks).toString('utf8')
     let json: unknown
     try {
       json = JSON.parse(body)

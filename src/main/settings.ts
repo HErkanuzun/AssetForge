@@ -3,6 +3,7 @@ import { app, safeStorage } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
+import { setLogSecrets } from './log'
 import type { LlmProvider, LlmRoles, McpExpose, McpServerConfig, SettingsPatch, SettingsPublic } from '../shared/types'
 
 type SecretName = 'anthropic' | 'meshy' | 'elevenlabs' | 'huggingface' | `llm:${string}`
@@ -81,8 +82,13 @@ export function getSettings(): SettingsFile {
   let loaded: Partial<SettingsFile> = {}
   try {
     loaded = JSON.parse(fs.readFileSync(file(), 'utf8'))
-  } catch {
-    /* ilk açılış */
+  } catch (e) {
+    // Dosya yoksa ilk açılış. Bozuksa sessizce sıfırlama: yedeğini al ki anahtarlar kurtarılabilsin
+    if (fs.existsSync(file())) {
+      const backup = file().replace(/\.json$/, `.broken-${Date.now()}.json`)
+      fs.copyFileSync(file(), backup)
+      console.error(`[settings] ayar dosyası okunamadı, yedeklendi: ${backup}`, (e as Error).message)
+    }
   }
   const d = defaults()
   cache = { ...d, ...loaded, secrets: { ...loaded.secrets } }
@@ -91,6 +97,7 @@ export function getSettings(): SettingsFile {
   if (process.env.FORGE_PROJECT_DIR) cache.projectDir = process.env.FORGE_PROJECT_DIR
   if (!cache.blenderPath) cache.blenderPath = d.blenderPath
   if (!loaded.mcpExpose) persist() // MCP token'ı bir kez üretilip saklansın
+  refreshLogSecrets()
   return cache
 }
 
@@ -99,7 +106,31 @@ let savedProjectDir = ''
 function persist(): void {
   fs.mkdirSync(path.dirname(file()), { recursive: true })
   const out = process.env.FORGE_PROJECT_DIR ? { ...cache, projectDir: savedProjectDir } : cache
-  fs.writeFileSync(file(), JSON.stringify(out, null, 2))
+  // Önce geçici dosyaya yaz, sonra değiştir: yazma yarıda kalırsa eski ayarlar bozulmaz
+  const tmp = file() + '.tmp'
+  fs.writeFileSync(tmp, JSON.stringify(out, null, 2))
+  fs.renameSync(tmp, file())
+  refreshLogSecrets()
+}
+
+/** Günlükte maskelenecek gerçek değerler: kayıtlı anahtarlar, MCP token'ı, dış MCP başlık/ortam değerleri */
+function refreshLogSecrets(): void {
+  if (!cache) return
+  const values: string[] = [cache.mcpExpose.token]
+  for (const enc of Object.values(cache.secrets)) {
+    try {
+      if (enc) values.push(safeStorage.decryptString(Buffer.from(enc, 'base64')))
+    } catch {
+      /* başka kullanıcıya ait şifreli değer */
+    }
+  }
+  for (const m of cache.mcpServers) {
+    for (const line of [...m.env.split(/\r?\n/), ...m.headers.split(/\r?\n/)]) {
+      const v = line.split(/[=:]/).slice(1).join(':').trim()
+      if (v) values.push(v.replace(/^Bearer\s+/i, ''))
+    }
+  }
+  setLogSecrets(values)
 }
 
 export function getSecret(name: SecretName): string | undefined {

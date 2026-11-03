@@ -86,6 +86,11 @@ export interface ForgeApi {
     cancel(): Promise<void>
     onEvent(cb: (e: ConnectEvent) => void): () => void
   }
+  diag: {
+    /** Tanılama dosyasını kaydeder; kaydedilen yol ya da iptalde null */
+    save(): Promise<string | null>
+    openLogs(): Promise<void>
+  }
   mcp: {
     status(): Promise<{ servers: McpServerStatus[]; expose: { running: boolean; url: string } }>
     test(id: string): Promise<McpServerStatus>

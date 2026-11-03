@@ -92,6 +92,10 @@ const api: ForgeApi = {
       return () => ipcRenderer.removeListener('connect:event', listener)
     }
   },
+  diag: {
+    save: () => call('diag:save'),
+    openLogs: () => call('diag:openLogs')
+  },
   mcp: {
     status: () => call('mcp:status'),
     test: (id) => call('mcp:test', id)

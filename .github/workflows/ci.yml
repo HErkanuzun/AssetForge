@@ -9,12 +9,12 @@ jobs:
   check:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
       - run: npm ci
@@ -24,6 +24,8 @@ jobs:
       - run: npm test
       - name: Third-party notices are up to date
         run: npm run notices:check
+      - name: No known vulnerabilities in shipped dependencies
+        run: npm run audit
       - name: Python lint (Blender / Unreal / Kimodo scripts)
         run: |
           pip install ruff
