@@ -72,6 +72,14 @@ describe('pipeline grafiği', () => {
     expect(nearestPrompt(g, 'qa')).toBe('prompt')
     expect(nearestPrompt(g, 'asset')).toBeNull()
   })
+
+  it('geri bildirim hazır şablonlarda doğru düğüme gider (animasyon: Kimodo, ses: prompt motoru)', () => {
+    const tpl = (id: string) => PIPELINE_TEMPLATES.find((t) => t.id === id)!
+    const qa = (id: string) => tpl(id).nodes.find((n) => n.type === 'qa.review')!.id
+    expect(nearestPrompt(tpl('tpl_anim_kimodo'), qa('tpl_anim_kimodo'))).toBe('anim')
+    expect(nearestPrompt(tpl('tpl_sfx'), qa('tpl_sfx'))).toBe('prompt')
+    expect(nearestPrompt(tpl('tpl_engine_dynamic'), qa('tpl_engine_dynamic'))).toBe('prompt')
+  })
 })
 
 describe('node tanımları', () => {

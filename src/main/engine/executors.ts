@@ -7,6 +7,9 @@ import { assetBaseName, parseSizeMeters } from '../../shared/templates'
 import { runBlender, runBlenderAnim } from '../integrations/blender'
 import { kimodoGenerate, type KimodoRequest } from '../integrations/kimodo'
 import { buildKimodoRequest, type KimodoSpec } from '../anim/motion'
+import { decodeWav, judgeAudio, measureAudio } from '../../shared/audioQa'
+import { parseBvh } from '../../shared/bvh'
+import { judgeMotion, measureMotion } from '../../shared/motionQa'
 import { loadMotion, motionInfo, saveMotion, type StoredMotion } from '../anim/store'
 import { execInUe } from '../integrations/ue'
 import { generatePrompt, reviewAsset } from '../providers/claude'
@@ -120,6 +123,91 @@ async function modelArtifact(ctx: ExecCtx, task: MeshyTask, resource: MeshyResou
 }
 
 // ---------------------------------------------------------------------------
+
+function writeReport(ctx: ExecCtx, report: QAReport): void {
+  fs.writeFileSync(path.join(ctx.dir, `qa_report_${Date.now()}.json`), JSON.stringify(report, null, 2))
+  ctx.log(`Puan ${report.score}/10 → ${report.pass ? 'GEÇTİ' : 'KALDI'}: ${report.summary}`)
+  for (const t of report.technical ?? []) ctx.log(`  · ${t}`)
+  for (const i of report.issues) ctx.log(`  • ${i}`)
+}
+
+/** Animasyon: BVH'den ayak kayması, zemine girme, titreme + sistem klibinin hedef hız/yön/dönüşü */
+function reviewAnimation(ctx: ExecCtx, subject: Extract<Artifact, { kind: 'animation' }>, minScore: number): ExecResult {
+  let spec: KimodoSpec | null = null
+  try {
+    spec = ctx.asset.extra['KimodoSpec'] ? (JSON.parse(ctx.asset.extra['KimodoSpec']) as KimodoSpec) : null
+  } catch {
+    spec = null
+  }
+  const measured = subject.motion?.measured
+  const metrics = measureMotion(parseBvh(fs.readFileSync(subject.bvh, 'utf8')))
+  const qa = judgeMotion(
+    metrics,
+    {
+      ...(spec && measured
+        ? {
+            speed: Math.round(((spec.speed + (spec.speedEnd ?? spec.speed)) / 2) * 100) / 100,
+            measuredSpeed: measured.speed,
+            direction: spec.speed > 0.2 ? spec.moveDir : undefined,
+            measuredDirection: measured.direction,
+            turn: spec.turn,
+            measuredTurn: measured.turn
+          }
+        : {}),
+      loopCost: subject.motion?.loop?.cost,
+      stationary: spec ? spec.role === 'idle' || spec.role === 'aim' : false
+    },
+    minScore
+  )
+  const report: QAReport = {
+    score: qa.score,
+    pass: qa.pass,
+    issues: qa.issues,
+    strengths: qa.issues.length ? [] : ['Ayaklar yerde sabit, hareket akıcı'],
+    prompt_fix: qa.promptFix,
+    summary: qa.issues.length ? qa.issues[0] : 'Hareket teknik kontrolleri geçti',
+    technical: qa.technical
+  }
+  writeReport(ctx, report)
+  return { outputs: { subject, report: { kind: 'report', report } }, qa: { pass: qa.pass, feedback: qa.promptFix } }
+}
+
+/** Ses: her dosyada sessizlik, kırpılma, seviye, baş boşluğu, süre ve döngü dikişi */
+function reviewAudio(ctx: ExecCtx, subject: Extract<Artifact, { kind: 'audio' | 'audioset' }>, minScore: number): ExecResult {
+  const files = subject.kind === 'audio' ? subject.files : subject.layers.map((l) => l.file)
+  const technical: string[] = []
+  const issues: string[] = []
+  const fixes = new Set<string>()
+  const scores: number[] = []
+  let skipped = 0
+  for (const f of files) {
+    const pcm = f.toLowerCase().endsWith('.wav') ? decodeWav(fs.readFileSync(f)) : null
+    if (!pcm) {
+      skipped++
+      continue
+    }
+    const r = judgeAudio(path.basename(f), measureAudio(pcm), subject.target)
+    scores.push(r.score)
+    technical.push(...r.technical)
+    issues.push(...r.issues)
+    for (const x of r.fixes) fixes.add(x)
+  }
+  if (skipped) technical.push(`${skipped} dosya WAV değil (ör. MP3); ölçülmedi. Ayarlar → Proje'den PCM biçimini seçersen hepsi incelenir.`)
+  // Varyasyonlu SFX'te en iyi dosya, motor katmanlarında en kötü katman belirleyicidir (hepsi kullanılır)
+  const score = scores.length ? (subject.kind === 'audioset' ? Math.min(...scores) : Math.max(...scores)) : 10
+  const pass = score >= minScore
+  const report: QAReport = {
+    score,
+    pass,
+    issues,
+    strengths: issues.length ? [] : ['Seviye, süre ve dikişler temiz'],
+    prompt_fix: [...fixes].join(', '),
+    summary: !scores.length ? 'Ölçülebilir WAV dosyası yok' : issues.length ? issues[0] : 'Ses teknik kontrolleri geçti',
+    technical
+  }
+  writeReport(ctx, report)
+  return { outputs: { subject, report: { kind: 'report', report } }, qa: { pass, feedback: report.prompt_fix } }
+}
 
 const executors: Record<string, Executor> = {
   'asset.input': async (ctx) => ({ outputs: { asset: { kind: 'asset', asset: ctx.asset } } }),
@@ -358,11 +446,8 @@ const executors: Record<string, Executor> = {
     const hardFails: string[] = []
     let images: string[] = []
 
-    if (subject.kind === 'audio' || subject.kind === 'audioset' || subject.kind === 'animation') {
-      ctx.log('Ses/animasyon için görsel inceleme yok; dosyalar kontrol edildi')
-      const report: QAReport = { score: 10, pass: true, issues: [], strengths: [], prompt_fix: '', summary: 'Ses dosyaları mevcut', technical: [] }
-      return { outputs: { subject, report: { kind: 'report', report } }, qa: { pass: true, feedback: '' } }
-    }
+    if (subject.kind === 'animation') return reviewAnimation(ctx, subject, minScore)
+    if (subject.kind === 'audio' || subject.kind === 'audioset') return reviewAudio(ctx, subject, minScore)
     if (subject.kind === 'image') images = subject.files
     if (subject.kind === 'model') {
       images = subject.previews?.length ? subject.previews : subject.thumbnail ? [subject.thumbnail] : []
@@ -422,7 +507,7 @@ const executors: Record<string, Executor> = {
       ctx.progress(((i + 1) / n) * 100)
       ctx.log(`Ses ${i + 1}/${n}: ${path.basename(f)}`)
     }
-    return { outputs: { audio: { kind: 'audio', files } } }
+    return { outputs: { audio: { kind: 'audio', files, target: { seconds: durParam > 0 ? durParam : pr.duration_seconds, loop: loopParam === 'auto' ? pr.loop : loopParam === 'yes' } } } }
   },
 
   'audio.engine': async (ctx, p, inputs) => {
@@ -458,7 +543,7 @@ const executors: Record<string, Executor> = {
       ctx.log(`Katman ${i + 1}/${n}: ${rpm} rpm → ${path.basename(file)}`)
     }
     const dynamic = { type: 'engine' as const, layers: n, idleRpm: idle, maxRpm: Math.round(max), engine: timbre }
-    return { outputs: { audio: { kind: 'audioset', layers, dynamic } } }
+    return { outputs: { audio: { kind: 'audioset', layers, dynamic, target: { seconds: Math.min(30, Math.max(2, num(p.seconds, 6))), loop: true } } } }
   },
 
   'anim.kimodo': async (ctx, p) => {
@@ -479,6 +564,14 @@ const executors: Record<string, Executor> = {
           .map(Number)
           .filter((x) => x > 0)
     }
+    // Kalite kontrol geri bildirimi (yeniden deneme): Claude yolu bunu promptu yazarken kullanır,
+    // hazır metinlere ise düzeltme eklenir
+    const retry = ctx.feedback.length
+    if (retry && texts.length) {
+      const fix = ctx.feedback[retry - 1]
+      texts = texts.map((t) => `${t.replace(/[.,\s]+$/, '')}, ${fix}.`)
+      ctx.log(`Kalite kontrol düzeltmesi prompta eklendi: ${fix}`)
+    }
     if (!texts.length) {
       const { data, usd } = await generatePrompt({ bible: ctx.bible, asset: ctx.asset, targetId: 'kimodo_motion', extra: str(p.extra), feedback: ctx.feedback })
       ctx.cost({ usd })
@@ -496,7 +589,10 @@ const executors: Record<string, Executor> = {
       ctx.warn('KimodoSpec okunamadı; düz üretim yapılıyor')
     }
     const seedP = num(p.seed, -1)
-    const seed = spec?.seed !== undefined && spec.seed >= 0 ? spec.seed : seedP
+    const fixedSeed = spec?.seed !== undefined && spec.seed >= 0 ? spec.seed : seedP
+    // Sabit seed aynı hareketi tekrar üretir: yeniden denemede kaydır
+    const seed = fixedSeed >= 0 && retry ? fixedSeed + retry * 7919 : fixedSeed
+    if (fixedSeed >= 0 && retry) ctx.log(`Yeniden deneme: seed ${fixedSeed} → ${seed}`)
     const req: KimodoRequest = { texts, durations, seed: seed >= 0 ? seed : undefined, steps: num(p.steps, 100) }
     if (spec) {
       const from = loadMotion(ctx.projectDir, spec.fromAssetId)?.poses?.last

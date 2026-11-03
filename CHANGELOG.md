@@ -5,6 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+- **Animation quality check:** the Quality Check node now reads the generated BVH and measures foot sliding, feet sinking into the floor, jitter and single-frame pops, plus how closely the clip matches the requested speed, direction, turn angle and loop seam. Idle and aim clips must stay in place. Thresholds were tuned on NVIDIA Kimodo's own demo motions. Runs locally, no service cost.
+- **Audio quality check:** for WAV output it measures silence, clipping, loudness, silence at the start, length against the requested duration, and for loops the seam (clicks and level jumps). Engine sound sets are judged by their weakest file.
+- **Automatic retry for animation:** when a clip fails the check, Kimodo generates it again with a different seed and with the fix added to the motion text (for example "feet stay planted on the ground"). Sound effects get the fix through the prompt engine as before.
+- The animation, sound effect and engine sound templates now include a Quality Check step (animation retries up to 2 times, sounds once). New projects get them automatically; existing pipelines can add the node by hand.
+- Animation Studio shows a **Quality score** chip on each clip, with the problems in its tooltip and the measurements next to the existing ones.
+
+### Fixed
+- The Quality Check node gave animation and audio results a 10/10 pass without looking at them. They are now measured, and a bad result sends feedback for a retry.
+
 ## [0.4.5] - 2026-11-03
 
 ### Added

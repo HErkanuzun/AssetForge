@@ -428,7 +428,8 @@ export const NODE_DEFS: NodeDef[] = [
     type: 'qa.review',
     label: 'Kalite Kontrol',
     category: 'qa',
-    description: 'Teknik kontrol (poligon, UV, ölçü) + Claude görsel inceleme. Puan düşükse en yakın Prompt Motoruna geri bildirim gönderip hattı yeniden çalıştırır.',
+    description:
+      'Model ve görsel: teknik kontrol (poligon, UV, ölçü) + Claude görsel inceleme. Animasyon: ayak kayması, zemine girme, titreme, kopukluk, hedef hız/yön/dönüş. Ses: sessizlik, kırpılma, seviye, süre, döngü dikişi (ücretsiz, yerel ölçüm). Puan düşükse en yakın Prompt Motoruna ya da Kimodo düğümüne geri bildirim gönderip yeniden ürettirir.',
     inputs: [{ id: 'subject', label: 'İncelenecek', type: 'media' }],
     outputs: [
       { id: 'subject', label: 'Onaylı', type: 'media' },

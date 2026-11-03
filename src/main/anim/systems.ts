@@ -74,6 +74,18 @@ function latestJobs(dir: string): Map<string, Job> {
   return m
 }
 
+/** İşteki kalite kontrol düğümünün son raporu */
+function qaOf(j: Job): AnimSystemClipState['qa'] {
+  for (const n of Object.values(j.nodes)) {
+    const r = n.outputs?.report
+    if (r?.kind === 'report') {
+      const { score, pass, summary, issues, technical } = r.report
+      return { score, pass, summary, issues, technical }
+    }
+  }
+  return undefined
+}
+
 const jobProgressOf = (j: Job) => {
   const n = Object.values(j.nodes)
   return n.length ? Math.round(n.reduce((s, x) => s + (x.status === 'done' || x.status === 'skipped' ? 100 : x.progress), 0) / n.length) : 0
@@ -96,7 +108,8 @@ export function systemStates(dir: string, sys: AnimSystem): AnimSystemClipState[
       progress: status === 'done' ? 100 : j ? jobProgressOf(j) : 0,
       error: status === 'failed' ? j?.error : undefined,
       motion: motionInfo(motion),
-      bvhUrl: motion?.bvh ? 'forge://local/' + encodeURIComponent(motion.bvh) : undefined
+      bvhUrl: motion?.bvh ? 'forge://local/' + encodeURIComponent(motion.bvh) : undefined,
+      qa: j ? qaOf(j) : undefined
     }
   })
 }

@@ -49,7 +49,7 @@ Tek seferlik üretimler yerine **tutarlı, projeye özel asset** isteyen bağım
 - **Dikişsiz döngüler.** Döngü, Kimodo'nun ayak temaslarından sol ayak basışından sol ayak basışına kesilir. Dikiş farkı klibe yayılır (Unreal'da ölçülen hata 0.00°). Gerçek hız, yön ve dönüş ölçülür; Blend Space senkronu için L/R sync marker'lar eklenir.
 - **Poz eşli geçişler.** Başlangıç, duruş, dönüş ve pivot kliplerinin ilk/son kareleri komşu klibin pozuna kilitlenir; kök yolu kare kare verilir.
 - **Proje Kitabı.** Sanat yönü, palet, malzeme kütüphanesi, kategori kuralları ve teknik bütçeler. GDD veya evren el kitabı PDF'lerinden otomatik doldurulabilir.
-- **Kalite kontrol döngüsü.** Teknik ölçüm (üçgen, UV, boyut) ve yapay zekâ ile görsel inceleme. Puan düşükse prompt yeniden yazılır, hat tekrar çalışır.
+- **Kalite kontrol döngüsü.** Teknik ölçüm (üçgen, UV, boyut), yapay zekâ ile görsel inceleme, animasyonda yerel ölçüm (ayak kayması, zemine girme, titreme, hız ve yön) ve seste yerel ölçüm (sessizlik, kırpılma, seviye, döngü dikişi). Puan düşükse prompt yeniden yazılır, hat tekrar çalışır; animasyon yeni bir tohumla yeniden üretilir.
 - **Node tabanlı hat editörü** (React Flow) ve karakter, araç, prop, doku, ses, VFX ve animasyon için hazır hatlar.
 - **Tablo içe aktarma.** Asset listeni Excel/CSV'den al; Palet ve Malzemeler sayfaları doğrudan Proje Kitabı'na gider.
 - **Yapımcı asistanı (Ctrl+J).** 20'den fazla araçla uygulama içi asistan: asset yazma, hat çalıştırma, önizlemeleri inceleme, animasyon üretme, Unreal'da Python çalıştırma. Para harcayan veya geri alınamayan işlemler her zaman onay ister.

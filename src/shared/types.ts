@@ -201,8 +201,9 @@ export type Artifact =
       animations?: Record<string, string>
       textured?: boolean
     }
-  | { kind: 'audio'; files: string[] }
-  | { kind: 'audioset'; layers: { file: string; baseRpm: number; label: string }[]; dynamic: DynamicSoundSpec }
+  /** target: istenen süre ve döngü (kalite kontrol karşılaştırır) */
+  | { kind: 'audio'; files: string[]; target?: { seconds?: number; loop?: boolean } }
+  | { kind: 'audioset'; layers: { file: string; baseRpm: number; label: string }[]; dynamic: DynamicSoundSpec; target?: { seconds?: number; loop?: boolean } }
   | { kind: 'animation'; clip: string; bvh: string; fbx: string; seconds: number; rootMotion: string; loop?: boolean; motion?: ClipMotionInfo }
   | { kind: 'report'; report: QAReport }
 
@@ -487,6 +488,8 @@ export interface AnimSystemClipState {
   error?: string
   motion?: ClipMotionInfo
   bvhUrl?: string
+  /** Son üretimin kalite kontrol sonucu (ayak kayması, titreme, hedef hız/yön) */
+  qa?: { score: number; pass: boolean; summary: string; issues: string[]; technical: string[] }
 }
 
 export interface KimodoSetupStep {

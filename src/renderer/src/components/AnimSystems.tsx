@@ -261,6 +261,11 @@ function Inspector({ sys, c, st, onChange, onProduce }: { sys: AnimSystem; c: An
           {st?.status === 'running' ? `üretiliyor %${st.progress}` : STATUS_TR[st?.status ?? 'none']}
         </span>
         {c.assetId && <span className="chip">{c.assetId}</span>}
+        {st?.qa && (
+          <span className={`chip ${st.qa.pass ? (st.qa.issues.length ? '' : 'ok') : 'pink'}`} title={[st.qa.summary, ...st.qa.issues.map((i) => '• ' + i)].join('\n')}>
+            Kalite {st.qa.score}/10
+          </span>
+        )}
       </div>
       <span className="dim small">Kimodo promptu ({'{S}'} = stil öznesi)</span>
       <textarea className="input" rows={3} value={c.prompt} onChange={(e) => onChange({ prompt: e.target.value })} />
@@ -301,6 +306,25 @@ function Inspector({ sys, c, st, onChange, onProduce }: { sys: AnimSystem; c: An
           <Select value={c.to ?? ''} onChange={(v) => onChange({ to: v || undefined })} options={[{ value: '', label: '— serbest —' }, ...others]} />
         </label>
       </div>
+      {st?.qa && st.qa.technical.length > 0 && (
+        <div className="ins-meas">
+          <b className="small">Kalite kontrol: {st.qa.score}/10</b>
+          {st.qa.issues.length > 0 ? (
+            st.qa.issues.map((i) => (
+              <div key={i} className="small">
+                • {i}
+              </div>
+            ))
+          ) : (
+            <div className="small">Ayaklar yerde sabit, hareket akıcı, hedeflere uygun.</div>
+          )}
+          {st.qa.technical.slice(1, 4).map((t) => (
+            <div key={t} className="small dim">
+              {t}
+            </div>
+          ))}
+        </div>
+      )}
       {m && (
         <div className="ins-meas">
           <b className="small">Ölçülen</b>

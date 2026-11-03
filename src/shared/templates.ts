@@ -99,12 +99,14 @@ export const PIPELINE_TEMPLATES: Pipeline[] = [
       ['asset', 'asset.input'],
       ['prompt', 'prompt.generate', { target: 'elevenlabs_sfx' }],
       ['sfx', 'audio.elevenlabs'],
+      ['qa', 'qa.review', { on_fail: 'continue', max_retries: 1 }],
       ['export', 'export.ue']
     ],
     [
       ['asset', 'asset', 'prompt', 'asset'],
       ['prompt', 'prompt', 'sfx', 'prompt'],
-      ['sfx', 'audio', 'export', 'subject']
+      ['sfx', 'audio', 'qa', 'subject'],
+      ['qa', 'subject', 'export', 'subject']
     ]
   ),
   chain(
@@ -212,26 +214,30 @@ PIPELINE_TEMPLATES.push(
       ['asset', 'asset.input'],
       ['prompt', 'prompt.generate', { target: 'elevenlabs_engine' }],
       ['engine', 'audio.engine'],
+      ['qa', 'qa.review', { on_fail: 'continue', max_retries: 1 }],
       ['export', 'export.ue']
     ],
     [
       ['asset', 'asset', 'prompt', 'asset'],
       ['prompt', 'prompt', 'engine', 'prompt'],
-      ['engine', 'audio', 'export', 'subject']
+      ['engine', 'audio', 'qa', 'subject'],
+      ['qa', 'subject', 'export', 'subject']
     ]
   ),
   chain(
     'tpl_anim_kimodo',
     'Animasyon — Kimodo → Karakter',
-    'Metinden hareket (NVIDIA Kimodo) → Blender: Manny adları + root motion → Unreal: ortak SOMA iskeleti → ana karaktere otomatik retarget.',
+    'Metinden hareket (NVIDIA Kimodo) → Blender: Manny adları + root motion → kalite kontrol (ayak kayması, titreme, hedef hız/yön; kötüyse yeniden üretir) → Unreal: ortak SOMA iskeleti → ana karaktere otomatik retarget.',
     [
       ['asset', 'asset.input'],
       ['anim', 'anim.kimodo'],
+      ['qa', 'qa.review', { on_fail: 'continue', max_retries: 2 }],
       ['export', 'export.ue']
     ],
     [
       ['asset', 'asset', 'anim', 'asset'],
-      ['anim', 'anim', 'export', 'subject']
+      ['anim', 'anim', 'qa', 'subject'],
+      ['qa', 'subject', 'export', 'subject']
     ]
   ),
   chain(

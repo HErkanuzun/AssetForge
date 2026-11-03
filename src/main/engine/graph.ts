@@ -56,7 +56,10 @@ export function descendants(p: Pipeline, id: string): Set<string> {
   return out
 }
 
-/** QA node'una en yakın üst Prompt Motoru (geriye doğru BFS) */
+/** Kalite kontrol geri bildirimini kabul eden düğümler: Prompt Motoru ve kendi promptunu yazan Kimodo */
+export const FEEDBACK_NODES = new Set(['prompt.generate', 'anim.kimodo'])
+
+/** QA node'una en yakın, geri bildirim alabilen üst düğüm (geriye doğru BFS) */
 export function nearestPrompt(p: Pipeline, qaId: string): string | null {
   const types = new Map(p.nodes.map((n) => [n.id, n.type]))
   const seen = new Set<string>([qaId])
@@ -66,7 +69,7 @@ export function nearestPrompt(p: Pipeline, qaId: string): string | null {
     for (const cur of frontier)
       for (const e of p.edges)
         if (e.target === cur && !seen.has(e.source)) {
-          if (types.get(e.source) === 'prompt.generate') return e.source
+          if (FEEDBACK_NODES.has(types.get(e.source) ?? '')) return e.source
           seen.add(e.source)
           next.push(e.source)
         }

@@ -51,7 +51,7 @@ It is built for indie developers, technical artists and students who want **cons
 - **Seamless loops.** Loops are cut from left-foot plant to left-foot plant using Kimodo's foot contacts. The seam error is spread across the clip (0.00° measured in Unreal). Real speed, direction and turn rate are measured, and L/R sync markers are added for Blend Space sync.
 - **Pose-matched transitions.** Start, stop, turn and pivot clips are generated with their first and last frames locked to the neighbouring clip's pose, using a frame-by-frame root path.
 - **Project bible.** Art direction, palette, material library, category rules and technical budgets. It can be filled automatically from your GDD or world-guide PDFs.
-- **Quality control loop.** Technical checks (triangles, UVs, size) plus AI vision review. Low scores rewrite the prompt and rerun the pipeline.
+- **Quality control loop.** Technical checks (triangles, UVs, size), AI vision review, and local checks for animation (foot sliding, floor penetration, jitter, speed and direction) and audio (silence, clipping, loudness, loop seams). Low scores rewrite the prompt and rerun the pipeline; animation retries with a new seed.
 - **Node-based pipeline editor** (React Flow) with ready-made pipelines for characters, vehicles, props, textures, sounds, VFX and animation.
 - **Spreadsheet import.** Import your asset list from Excel or CSV. Palette and material sheets go straight into the project bible.
 - **"Producer" AI agent (Ctrl+J).** An in-app assistant with 20+ tools: write assets, run pipelines, review previews, generate animations and run Python inside Unreal. Paid or irreversible actions always ask for confirmation.
