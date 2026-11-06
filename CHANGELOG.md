@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.8] - 2026-11-06
+
 First step of the new direction: ComfyUI becomes AssetForge's production backend, so one integration opens local models and many paid services. AssetForge stays the producer (brief, project bible, prompts, quality checks, Blender, Unreal import). See [ROADMAP.md](ROADMAP.md).
 
 ### Added
