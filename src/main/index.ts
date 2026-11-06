@@ -21,6 +21,7 @@ import { importAssetList } from './importers/assetList'
 import { discoverUe } from './integrations/ue'
 import { deleteBrief, listBriefs, listJobs, loadBrief, loadProject, saveBrief, saveProject } from './project'
 import { clientFor, extractBible, planAnimSystem, suggestMotion, testClaude } from './providers/claude'
+import { comfyInfo } from './providers/comfyui'
 import { animSystemInfo, newAnimSystem } from '../shared/animSystems'
 import type { AnimSystem, AnimSystemKind } from '../shared/types'
 import { applyPlan, buildSystemInUe, deleteSystem, getSystem, listSystems, produceSystem, saveSystem, stopProduce, systemStates, type ProduceOptions } from './anim/systems'
@@ -185,6 +186,7 @@ function registerIpc(): void {
   handle('ue:discover', () => discoverUe())
   handle('test:claude', () => testClaude())
   handle('test:meshy', () => balance())
+  handle('test:comfy', () => comfyInfo(getSettings().comfyUrl))
 
   // Brief Chat
   handle('brief:create', (seed?: { title?: string; kind?: AssetKind }) => ({ ...createBrief(dir(), seed), history: [] }))

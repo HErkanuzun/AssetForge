@@ -31,7 +31,7 @@ AssetForge, **kısa bir metin tarifini Unreal Engine 5 için üretime hazır oyu
 | Metin/görselden 3D, yeniden dokulama, rig | Meshy | GLB/FBX modeller, PBR dokular, UE5 Manny uyumlu rig |
 | Metinden hareket | NVIDIA Kimodo (yerel, CUDA) | Döngülü, root motion'lı animasyon klipleri |
 | Ses efektleri ve dinamik motor sesi | ElevenLabs | SFX ve MetaSound'a bağlı RPM katmanları |
-| Doku ve konsept görseller | ComfyUI (yerel, her workflow) | Döşenebilir PBR dokular, sprite'lar |
+| Görsel, doku, 3D, ses ve hareket | ComfyUI (her workflow: TRELLIS.2, ACE-Step gibi ücretsiz yerel modeller ya da Comfy hesabıyla Meshy, Tripo, Rodin, ElevenLabs gibi partner düğümleri) | Dokular, sprite'lar, görselden 3D model, müzik, hareket klipleri |
 | Temizlik ve LOD | Blender (arka planda) | Ölçeklenmiş, sadeleştirilmiş, isimlendirilmiş FBX + LOD %50/25/10 |
 | İçe aktarma | Unreal Engine 5 Python Remote Execution | Doğru klasörlere asset, materyal örnekleri, Blend Space, Montage, Pose Search veritabanı |
 
@@ -82,7 +82,7 @@ Tek seferlik üretimler yerine **tutarlı, projeye özel asset** isteyen bağım
 | Anthropic API anahtarı **veya** OpenAI uyumlu uç | prompt, Brief, kalite kontrol, asistan | Ollama veya LM Studio ile yerel modeller de çalışır. |
 | Meshy API anahtarı | 3D model, doku, rig | |
 | ElevenLabs API anahtarı | ses efektleri, motor sesi | |
-| ComfyUI (isteğe bağlı) | yerel doku ve görsel | `{{PROMPT}}` yer tutuculu, API formatında her workflow |
+| ComfyUI (isteğe bağlı) | görsel, 3D, ses, hareket | API formatında her workflow. Düğüm başlıklarını `AF:prompt`, `AF:image`, `AF:model`, `AF:audio`, `AF:seed` yap (ya da `{{PROMPT}}` yer tutucuları). Comfy hesabı anahtarı yalnızca partner düğümleri için gerekir. |
 | NVIDIA GPU + ~25 GB disk (isteğe bağlı) | Kimodo metinden hareket | Animasyon sayfasından tek tıkla kurulum. Hugging Face token gerekir. |
 
 ### İlk kurulum adımları
@@ -97,7 +97,7 @@ Tek seferlik üretimler yerine **tutarlı, projeye özel asset** isteyen bağım
 
 **Unreal otomatik import:** Editör kapalıysa export klasöründeki `ue_import_*.py` dosyası *File → Execute Python Script* ile elle çalıştırılabilir.
 
-**ComfyUI:** Varsayılan workflow `resources/comfyui/default_workflow_api.json` (SDXL). Kendi workflow'unu *Save (API Format)* ile kaydet; metin alanlarına `{{PROMPT}}`, `{{NEGATIVE}}`, seed alanına `"{{SEED}}"` yaz.
+**ComfyUI:** Hatlarda *ComfyUI İş Akışı* düğümü her workflow'u çalıştırır ve çıktısını (görsel, 3D model, ses, BVH/FBX animasyon) sonraki adıma verir. Workflow'u ComfyUI'da *Workflow → Export (API)* ile kaydet. AssetForge'un değerleri başlığı `AF:prompt`, `AF:negative`, `AF:seed`, `AF:image`, `AF:model`, `AF:audio` olan düğümlere yazılır; başlık yoksa örnekleyicinin positive/negative metni ve tek yükleyici düğümü kendiliğinden bulunur. Eski `{{PROMPT}}`, `{{NEGATIVE}}`, `"{{SEED}}"` yer tutucuları da çalışır. Varsayılan workflow: `resources/comfyui/default_workflow_api.json` (SDXL).
 
 ## Kaynaktan derleme
 

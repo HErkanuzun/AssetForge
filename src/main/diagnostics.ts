@@ -7,6 +7,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { redact, tailLog } from './log'
 import { kimodoStatus } from './integrations/kimodo'
+import { comfyInfo } from './providers/comfyui'
 import { getSecret, getSettings } from './settings'
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | { error: string }> {
@@ -54,11 +55,11 @@ export async function buildDiagnostics(): Promise<string> {
     '## Ayarlar (özet)',
     `Proje klasörü: ${s.projectDir} (${exists(s.projectDir)})`,
     `Claude modeli: ${s.claudeModel} · web araması: ${yes(s.webSearch)} · eşzamanlı iş: ${s.concurrency}`,
-    `Anahtarı olan servisler: ${(['anthropic', 'meshy', 'elevenlabs', 'huggingface'] as const).filter((n) => getSecret(n)).join(', ') || 'yok'}${s.llmProviders.length ? ` · ek sağlayıcı anahtarı: ${s.llmProviders.filter((p) => getSecret(`llm:${p.id}`)).length}/${s.llmProviders.length}` : ''}`,
+    `Anahtarı olan servisler: ${(['anthropic', 'meshy', 'elevenlabs', 'huggingface', 'comfy'] as const).filter((n) => getSecret(n)).join(', ') || 'yok'}${s.llmProviders.length ? ` · ek sağlayıcı anahtarı: ${s.llmProviders.filter((p) => getSecret(`llm:${p.id}`)).length}/${s.llmProviders.length}` : ''}`,
     `Ek LLM sağlayıcıları: ${s.llmProviders.map((p) => `${p.name} (${p.kind}, ${p.baseUrl || 'varsayılan'}, ${p.model || '-'})`).join('; ') || 'yok'}`,
     `Roller: asistan=${s.llmRoles.assistant}, istemler=${s.llmRoles.prompts}, görsel=${s.llmRoles.vision}`,
     `Blender: ${s.blenderPath || '-'} (${exists(s.blenderPath)})`,
-    `ComfyUI: ${s.comfyUrl}${s.comfyWorkflow ? ` · iş akışı ${exists(s.comfyWorkflow)}` : ''}`,
+    `ComfyUI: ${s.comfyUrl}${s.comfyWorkflow ? ` · iş akışı ${exists(s.comfyWorkflow)}` : ''} · ${await comfyInfo(s.comfyUrl).catch((e: Error) => `ulaşılamıyor (${e.message.slice(0, 80)})`)}`,
     `Ses biçimi: ${s.audioFormat}`,
     `Kimodo: ${s.kimodoBackend} · ${s.kimodoUrl} · klasör ${exists(s.kimodoHome)}${s.kimodoBackend === 'wsl' ? ` · WSL ${s.wslDistro}` : ''}`,
     `MCP sunucusu: ${s.mcpExpose.enabled ? `açık, port ${s.mcpExpose.port}` : 'kapalı'}`,

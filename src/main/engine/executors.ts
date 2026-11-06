@@ -13,10 +13,10 @@ import { judgeMotion, measureMotion } from '../../shared/motionQa'
 import { loadMotion, motionInfo, saveMotion, type StoredMotion } from '../anim/store'
 import { execInUe } from '../integrations/ue'
 import { generatePrompt, reviewAsset } from '../providers/claude'
-import { comfyGenerate } from '../providers/comfyui'
+import { comfyRun } from '../providers/comfyui'
 import { soundEffect } from '../providers/elevenlabs'
 import { createTask, downloadModelTask, waitTask, type MeshyTask } from '../providers/meshy'
-import { getSettings } from '../settings'
+import { getSecret, getSettings } from '../settings'
 import { downloadTo, ensureDir, fileToDataUri, resourcePath, truncateWords } from '../util'
 
 export interface ExecCtx {
@@ -122,6 +122,19 @@ async function modelArtifact(ctx: ExecCtx, task: MeshyTask, resource: MeshyResou
   return { kind: 'model', file, glb: d.glb, meshyTaskId: task.id, meshyResource: resource, thumbnail: d.thumbnail, textures: d.textures, textured }
 }
 
+/** Düğümdeki workflow → Ayarlardaki varsayılan → yerleşik SDXL şablonu */
+function comfyWorkflowPath(ctx: ExecCtx, p: Params): string {
+  const own = str(p.workflow).trim().replace(/^"|"$/g, '')
+  if (own) return own
+  return getSettings().comfyWorkflow || resourcePath('comfyui', 'default_workflow_api.json')
+}
+
+/** -1 = her çalıştırmada yeni; sabit seed kalite döngüsünde her denemede kaydırılır */
+function comfySeed(ctx: ExecCtx, p: Params): number {
+  const fixed = num(p.seed, -1)
+  return fixed >= 0 ? fixed + ctx.feedback.length * 7919 : Math.floor(Math.random() * 2 ** 31)
+}
+
 // ---------------------------------------------------------------------------
 
 function writeReport(ctx: ExecCtx, report: QAReport): void {
@@ -138,6 +151,10 @@ function reviewAnimation(ctx: ExecCtx, subject: Extract<Artifact, { kind: 'anima
     spec = ctx.asset.extra['KimodoSpec'] ? (JSON.parse(ctx.asset.extra['KimodoSpec']) as KimodoSpec) : null
   } catch {
     spec = null
+  }
+  if (!subject.bvh || !fs.existsSync(subject.bvh)) {
+    ctx.log('Animasyonun BVH dosyası yok (yalnızca FBX); hareket ölçülemedi, kontrol atlandı')
+    return { outputs: { subject }, qa: { pass: true, feedback: '' } }
   }
   const measured = subject.motion?.measured
   const metrics = measureMotion(parseBvh(fs.readFileSync(subject.bvh, 'utf8')))
@@ -271,18 +288,84 @@ const executors: Record<string, Executor> = {
   'image.comfyui': async (ctx, p, inputs) => {
     const pr = need(inputs, 'prompt', 'prompt').prompt
     const s = getSettings()
-    const files = await comfyGenerate({
+    const r = await comfyRun({
       url: s.comfyUrl,
-      workflowPath: str(p.workflow) || s.comfyWorkflow,
-      prompt: pr.prompt,
-      negative: pr.negative_prompt,
-      seed: num(p.seed, -1),
+      apiKey: getSecret('comfy'),
+      workflowPath: comfyWorkflowPath(ctx, p),
+      values: { prompt: pr.prompt, negative: pr.negative_prompt, seed: comfySeed(ctx, p) },
       outDir: ctx.dir,
       baseName: assetBaseName(ctx.asset),
       log: ctx.log,
+      warn: ctx.warn,
+      progress: ctx.progress,
       signal: ctx.signal
     })
-    return { outputs: { image: { kind: 'image', files } } }
+    if (!r.files.image.length) throw new Error('ComfyUI görsel döndürmedi (workflow’da Save Image düğümü var mı?)')
+    return { outputs: { image: { kind: 'image', files: r.files.image } } }
+  },
+
+  'comfy.workflow': async (ctx, p, inputs) => {
+    const s = getSettings()
+    const pr = promptOf(inputs)
+    const text = pr?.prompt || str(p.text).trim() || undefined
+    const img = inputs.image
+    const model = inputs.model
+    const audio = inputs.audio
+    const seconds = pr?.duration_seconds || num(p.seconds, 0) || undefined
+    const base = assetBaseName(ctx.asset)
+    const r = await comfyRun({
+      url: s.comfyUrl,
+      apiKey: getSecret('comfy'),
+      workflowPath: comfyWorkflowPath(ctx, p),
+      values: { prompt: text, negative: pr?.negative_prompt || undefined, seed: comfySeed(ctx, p), seconds },
+      uploads: {
+        image: img?.kind === 'image' ? img.files[0] : undefined,
+        model: model?.kind === 'model' ? (model.glb ?? model.file) : undefined,
+        audio: audio?.kind === 'audio' ? audio.files[0] : undefined
+      },
+      outDir: ctx.dir,
+      baseName: base,
+      log: ctx.log,
+      warn: ctx.warn,
+      progress: (v) => ctx.progress(Math.min(90, v * 0.9)),
+      signal: ctx.signal,
+      timeoutMin: num(p.timeout, 30)
+    })
+    if (r.skipped.length) ctx.log(`Tanınmayan çıktılar atlandı: ${r.skipped.join(', ')}`)
+    const outputs: Record<string, Artifact> = {}
+    const f = r.files
+    if (f.image.length) outputs.image = { kind: 'image', files: f.image }
+    const mesh = f.model.find((x) => x.endsWith('.glb')) ?? f.model[0]
+    if (mesh) outputs.model = { kind: 'model', file: mesh, glb: mesh.endsWith('.glb') ? mesh : undefined, thumbnail: f.image[0] }
+    if (f.audio.length) outputs.audio = { kind: 'audio', files: f.audio, target: seconds ? { seconds, loop: pr?.loop } : undefined }
+    const bvh = f.anim.find((x) => x.endsWith('.bvh'))
+    let fbx = f.anim.find((x) => x.endsWith('.fbx'))
+    if (bvh || fbx) {
+      const clip = `AS_${base}`
+      const rootMotion = ctx.asset.extra['RootMotion'] || 'root'
+      let seconds = 0
+      if (bvh) {
+        const b = parseBvh(fs.readFileSync(bvh, 'utf8'))
+        seconds = Math.round(b.frames * b.frameTime * 100) / 100
+        ctx.log(`BVH: ${b.frames} kare, ${seconds} sn`)
+      }
+      if (!fbx && bvh) {
+        if (!s.blenderPath) throw new Error('BVH’yi Unreal’a aktarmak için FBX’e çevirmek gerekiyor; Ayarlar → Yerel araçlar’dan Blender yolunu girin')
+        const a = await runBlenderAnim({ blenderPath: s.blenderPath, bvh, out: path.join(ctx.dir, `${clip}.fbx`), rootMotion, log: ctx.log, signal: ctx.signal })
+        fbx = a.file
+        seconds = a.duration
+      }
+      outputs.anim = { kind: 'animation', clip, bvh: bvh ?? '', fbx: fbx!, seconds, rootMotion, loop: pr?.loop }
+    }
+    if (!Object.keys(outputs).length) throw new Error('ComfyUI çıktı vermedi. Workflow’da Save Image / Save Audio / Save 3D gibi bir kaydetme düğümü olmalı.')
+    ctx.log(
+      `Çıktılar: ${Object.entries(f)
+        .filter(([, v]) => v.length)
+        .map(([k, v]) => `${k} ×${v.length}`)
+        .join(', ')}`
+    )
+    ctx.progress(100)
+    return { outputs }
   },
 
   'model.meshy.text3d': async (ctx, p, inputs) => {

@@ -238,7 +238,7 @@ export interface Job {
 
 export interface SettingsPublic {
   claudeModel: string
-  hasKeys: { anthropic: boolean; meshy: boolean; elevenlabs: boolean; huggingface: boolean }
+  hasKeys: { anthropic: boolean; meshy: boolean; elevenlabs: boolean; huggingface: boolean; comfy: boolean }
   /** Manny/Quinn IK Rig yolu (retarget kaynağı) */
   mannyIkRig: string
   wslDistro: string
@@ -271,7 +271,7 @@ export interface SettingsPatch {
   kimodoUrl?: string
   kimodoBackend?: 'native' | 'wsl'
   kimodoHome?: string
-  secrets?: { anthropic?: string; meshy?: string; elevenlabs?: string; huggingface?: string }
+  secrets?: { anthropic?: string; meshy?: string; elevenlabs?: string; huggingface?: string; comfy?: string }
   llmProviders?: LlmProvider[]
   llmRoles?: LlmRoles
   mcpServers?: McpServerConfig[]

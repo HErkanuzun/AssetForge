@@ -25,7 +25,7 @@ const SECTIONS: { id: Section; label: string; icon: IconName; desc: string; keyw
     keywords: 'model claude ollama lm studio openrouter llm görev atama asistan prompt görsel vision web arama'
   },
   { id: 'project', label: 'Proje ve üretim', icon: 'folder', desc: 'Proje klasörü, eşzamanlı iş sayısı, ses formatı', keywords: 'proje klasör iş sayısı concurrency ses format wav mp3 çıktı' },
-  { id: 'tools', label: 'Yerel araçlar', icon: 'wand', desc: 'Blender ve ComfyUI', keywords: 'blender comfyui workflow doku texture yerel' },
+  { id: 'tools', label: 'Yerel araçlar', icon: 'wand', desc: 'Blender ve ComfyUI', keywords: 'blender comfyui workflow doku texture yerel 3d ses partner comfy hesabı' },
   { id: 'anim', label: 'Animasyon', icon: 'anim', desc: 'NVIDIA Kimodo kurulumu ve servis', keywords: 'kimodo animasyon hareket motion wsl docker cuda hugging face llama' },
   { id: 'unreal', label: 'Unreal Engine', icon: 'cube', desc: 'Remote Execution bağlantısı ve IK Rig', keywords: 'unreal ue5 remote execution python ik rig manny quinn retarget' },
   {
@@ -47,7 +47,7 @@ const AUDIO = [
 
 const STORE_KEY = 'forge.settingsSection'
 
-type KeyName = 'anthropic' | 'meshy' | 'elevenlabs' | 'huggingface'
+type KeyName = 'anthropic' | 'meshy' | 'elevenlabs' | 'huggingface' | 'comfy'
 
 function KeyField({ name, label, has, link }: { name: KeyName; label: string; has: boolean; link: string }) {
   const { setSettings, toast } = useStore()
@@ -58,7 +58,7 @@ function KeyField({ name, label, has, link }: { name: KeyName; label: string; ha
     toast(value ? `${label} anahtarı kaydedildi` : `${label} anahtarı silindi`, 'ok')
   }
   return (
-    <Field label={`${label} API anahtarı`} help={has ? '✓ Kayıtlı (Windows şifrelemesiyle saklanır)' : `Yok — yukarıdan “Bağlan” ya da ${link}`}>
+    <Field label={`${label} API anahtarı`} help={has ? '✓ Kayıtlı (Windows şifrelemesiyle saklanır)' : name === 'comfy' ? `Yok — ${link}` : `Yok — yukarıdan “Bağlan” ya da ${link}`}>
       <div className="row">
         <TextInput type="password" value={v} onChange={setV} placeholder={has ? '•••••••• (değiştirmek için yazın)' : 'anahtarı yapıştırın'} />
         <AsyncButton onClick={() => save(v)} disabled={!v}>
@@ -207,11 +207,21 @@ export default function SettingsPage() {
               </div>
             </Field>
           </Card>
-          <Card title="ComfyUI" desc="Doku ve konsept görseller için yerel ComfyUI sunucusu.">
+          <Card
+            title="ComfyUI"
+            desc="Görsel, doku, 3D model, ses ve animasyon üreten ComfyUI workflow’larını çalıştırır. Yerel modeller (TRELLIS.2, Hunyuan3D, ACE-Step, Kimodo …) ücretsizdir; partner düğümleri (Meshy, Tripo, Rodin, ElevenLabs …) Comfy hesabı kredisiyle çalışır."
+          >
             <Field label="ComfyUI adresi">
-              <TextInput value={s.comfyUrl} onChange={(v) => patch({ comfyUrl: v })} />
+              <div className="row">
+                <TextInput value={s.comfyUrl} onChange={(v) => patch({ comfyUrl: v })} />
+                <AsyncButton onClick={() => test(window.forge.testComfy, 'ComfyUI')}>Bağlantıyı test et</AsyncButton>
+              </div>
             </Field>
-            <Field label="Varsayılan workflow (API formatı .json)" help="Boş = yerleşik SDXL şablonu. Yer tutucular: {{PROMPT}} {{NEGATIVE}} {{SEED}}">
+            <KeyField name="comfy" label="Comfy hesabı" has={s.hasKeys.comfy} link="platform.comfy.org → API Keys (yalnızca partner düğümleri için)" />
+            <Field
+              label="Varsayılan workflow (API formatı .json)"
+              help="Boş = yerleşik SDXL şablonu. AssetForge’un değerleri başlığı AF:prompt, AF:negative, AF:seed, AF:image, AF:model, AF:audio olan düğümlere ya da {{PROMPT}} {{NEGATIVE}} {{SEED}} yer tutucularına yazılır."
+            >
               <div className="row">
                 <TextInput value={s.comfyWorkflow} onChange={(v) => patch({ comfyWorkflow: v })} />
                 <AsyncButton

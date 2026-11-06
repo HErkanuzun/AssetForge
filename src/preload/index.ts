@@ -41,6 +41,7 @@ const api: ForgeApi = {
   ueDiscover: () => call('ue:discover'),
   testClaude: () => call('test:claude'),
   testMeshy: () => call('test:meshy'),
+  testComfy: () => call('test:comfy'),
   openPath: (p) => call('shell:openPath', p),
   showItem: (p) => call('shell:showItem', p),
   pathForFile: (f) => webUtils.getPathForFile(f),

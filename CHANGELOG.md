@@ -5,6 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+First step of the new direction: ComfyUI becomes AssetForge's production backend, so one integration opens local models and many paid services. AssetForge stays the producer (brief, project bible, prompts, quality checks, Blender, Unreal import). See [ROADMAP.md](ROADMAP.md).
+
+### Added
+- **ComfyUI workflow node** ("ComfyUI İş Akışı"): runs any ComfyUI workflow and passes its results on in the pipeline as images, 3D models, audio or animation. Optional inputs for prompt, image, model and audio; uploaded files go to ComfyUI's input folder (3D models under `3d/`). BVH output is turned into FBX with Blender for Unreal.
+- AssetForge values reach the workflow through node titles: `AF:prompt`, `AF:negative`, `AF:seed`, `AF:seconds`, `AF:image`, `AF:model`, `AF:audio`. Without titles, the sampler's positive and negative text and a single Load Image / Load 3D / Load Audio node are found automatically. The old `{{PROMPT}}` placeholders still work. Output nodes titled `AF:anim` (or `AF:model` …) decide the output type; otherwise the file extension does.
+- **Comfy account key** (Settings → Local tools → ComfyUI) for partner nodes such as Meshy, Tripo, Rodin, Hunyuan3D and ElevenLabs. Partner nodes are paid with Comfy credits.
+- Live progress from ComfyUI while a workflow runs, and a **Test connection** button that shows the ComfyUI version and GPU. The diagnostics file includes whether ComfyUI is reachable.
+
+### Changed
+- The ComfyUI image node uses the same runner: clearer errors when a workflow is rejected (which node, which input, and a hint when a custom node is missing), a message when a UI-format file is chosen instead of the API format, seeds that change between quality-check retries, and canceling a job removes it from ComfyUI's queue without stopping other work there.
+
+### Fixed
+- The animation quality check no longer fails on clips that have only an FBX file; it notes that the motion could not be measured.
+
 ## [0.4.7] - 2026-11-03
 
 ### Fixed

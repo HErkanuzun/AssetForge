@@ -6,7 +6,7 @@ import crypto from 'node:crypto'
 import { setLogSecrets } from './log'
 import type { LlmProvider, LlmRoles, McpExpose, McpServerConfig, SettingsPatch, SettingsPublic } from '../shared/types'
 
-type SecretName = 'anthropic' | 'meshy' | 'elevenlabs' | 'huggingface' | `llm:${string}`
+type SecretName = 'anthropic' | 'meshy' | 'elevenlabs' | 'huggingface' | 'comfy' | `llm:${string}`
 
 interface SettingsFile {
   claudeModel: string
@@ -136,7 +136,7 @@ function refreshLogSecrets(): void {
 export function getSecret(name: SecretName): string | undefined {
   const enc = getSettings().secrets[name]
   if (!enc) {
-    const env = ({ anthropic: 'ANTHROPIC_API_KEY', meshy: 'MESHY_API_KEY', elevenlabs: 'ELEVENLABS_API_KEY', huggingface: 'HF_TOKEN' } as Record<string, string>)[name]
+    const env = ({ anthropic: 'ANTHROPIC_API_KEY', meshy: 'MESHY_API_KEY', elevenlabs: 'ELEVENLABS_API_KEY', huggingface: 'HF_TOKEN', comfy: 'COMFY_API_KEY' } as Record<string, string>)[name]
     return env ? process.env[env] || undefined : undefined
   }
   try {
@@ -189,7 +189,8 @@ export function publicSettings(): SettingsPublic {
       anthropic: !!getSecret('anthropic'),
       meshy: !!getSecret('meshy'),
       elevenlabs: !!getSecret('elevenlabs'),
-      huggingface: !!getSecret('huggingface')
+      huggingface: !!getSecret('huggingface'),
+      comfy: !!getSecret('comfy')
     }
   }
 }

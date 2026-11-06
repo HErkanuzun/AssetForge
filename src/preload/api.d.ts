@@ -49,6 +49,8 @@ export interface ForgeApi {
   ueDiscover(): Promise<UeNode[]>
   testClaude(): Promise<string>
   testMeshy(): Promise<number>
+  /** ComfyUI sürümü ve GPU */
+  testComfy(): Promise<string>
   openPath(p: string): Promise<string>
   showItem(p: string): Promise<void>
   /** Sürükle-bırak ile gelen dosyanın diskteki yolu */

@@ -24,7 +24,7 @@ export interface ParamDef {
   help?: string
 }
 
-export type NodeCategory = 'input' | 'prompt' | 'image' | '3d' | 'audio' | 'anim' | 'process' | 'qa' | 'output'
+export type NodeCategory = 'input' | 'prompt' | 'comfy' | 'image' | '3d' | 'audio' | 'anim' | 'process' | 'qa' | 'output'
 
 export interface NodeDef {
   type: string
@@ -39,6 +39,7 @@ export interface NodeDef {
 export const CATEGORY_META: Record<NodeCategory, { label: string; color: string }> = {
   input: { label: 'Girdi', color: '#64748b' },
   prompt: { label: 'Prompt', color: '#a855f7' },
+  comfy: { label: 'ComfyUI', color: '#84cc16' },
   image: { label: 'Görsel', color: '#0ea5e9' },
   '3d': { label: '3D', color: '#f97316' },
   audio: { label: 'Ses', color: '#22c55e' },
@@ -318,12 +319,38 @@ export const NODE_DEFS: NodeDef[] = [
     type: 'image.comfyui',
     label: 'ComfyUI Görsel',
     category: 'image',
-    description: 'Bilgisayarındaki ComfyUI ile (API formatı workflow) görsel/doku üretir. Ücretsiz, yerel.',
+    description: 'Bilgisayarındaki ComfyUI ile (API formatı workflow) görsel/doku üretir. Ücretsiz, yerel. Görselden başka çıktılar için “ComfyUI İş Akışı” düğümünü kullanın.',
     inputs: [{ id: 'prompt', label: 'Prompt', type: 'prompt' }],
     outputs: [{ id: 'image', label: 'Görsel', type: 'image' }],
     params: [
       { id: 'workflow', label: 'Workflow dosyası', type: 'text', default: '', help: 'Boş = Ayarlardaki varsayılan. {{PROMPT}}, {{NEGATIVE}}, {{SEED}} yer tutucuları' },
       { id: 'seed', label: 'Seed', type: 'number', default: -1, help: '-1 = rastgele' }
+    ]
+  },
+  {
+    type: 'comfy.workflow',
+    label: 'ComfyUI İş Akışı',
+    category: 'comfy',
+    description:
+      'Herhangi bir ComfyUI workflow’unu çalıştırır ve çıktısını (görsel, 3D model, ses, animasyon) hatta verir. Yerel modeller ücretsizdir; Meshy, Tripo, Rodin, Hunyuan3D, ElevenLabs gibi partner düğümleri Comfy hesabı kredisiyle çalışır. Girişlerin gideceği düğümlerin başlığını AF:prompt, AF:image, AF:model, AF:audio, AF:seed yapın.',
+    inputs: [
+      { id: 'prompt', label: 'Prompt', type: 'prompt', optional: true },
+      { id: 'image', label: 'Görsel', type: 'image', optional: true },
+      { id: 'model', label: 'Model', type: 'model', optional: true },
+      { id: 'audio', label: 'Ses', type: 'audio', optional: true }
+    ],
+    outputs: [
+      { id: 'image', label: 'Görsel', type: 'image' },
+      { id: 'model', label: 'Model', type: 'model' },
+      { id: 'audio', label: 'Ses', type: 'audio' },
+      { id: 'anim', label: 'Animasyon', type: 'anim' }
+    ],
+    params: [
+      { id: 'workflow', label: 'Workflow dosyası (API formatı)', type: 'text', default: '', help: 'ComfyUI → Workflow → Export (API). Boş = Ayarlardaki varsayılan' },
+      { id: 'text', label: 'Metin (prompt bağlı değilse)', type: 'textarea', default: '' },
+      { id: 'seed', label: 'Seed', type: 'number', default: -1, help: '-1 = her çalıştırmada yeni' },
+      { id: 'seconds', label: 'Süre (sn, ses/animasyon)', type: 'number', default: 0, help: '0 = prompttaki süre ya da workflow’daki değer' },
+      { id: 'timeout', label: 'Zaman aşımı (dk)', type: 'number', default: 30 }
     ]
   },
   {
