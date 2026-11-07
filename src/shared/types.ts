@@ -516,6 +516,16 @@ export interface KimodoStatus {
 // ---------------------------------------------------------------------------
 // Yapay zeka sağlayıcıları, Yapımcı asistanı ve MCP bağlantıları
 
+export interface CliAgentStatus {
+  id: string
+  name: string
+  command: string
+  installed: boolean
+  executablePath?: string
+  version?: string
+  error?: string
+}
+
 export type LlmKind = 'anthropic' | 'openai'
 
 export interface LlmProvider {
