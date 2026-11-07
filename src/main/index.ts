@@ -10,6 +10,7 @@ import { initLog, logDir, writeLog } from './log'
 import { hardenApp, isInside, openInsideProject, showInsideProject } from './security'
 import { createJobTaskbar, pageFromArgv, setupJumpList } from './taskbar'
 import { approve, createConv, deleteConv, listConvs, loadConv, sendAgent, stopConv } from './agent/assistant'
+import { discoverCliAgents } from './agent/cliAgents'
 import { mcpStatus, mcpTest } from './agent/mcpClient'
 import { mcpServerRunning, mcpUrl, syncMcpServer } from './agent/mcpServer'
 import { oaTest } from './ai/openai'
@@ -250,6 +251,7 @@ function registerIpc(): void {
     notify: (p: Project) => win?.webContents.send('project:changed', p),
     emit: (e: unknown) => win?.webContents.send('agent:event', e)
   }
+  handle('agent:discoverCliAgents', () => discoverCliAgents())
   handle('agent:list', () => listConvs(dir()))
   handle('agent:get', (id: string) => {
     const c = loadConv(dir(), id)

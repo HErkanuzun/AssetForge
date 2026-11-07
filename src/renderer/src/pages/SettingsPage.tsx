@@ -7,7 +7,7 @@ import { useStore } from '../store'
 import { McpSettings, ModelSettings } from '../components/ConnectionsSettings'
 import QuickConnect from '../components/QuickConnect'
 
-type Section = 'connect' | 'models' | 'project' | 'tools' | 'anim' | 'unreal' | 'mcp' | 'about'
+type Section = 'connect' | 'models' | 'project' | 'tools' | 'anim' | 'unreal' | 'agents' | 'mcp' | 'about'
 
 const SECTIONS: { id: Section; label: string; icon: IconName; desc: string; keywords: string }[] = [
   {
@@ -28,6 +28,13 @@ const SECTIONS: { id: Section; label: string; icon: IconName; desc: string; keyw
   { id: 'tools', label: 'Yerel araçlar', icon: 'wand', desc: 'Blender ve ComfyUI', keywords: 'blender comfyui workflow doku texture yerel 3d ses partner comfy hesabı' },
   { id: 'anim', label: 'Animasyon', icon: 'anim', desc: 'NVIDIA Kimodo kurulumu ve servis', keywords: 'kimodo animasyon hareket motion wsl docker cuda hugging face llama' },
   { id: 'unreal', label: 'Unreal Engine', icon: 'cube', desc: 'Remote Execution bağlantısı ve IK Rig', keywords: 'unreal ue5 remote execution python ik rig manny quinn retarget' },
+  {
+    id: 'agents',
+    label: 'CLI ajanları',
+    icon: 'terminal',
+    desc: 'Bilgisayarda kurulu Claude Code, Codex, Gemini CLI ve diğer ajanları tara',
+    keywords: 'cli agent ajan claude code codex gemini opencode goose aider cursor qwen terminal'
+  },
   {
     id: 'mcp',
     label: 'MCP ve dış araçlar',
@@ -71,6 +78,51 @@ function KeyField({ name, label, has, link }: { name: KeyName; label: string; ha
         )}
       </div>
     </Field>
+  )
+}
+
+function CliAgentsSettings() {
+  const [agents, setAgents] = useState<import('../../../shared/types').CliAgentStatus[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const scan = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      setAgents(await window.forge.agent.discoverCliAgents())
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void scan()
+  }, [])
+
+  return (
+    <Card title="Kurulu CLI ajanları" desc="AssetForge, PATH üzerinde bulunan CLI ajanlarını ve sürümlerini otomatik algılar. Bu aşamada yalnızca keşif yapılır; sohbet çalıştırma adaptörleri ayrı bir adımda eklenecektir.">
+      <div className="row" style={{ marginBottom: 12 }}>
+        <AsyncButton onClick={scan} disabled={loading}>{loading ? 'Taranıyor…' : 'Tekrar tara'}</AsyncButton>
+        <span className="dim small">PATH ve platformun standart çalıştırılabilir dosya uzantıları taranır.</span>
+      </div>
+      {error && <div className="set-note warn">{error}</div>}
+      <div className="stack">
+        {agents.map((agent) => (
+          <div key={agent.id} className="row" style={{ justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid var(--line, #292d36)' }}>
+            <div style={{ minWidth: 0 }}>
+              <b>{agent.name}</b>
+              <div className="dim small ellipsis">{agent.installed ? agent.executablePath : agent.command}</div>
+              {agent.error && <div className="dim small">{agent.error}</div>}
+            </div>
+            <span className={agent.installed ? 'set-count' : 'dim small'}>{agent.installed ? agent.version || 'Kurulu · sürüm okunamadı' : 'Bulunamadı'}</span>
+          </div>
+        ))}
+      </div>
+      {!loading && !agents.length && !error && <p className="dim small">Tarama tamamlandı; desteklenen CLI listesi boş döndü.</p>}
+    </Card>
   )
 }
 
@@ -308,6 +360,9 @@ export default function SettingsPage() {
           </Field>
         </Card>
       )
+      break
+    case 'agents':
+      body = <CliAgentsSettings />
       break
     case 'mcp':
       body = <McpSettings />
