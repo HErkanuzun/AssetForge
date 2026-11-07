@@ -5,6 +5,7 @@ import type {
   AnimSystemKind,
   AgentConversation,
   ConnectEvent,
+  CliAgentStatus,
   ConnectService,
   AgentEvent,
   AgentInput,
@@ -79,6 +80,7 @@ export interface ForgeApi {
     onEvent(cb: (e: AgentEvent) => void): () => void
     /** Dış MCP istemcisi (ör. Claude Code) bir araç çağırdı */
     onExternal(cb: (toolName: string) => void): () => void
+    discoverCliAgents(): Promise<CliAgentStatus[]>
   }
   onProjectChanged(cb: (p: Project) => void): () => void
   llm: {
