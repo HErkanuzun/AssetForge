@@ -7,8 +7,10 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { comfyLocalStatus, ensureComfy, comfyLocalStep } from '../src/main/integrations/comfy'
-import { comfyRun } from '../src/main/providers/comfyui'
-import { getSettings, setSettings } from '../src/main/settings'
+import { checkFit, comfyObjectInfo, comfyRun } from '../src/main/providers/comfyui'
+import { importWorkflow, removeWorkflow, resolveWorkflow } from '../src/main/integrations/comfyLibrary'
+import { withComfyServer } from '../src/main/integrations/comfyServers'
+import { setSettings } from '../src/main/settings'
 
 const home = process.env.AF_COMFY_HOME
 const live = describe.skipIf(!home)
@@ -32,7 +34,7 @@ live('canlı ComfyUI', () => {
   }, 60000)
 
   it('kurulum adımları tamam görünür', async () => {
-    setSettings({ comfyHome: home!, comfyUrl: 'http://127.0.0.1:8188' })
+    setSettings({ comfyHome: home!, comfyServers: [{ id: 'local', name: 'Bu bilgisayar', url: 'http://127.0.0.1:8188', enabled: true, managed: true }] })
     const st = await comfyLocalStatus()
     log(JSON.stringify(st.steps.map((s) => [s.id, s.done])))
     expect(st.steps.filter((s) => s.id !== 'start').every((s) => s.done)).toBe(true)
@@ -52,7 +54,7 @@ live('canlı ComfyUI', () => {
     fs.writeFileSync(img, PNG)
     let last = 0
     const r = await comfyRun({
-      url: getSettings().comfyUrl,
+      url: 'http://127.0.0.1:8188',
       workflowPath: wf,
       values: {},
       uploads: { image: img },
@@ -65,5 +67,27 @@ live('canlı ComfyUI', () => {
     const out = fs.readFileSync(r.files.image[0])
     expect(out.subarray(1, 4).toString()).toBe('PNG')
     expect(last).toBeGreaterThan(0)
+  }, 120000)
+
+  it('gerçek düğüm listesiyle uygunluk denetimi ve kitaplıktan otomatik sunucu seçimi', async () => {
+    const info = await comfyObjectInfo('http://127.0.0.1:8188')
+    expect(checkFit(JSON.stringify(WORKFLOW), info)).toEqual({ missingNodes: [], missingModels: [] })
+    const fake = { ...WORKFLOW, '4': { class_type: 'CheckpointLoaderSimple', inputs: { ckpt_name: 'yok-boyle-model.safetensors' } }, '5': { class_type: 'YokBoyleDugum', inputs: {} } }
+    expect(checkFit(JSON.stringify(fake), info)).toEqual({ missingNodes: ['YokBoyleDugum'], missingModels: ['yok-boyle-model.safetensors'] })
+
+    const w = importWorkflow({ json: JSON.stringify(WORKFLOW), name: 'Canlı test ters çevir' })
+    try {
+      const wf = resolveWorkflow(w.id)
+      const img = path.join(dir, 'in2.png')
+      fs.writeFileSync(img, PNG)
+      const logs: string[] = []
+      const r = await withComfyServer({ choice: 'auto', workflowPath: wf.path, log: (m) => logs.push(m) }, (s) =>
+        comfyRun({ url: s.url, token: s.token, workflowPath: wf.path, values: {}, uploads: { image: img }, outDir: dir, baseName: 'live2', log })
+      )
+      expect(logs.join('\n')).toMatch(/ComfyUI sunucusu: Bu bilgisayar/)
+      expect(r.files.image).toHaveLength(1)
+    } finally {
+      removeWorkflow(w.id)
+    }
   }, 120000)
 })

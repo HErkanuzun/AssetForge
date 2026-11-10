@@ -7,6 +7,8 @@ import { useStore } from '../store'
 import { McpSettings, ModelSettings } from '../components/ConnectionsSettings'
 import QuickConnect from '../components/QuickConnect'
 import ComfyLocal from '../components/ComfyLocal'
+import ComfyServers from '../components/ComfyServers'
+import ComfyLibrary from '../components/ComfyLibrary'
 import AgentClis from '../components/AgentClis'
 
 type Section = 'connect' | 'models' | 'project' | 'tools' | 'anim' | 'unreal' | 'mcp' | 'about'
@@ -27,7 +29,13 @@ const SECTIONS: { id: Section; label: string; icon: IconName; desc: string; keyw
     keywords: 'model claude ollama lm studio openrouter llm görev atama asistan prompt görsel vision web arama claude code codex cli ajan abonelik'
   },
   { id: 'project', label: 'Proje ve üretim', icon: 'folder', desc: 'Proje klasörü, eşzamanlı iş sayısı, ses formatı', keywords: 'proje klasör iş sayısı concurrency ses format wav mp3 çıktı' },
-  { id: 'tools', label: 'Yerel araçlar', icon: 'wand', desc: 'Blender ve ComfyUI', keywords: 'blender comfyui workflow doku texture yerel 3d ses partner comfy hesabı' },
+  {
+    id: 'tools',
+    label: 'Yerel araçlar',
+    icon: 'wand',
+    desc: 'Blender ve ComfyUI',
+    keywords: 'blender comfyui workflow kitaplık sunucu adres endpoint uzak ağ bilgisayar token doku texture yerel 3d ses partner comfy hesabı'
+  },
   { id: 'anim', label: 'Animasyon', icon: 'anim', desc: 'NVIDIA Kimodo kurulumu ve servis', keywords: 'kimodo animasyon hareket motion wsl docker cuda hugging face llama' },
   { id: 'unreal', label: 'Unreal Engine', icon: 'cube', desc: 'Remote Execution bağlantısı ve IK Rig', keywords: 'unreal ue5 remote execution python ik rig manny quinn retarget' },
   {
@@ -215,35 +223,25 @@ export default function SettingsPage() {
             </Field>
           </Card>
           <Card
-            title="ComfyUI"
-            desc="Görsel, doku, 3D model, ses ve animasyon üreten ComfyUI workflow’larını çalıştırır. Yerel modeller (TRELLIS.2, Hunyuan3D, ACE-Step, Kimodo …) ücretsizdir; partner düğümleri (Meshy, Tripo, Rodin, ElevenLabs …) Comfy hesabı kredisiyle çalışır."
+            title="ComfyUI sunucuları"
+            desc="Görsel, doku, 3D model, ses ve animasyon üreten ComfyUI workflow’larını çalıştırır. Birden çok bilgisayar ekleyebilirsiniz: örneğin 3D’yi güçlü GPU’lu bilgisayarda, sesi diğerinde üretin. Yerel modeller (TRELLIS.2, Hunyuan3D, ACE-Step, Kimodo …) ücretsizdir; partner düğümleri (Meshy, Tripo, Rodin, ElevenLabs …) Comfy hesabı kredisiyle çalışır."
+          >
+            <ComfyServers />
+            <KeyField name="comfy" label="Comfy hesabı" has={s.hasKeys.comfy} link="platform.comfy.org → API Keys (yalnızca partner düğümleri için)" />
+          </Card>
+          <Card
+            title="ComfyUI workflow kitaplığı"
+            desc="ComfyUI’da kurduğunuz workflow’ları (Workflow → Export (API)) burada saklayın; ComfyUI düğümleri buradan seçer. Her workflow’un tercih ettiği sunucuyu belirleyebilir, sunucularda eksik düğüm ve model olup olmadığını denetleyebilirsiniz."
+          >
+            <ComfyLibrary />
+          </Card>
+          <Card
+            title="Bu bilgisayara ComfyUI kurulumu (isteğe bağlı)"
+            desc="Kendi ComfyUI’ınız yoksa AssetForge bu bilgisayara kurup gerektiğinde arka planda başlatır (Windows + NVIDIA). Listedeki “Bu bilgisayar” kaydını kullanır."
           >
             <ComfyLocal />
             <Field label="Kurulum klasörü" help="AssetForge ComfyUI’ı buraya kurar (Python ortamı, ComfyUI, modeller). Modeller büyüdükçe birkaç on GB olabilir.">
               <TextInput value={s.comfyHome} onChange={(v) => patch({ comfyHome: v })} />
-            </Field>
-            <Field label="ComfyUI adresi" help="Kendi ComfyUI’ınızı kullanıyorsanız onun adresi. 127.0.0.1 dışındaki adreslerde kurulum yönetilmez.">
-              <div className="row">
-                <TextInput value={s.comfyUrl} onChange={(v) => patch({ comfyUrl: v })} />
-                <AsyncButton onClick={() => test(window.forge.testComfy, 'ComfyUI')}>Bağlantıyı test et</AsyncButton>
-              </div>
-            </Field>
-            <KeyField name="comfy" label="Comfy hesabı" has={s.hasKeys.comfy} link="platform.comfy.org → API Keys (yalnızca partner düğümleri için)" />
-            <Field
-              label="Varsayılan workflow (API formatı .json)"
-              help="Boş = yerleşik SDXL şablonu. AssetForge’un değerleri başlığı AF:prompt, AF:negative, AF:seed, AF:image, AF:model, AF:audio olan düğümlere ya da {{PROMPT}} {{NEGATIVE}} {{SEED}} yer tutucularına yazılır."
-            >
-              <div className="row">
-                <TextInput value={s.comfyWorkflow} onChange={(v) => patch({ comfyWorkflow: v })} />
-                <AsyncButton
-                  onClick={async () => {
-                    const [f] = await window.forge.pickFiles([{ name: 'Workflow', extensions: ['json'] }])
-                    if (f) await patch({ comfyWorkflow: f })
-                  }}
-                >
-                  Seç…
-                </AsyncButton>
-              </div>
             </Field>
           </Card>
         </>

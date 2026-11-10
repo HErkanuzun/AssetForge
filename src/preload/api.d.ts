@@ -5,7 +5,10 @@ import type {
   AnimSystemKind,
   AgentConversation,
   AgentCliInfo,
+  ComfyFit,
   ComfyLocalStatus,
+  ComfyServerState,
+  ComfyWorkflowEntry,
   ConnectEvent,
   ConnectService,
   AgentEvent,
@@ -61,7 +64,8 @@ export interface ForgeApi {
   testClaude(): Promise<string>
   testMeshy(): Promise<number>
   /** ComfyUI sürümü ve GPU */
-  testComfy(): Promise<string>
+  /** Kayıtlı sunucuyu (boş = bu bilgisayar) ya da kaydedilmemiş adres/token'ı dener */
+  testComfy(id?: string, draft?: { url?: string; token?: string }): Promise<string>
   openPath(p: string): Promise<string>
   showItem(p: string): Promise<void>
   /** Sürükle-bırak ile gelen dosyanın diskteki yolu */
@@ -119,8 +123,24 @@ export interface ForgeApi {
     status(): Promise<ComfyLocalStatus>
     step(step: string): Promise<void>
     logs(): Promise<string>
-    /** Düğüm editörünü tarayıcıda açar */
-    open(): Promise<void>
+    /** Düğüm editörünü tarayıcıda açar (boş = bu bilgisayar) */
+    open(id?: string): Promise<void>
+    /** Tüm sunucuların durumu */
+    servers(): Promise<ComfyServerState[]>
+    /** Bu bilgisayarda çalışan ComfyUI'lar */
+    discover(): Promise<{ url: string; info: string; known: boolean }[]>
+    /** Workflow kitaplığı */
+    wf: {
+      import(o: { file?: string; json?: string; name?: string }): Promise<ComfyWorkflowEntry>
+      replace(id: string, o: { file?: string; json?: string }): Promise<ComfyWorkflowEntry>
+      update(id: string, patch: { name?: string; serverId?: string }): Promise<ComfyWorkflowEntry>
+      remove(id: string): Promise<void>
+      duplicate(id: string): Promise<ComfyWorkflowEntry>
+      setDefault(id: string): Promise<void>
+      fit(id: string): Promise<ComfyFit[]>
+      /** Kayıtlı dosyayı Gezgin'de gösterir ('' = yerleşik şablon) */
+      show(id: string): Promise<void>
+    }
     onLog(cb: (line: string) => void): () => void
   }
   kimodo: {

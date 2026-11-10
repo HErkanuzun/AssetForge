@@ -331,8 +331,14 @@ export interface SettingsPublic {
   kimodoUrl: string
   kimodoBackend: 'native' | 'wsl'
   kimodoHome: string
-  comfyUrl: string
-  comfyWorkflow: string
+  /** ComfyUI sunucuları (bu bilgisayar, ağdaki diğer bilgisayarlar, uzak GPU) */
+  comfyServers: (ComfyServer & { hasToken: boolean })[]
+  /** '' / 'auto' = uygun olanı seç, yoksa sunucu kimliği */
+  comfyDefaultServer: string
+  /** Kayıtlı workflow'lar */
+  comfyWorkflows: ComfyWorkflowEntry[]
+  /** '' = yerleşik SDXL şablonu */
+  comfyDefaultWorkflow: string
   comfyHome: string
   blenderPath: string
   /** Unreal MCP sunucusu (Remote Execution yoksa yedek yol) */
@@ -349,8 +355,11 @@ export interface SettingsPublic {
 
 export interface SettingsPatch {
   claudeModel?: string
-  comfyUrl?: string
-  comfyWorkflow?: string
+  comfyServers?: ComfyServer[]
+  comfyDefaultServer?: string
+  comfyDefaultWorkflow?: string
+  /** Sunucu erişim token'ları (sunucu kimliği → token; boş = sil) */
+  comfyTokens?: Record<string, string>
   comfyHome?: string
   blenderPath?: string
   ueMcpUrl?: string
@@ -601,6 +610,60 @@ export interface KimodoStatus {
   postprocess?: boolean
   /** BIOS sanallaştırma (yalnızca WSL yolu için gerekli) */
   virtualization?: boolean
+  error?: string
+}
+
+export type ComfyOutputKind = 'image' | 'model' | 'audio' | 'anim'
+
+/** Bir ComfyUI sunucusu. Token şifreli olarak ayrı saklanır. */
+export interface ComfyServer {
+  id: string
+  name: string
+  url: string
+  enabled: boolean
+  /** AssetForge'un bu bilgisayara kurduğu ComfyUI (kurulum/başlatma yönetilir); en fazla bir tane */
+  managed?: boolean
+}
+
+/** Sunucunun anlık durumu (Ayarlar'daki gösterge için) */
+export interface ComfyServerState {
+  id: string
+  online: boolean
+  /** Sürüm ve GPU */
+  info?: string
+  /** Kuyruktaki iş (çalışan + bekleyen) */
+  queue?: number
+  error?: string
+}
+
+/** Kitaplıktaki workflow; dosyası AssetForge'un veri klasöründe saklanır */
+export interface ComfyWorkflowEntry {
+  id: string
+  name: string
+  /** Çıktı türleri (kaydetme düğümlerinden) */
+  produces: ComfyOutputKind[]
+  /** AssetForge'un doldurabildiği girişler: prompt, negative, seed, image, model, audio … */
+  roles: string[]
+  /** Kullandığı düğüm türleri (sunucu uygunluğu için) */
+  classTypes: string[]
+  /** Kullandığı model dosyaları */
+  models: string[]
+  /** Tercih edilen sunucu; '' = düğümün ya da Ayarlar'ın seçimi */
+  serverId: string
+  addedAt: number
+  /** İçe aktarıldığı dosya (bilgi için) */
+  source?: string
+}
+
+/** Bir workflow'un bir sunucuda çalışıp çalışamayacağı */
+export interface ComfyFit {
+  serverId: string
+  serverName: string
+  online: boolean
+  ok: boolean
+  missingNodes: string[]
+  missingModels: string[]
+  queue?: number
   error?: string
 }
 

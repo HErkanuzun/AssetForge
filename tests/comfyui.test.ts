@@ -111,12 +111,13 @@ describe('çıktılar', () => {
 describe('sahte ComfyUI sunucusuyla uçtan uca', () => {
   let server: http.Server
   let url = ''
-  const seen: { uploads: string[]; prompt?: { prompt: ComfyWorkflow; extra_data?: { api_key_comfy_org?: string } }; reject?: boolean } = { uploads: [] }
+  const seen: { uploads: string[]; auth: string[]; prompt?: { prompt: ComfyWorkflow; extra_data?: { api_key_comfy_org?: string } }; reject?: boolean } = { uploads: [], auth: [] }
   const files: Record<string, Buffer> = { 'out/3d/kilic.glb': Buffer.from('glTF'), 'out//onizleme.png': Buffer.from('PNG'), 'out/audio/s.flac': Buffer.from('fLaC') }
 
   beforeAll(async () => {
     server = http.createServer((req, res) => {
       const u = new URL(req.url ?? '/', 'http://x')
+      seen.auth.push(`${u.pathname} ${req.headers.authorization ?? '-'}`)
       const chunks: Buffer[] = []
       req.on('data', (c) => chunks.push(c))
       req.on('end', () => {
@@ -198,6 +199,20 @@ describe('sahte ComfyUI sunucusuyla uçtan uca', () => {
     })
     expect(fs.readFileSync(r.files.model[0], 'utf8')).toBe('glTF')
     expect(logs.join('\n')).toMatch(/ComfyUI işi: p1/)
+    expect(seen.auth.every((a) => a.endsWith(' -'))).toBe(true)
+  })
+
+  it('sunucu token’ını her isteğe ekler', async () => {
+    seen.auth.length = 0
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'af-comfy-'))
+    const wfFile = path.join(dir, 'wf.json')
+    fs.writeFileSync(wfFile, JSON.stringify({ '2': { class_type: 'TextNode', inputs: { text: '' }, _meta: { title: 'AF:prompt' } } }))
+    const ref = path.join(dir, 'ref.png')
+    fs.writeFileSync(ref, 'PNG')
+    await comfyRun({ url, token: 'gizli-token', workflowPath: wfFile, values: { prompt: 'x' }, uploads: { image: ref }, outDir: path.join(dir, 'out'), baseName: 'T', log: () => undefined })
+    const paths = seen.auth.map((a) => a.split(' ')[0])
+    expect(paths).toEqual(expect.arrayContaining(['/upload/image', '/prompt', '/history/p1', '/view']))
+    expect(seen.auth.filter((a) => !a.startsWith('/ws')).every((a) => a.endsWith('Bearer gizli-token'))).toBe(true)
   })
 
   it('reddedilen workflow açık hata verir; ulaşılamayan sunucu açık hata verir', async () => {

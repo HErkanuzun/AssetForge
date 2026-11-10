@@ -14,7 +14,7 @@ About **40 %** of the way to 1.0. The core pipeline works end to end, but some p
 |---|---|
 | Node pipeline editor, runner, QA retry loop | ✅ Done |
 | Meshy, ElevenLabs, Blender, UE5 import | ✅ Done |
-| ComfyUI as the production backend (any workflow: images, 3D, audio, motion; partner nodes) | 🟡 Workflow node and managed local install done and live-tested; ready-made workflow library next |
+| ComfyUI as the production backend (any workflow: images, 3D, audio, motion; partner nodes) | 🟡 Workflow node, managed local install, several servers with automatic choice and a workflow library done; ready-made workflows and running independent steps at the same time next |
 | Agent task node (API, Claude Code, Codex CLI with MCP tools) | ✅ Done, live-tested with Claude Code and Codex |
 | Vehicle assembly rig and Unreal vehicle setup | 🟡 Rig live-tested in Blender; Unreal setup not yet tested in a live editor |
 | Game design page (loops, story, UI screens, GDD, Unreal Agent Skills) | ✅ Done |
@@ -38,7 +38,7 @@ The dates are estimates for one main developer and can move.
 |---|---|---|
 | **0.4.0** | Nov 2026 | First public alpha: installer, docs in 4 languages, non-commercial license |
 | **0.5.0** | Nov 2026 | ✅ Local ComfyUI managed by AssetForge, agent task node (Claude Code / Codex / API), vehicle assembly rig and Unreal vehicle setup, game design page |
-| **0.5.x** | Dec 2026 | Ready-made ComfyUI workflows (TRELLIS.2 image-to-3D, Hunyuan3D, ACE-Step music, Kimodo motion, Meshy / Tripo / Rodin / ElevenLabs partner nodes), live Unreal vehicle test, live Kimodo verified, first-run setup wizard |
+| **0.5.x** | Dec 2026 | Independent pipeline steps run at the same time (for example 3D on one ComfyUI PC while sound runs on another), ready-made ComfyUI workflows (TRELLIS.2 image-to-3D, Hunyuan3D, ACE-Step music, Kimodo motion, Meshy / Tripo / Rodin / ElevenLabs partner nodes), live Unreal vehicle test, live Kimodo verified, first-run setup wizard |
 | **0.6.0** | Jan 2027 | Internationalization: English UI (Turkish kept), language switch in Settings |
 | **0.7.0** | Feb 2027 | Quality: unit tests for the pipeline and animation math, CI checks, crash and log reporting |
 | **0.8.0** | Mar 2027 | Content: vehicle rig tier 3 (suspension, brakes), Niagara templates for VFX sprites, more pipeline templates |

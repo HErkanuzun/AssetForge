@@ -16,14 +16,26 @@ import { mcpServerRunning, mcpUrl, syncMcpServer } from './agent/mcpServer'
 import { oaTest } from './ai/openai'
 import { suggestPipeline } from '../shared/templates'
 import { kimodoLogs, kimodoStatus, kimodoStep } from './integrations/kimodo'
-import { comfyLocalLogs, comfyLocalStatus, comfyLocalStep } from './integrations/comfy'
+import { comfyLocalLogs, comfyLocalStatus, comfyLocalStep, managedServer } from './integrations/comfy'
+import { discoverLocal, findServer, serverStates, testServer } from './integrations/comfyServers'
+import {
+  duplicateWorkflow,
+  fitWorkflow,
+  importWorkflow,
+  migrateLegacyWorkflow,
+  removeWorkflow,
+  replaceWorkflow,
+  setDefaultWorkflow,
+  updateWorkflow,
+  workflowFilePath
+} from './integrations/comfyLibrary'
+import { normalizeComfyUrl } from '../shared/comfyServers'
 import { briefToAssets, createBrief, libraryThumbnails, sendBrief } from './providers/brief'
 import { Runner } from './engine/runner'
 import { importAssetList } from './importers/assetList'
 import { discoverUe, ueStatus } from './integrations/ue'
 import { deleteBrief, listBriefs, listJobs, loadBrief, loadProject, saveBrief, saveProject } from './project'
 import { clientFor, extractBible, planAnimSystem, suggestMotion, testClaude } from './providers/claude'
-import { comfyInfo } from './providers/comfyui'
 import { generateDesignSection } from './providers/design'
 import { teachUe } from './integrations/ueSkills'
 import { designMarkdown } from '../shared/design'
@@ -204,12 +216,23 @@ function registerIpc(): void {
   handle('ue:status', () => ueStatus())
   handle('test:claude', () => testClaude())
   handle('test:meshy', () => balance())
-  handle('test:comfy', () => comfyInfo(getSettings().comfyUrl))
+  handle('test:comfy', (id?: string, draft?: { url?: string; token?: string }) => testServer(id || managedServer().id, draft))
   // Yerel ComfyUI: kurulum, başlat/durdur, tarayıcıda düğüm editörünü aç
   handle('comfy:status', () => comfyLocalStatus())
   handle('comfy:step', (step: string) => comfyLocalStep(step, (line) => win?.webContents.send('comfy:log', line)))
   handle('comfy:logs', () => comfyLocalLogs())
-  handle('comfy:open', () => openExternal(getSettings().comfyUrl))
+  handle('comfy:open', (id?: string) => openExternal(normalizeComfyUrl((id && findServer(id)?.url) || managedServer().url)))
+  // Birden çok sunucu ve workflow kitaplığı
+  handle('comfy:servers', () => serverStates())
+  handle('comfy:discover', () => discoverLocal())
+  handle('comfy:wf:import', (o: { file?: string; json?: string; name?: string }) => importWorkflow(o))
+  handle('comfy:wf:replace', (id: string, o: { file?: string; json?: string }) => replaceWorkflow(id, o))
+  handle('comfy:wf:update', (id: string, patch: { name?: string; serverId?: string }) => updateWorkflow(id, patch))
+  handle('comfy:wf:remove', (id: string) => removeWorkflow(id))
+  handle('comfy:wf:duplicate', (id: string) => duplicateWorkflow(id))
+  handle('comfy:wf:default', (id: string) => setDefaultWorkflow(id))
+  handle('comfy:wf:fit', (id: string) => fitWorkflow(id))
+  handle('comfy:wf:show', (id: string) => shell.showItemInFolder(workflowFilePath(id)))
 
   // Brief Chat
   handle('brief:create', (seed?: { title?: string; kind?: AssetKind }) => ({ ...createBrief(dir(), seed), history: [] }))
@@ -334,6 +357,7 @@ app.on('child-process-gone', (_e, d) => {
 })
 
 app.whenReady().then(() => {
+  migrateLegacyWorkflow()
   hardenApp()
   setupJumpList()
   registerFileProtocol()

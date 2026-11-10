@@ -5,6 +5,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+- **Several ComfyUI servers:** Settings → Local tools → ComfyUI now holds a list of servers: this PC, other PCs on your network, or a rented GPU.
+  - Change a server's name and address right in its row, test it, turn it on or off, and open its node editor.
+  - Servers behind a password can take a token. It is stored encrypted and sent as `Authorization: Bearer`.
+  - "Bu bilgisayarda ara" finds ComfyUI running on this PC (ports 8188, 8000, 8189, 8190, 8001) and adds it with one click.
+  - Your old single address moves into the list on its own.
+- **ComfyUI workflow library:** add API-format workflows from a file, by drag and drop, or by pasting the JSON.
+  - AssetForge keeps its own copy, so moving the original file breaks nothing.
+  - Each workflow shows what it makes (image, 3D, sound, motion) and which inputs AssetForge can fill.
+  - Rename, replace with a new export, duplicate, show in folder, delete, and pick a default.
+  - A workflow saved in ComfyUI's normal format is turned away with a note on how to export the API version.
+  - Your old default workflow file moves into the library on its own.
+- **Choosing where a workflow runs:** ComfyUI nodes now pick the workflow from the library and the server from a list: "Otomatik" or a specific server. A workflow can also have its own preferred server.
+  - "Otomatik" skips servers that are off or missing a node or model the workflow needs, then picks the one with the shortest queue. Jobs that start at the same time spread across free servers.
+  - The job log says which server was used and why the others were skipped.
+  - "Sunucularda denetle" in the library shows, for each server, which nodes and models are missing.
+
 ## [0.5.0] - 2026-11-10
 
 ### Added

@@ -47,7 +47,7 @@ const api: ForgeApi = {
   ueStatus: () => call('ue:status'),
   testClaude: () => call('test:claude'),
   testMeshy: () => call('test:meshy'),
-  testComfy: () => call('test:comfy'),
+  testComfy: (id, draft) => call('test:comfy', id, draft),
   openPath: (p) => call('shell:openPath', p),
   showItem: (p) => call('shell:showItem', p),
   pathForFile: (f) => webUtils.getPathForFile(f),
@@ -118,7 +118,19 @@ const api: ForgeApi = {
     status: () => call('comfy:status'),
     step: (step) => call('comfy:step', step),
     logs: () => call('comfy:logs'),
-    open: () => call('comfy:open'),
+    open: (id) => call('comfy:open', id),
+    servers: () => call('comfy:servers'),
+    discover: () => call('comfy:discover'),
+    wf: {
+      import: (o) => call('comfy:wf:import', o),
+      replace: (id, o) => call('comfy:wf:replace', id, o),
+      update: (id, patch) => call('comfy:wf:update', id, patch),
+      remove: (id) => call('comfy:wf:remove', id),
+      duplicate: (id) => call('comfy:wf:duplicate', id),
+      setDefault: (id) => call('comfy:wf:default', id),
+      fit: (id) => call('comfy:wf:fit', id),
+      show: (id) => call('comfy:wf:show', id)
+    },
     onLog: (cb) => {
       const listener = (_e: unknown, line: string) => cb(line)
       ipcRenderer.on('comfy:log', listener)

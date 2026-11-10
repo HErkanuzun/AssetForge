@@ -4,14 +4,21 @@ import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { setLogSecrets } from './log'
-import type { LlmProvider, LlmRoles, McpExpose, McpServerConfig, SettingsPatch, SettingsPublic } from '../shared/types'
+import type { ComfyServer, ComfyWorkflowEntry, LlmProvider, LlmRoles, McpExpose, McpServerConfig, SettingsPatch, SettingsPublic } from '../shared/types'
+import { migrateComfyServers } from '../shared/comfyServers'
 
-type SecretName = 'anthropic' | 'meshy' | 'elevenlabs' | 'huggingface' | 'comfy' | `llm:${string}`
+type SecretName = 'anthropic' | 'meshy' | 'elevenlabs' | 'huggingface' | 'comfy' | `llm:${string}` | `comfy:${string}`
 
 interface SettingsFile {
   claudeModel: string
-  comfyUrl: string
-  comfyWorkflow: string
+  /** Eski tek adres (yalnızca geçiş için okunur) */
+  comfyUrl?: string
+  /** Eski varsayılan workflow yolu (kitaplığa taşınınca boşalır) */
+  comfyWorkflow?: string
+  comfyServers: ComfyServer[]
+  comfyDefaultServer: string
+  comfyWorkflows: ComfyWorkflowEntry[]
+  comfyDefaultWorkflow: string
   /** AssetForge'un kurduğu yerel ComfyUI klasörü (venv + ComfyUI deposu) */
   comfyHome: string
   blenderPath: string
@@ -55,8 +62,10 @@ function detectBlender(): string {
 function defaults(): SettingsFile {
   return {
     claudeModel: 'claude-opus-5-5',
-    comfyUrl: 'http://127.0.0.1:8188',
-    comfyWorkflow: '',
+    comfyServers: [],
+    comfyDefaultServer: 'auto',
+    comfyWorkflows: [],
+    comfyDefaultWorkflow: '',
     comfyHome: path.join(app.getPath('userData'), 'comfyui'),
     blenderPath: detectBlender(),
     ueMcpUrl: 'http://127.0.0.1:8000/mcp',
@@ -103,6 +112,8 @@ export function getSettings(): SettingsFile {
   if (process.env.FORGE_PROJECT_DIR) cache.projectDir = process.env.FORGE_PROJECT_DIR
   if (!cache.blenderPath) cache.blenderPath = d.blenderPath
   // Kimodo büyük bir diske taşındıysa ComfyUI de yanına kurulur
+  cache.comfyServers = migrateComfyServers(loaded)
+  if (!Array.isArray(cache.comfyWorkflows)) cache.comfyWorkflows = []
   if (!loaded.comfyHome) cache.comfyHome = path.join(path.dirname(cache.kimodoHome), 'comfyui')
   if (!loaded.mcpExpose) persist() // MCP token'ı bir kez üretilip saklansın
   refreshLogSecrets()
@@ -156,7 +167,17 @@ export function getSecret(name: SecretName): string | undefined {
 
 export function setSettings(patch: SettingsPatch): void {
   const s = getSettings()
-  const { secrets, providerKeys, ...rest } = patch
+  const { secrets, providerKeys, comfyTokens, ...rest } = patch
+  for (const [id, v] of Object.entries(comfyTokens ?? {})) {
+    if (v === '') delete s.secrets[`comfy:${id}`]
+    else s.secrets[`comfy:${id}`] = safeStorage.encryptString(v.trim()).toString('base64')
+  }
+  if (rest.comfyServers) {
+    rest.comfyServers = migrateComfyServers({ comfyServers: rest.comfyServers.map(({ id, name, url, enabled, managed }) => ({ id, name, url, enabled, managed })) })
+    // Silinen sunucunun token'ı kalmasın
+    const ids = new Set(rest.comfyServers.map((x) => x.id))
+    for (const k of Object.keys(s.secrets)) if (k.startsWith('comfy:') && !ids.has(k.slice(6))) delete s.secrets[k as SecretName]
+  }
   for (const [id, v] of Object.entries(providerKeys ?? {})) {
     if (v === '') delete s.secrets[`llm:${id}`]
     else s.secrets[`llm:${id}`] = safeStorage.encryptString(v.trim()).toString('base64')
@@ -177,8 +198,10 @@ export function publicSettings(): SettingsPublic {
   const s = getSettings()
   return {
     claudeModel: s.claudeModel,
-    comfyUrl: s.comfyUrl,
-    comfyWorkflow: s.comfyWorkflow,
+    comfyServers: s.comfyServers.map((x) => ({ ...x, hasToken: !!getSecret(`comfy:${x.id}`) })),
+    comfyDefaultServer: s.comfyDefaultServer,
+    comfyWorkflows: s.comfyWorkflows,
+    comfyDefaultWorkflow: s.comfyDefaultWorkflow,
     comfyHome: s.comfyHome,
     blenderPath: s.blenderPath,
     ueMcpUrl: s.ueMcpUrl,
@@ -218,4 +241,20 @@ export function providerFor(role: keyof LlmRoles): LlmProvider {
 
 export function providerKey(p: LlmProvider): string | undefined {
   return p.builtin ? getSecret('anthropic') : getSecret(`llm:${p.id}`)
+}
+
+/** Kitaplık listesini yazar (yalnızca workflow kitaplığı modülü kullanır) */
+export function saveComfyWorkflows(list: ComfyWorkflowEntry[], defaultId?: string): void {
+  const s = getSettings()
+  s.comfyWorkflows = list
+  if (defaultId !== undefined) s.comfyDefaultWorkflow = defaultId
+  if (s.comfyDefaultWorkflow && !list.some((w) => w.id === s.comfyDefaultWorkflow)) s.comfyDefaultWorkflow = ''
+  persist()
+}
+
+/** Eski varsayılan workflow yolu kitaplığa taşındıktan sonra temizlenir */
+export function clearLegacyComfyWorkflow(): void {
+  const s = getSettings()
+  delete s.comfyWorkflow
+  persist()
 }

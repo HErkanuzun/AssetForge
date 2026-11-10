@@ -7,7 +7,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { redact, tailLog } from './log'
 import { kimodoStatus } from './integrations/kimodo'
-import { comfyInfo } from './providers/comfyui'
+import { serverStates } from './integrations/comfyServers'
 import { agentClis } from './agent/taskAgent'
 import { getSecret, getSettings } from './settings'
 
@@ -60,7 +60,15 @@ export async function buildDiagnostics(): Promise<string> {
     `Ek LLM sağlayıcıları: ${s.llmProviders.map((p) => `${p.name} (${p.kind}, ${p.baseUrl || 'varsayılan'}, ${p.model || '-'})`).join('; ') || 'yok'}`,
     `Roller: asistan=${s.llmRoles.assistant}, istemler=${s.llmRoles.prompts}, görsel=${s.llmRoles.vision}`,
     `Blender: ${s.blenderPath || '-'} (${exists(s.blenderPath)})`,
-    `ComfyUI: ${s.comfyUrl}${s.comfyWorkflow ? ` · iş akışı ${exists(s.comfyWorkflow)}` : ''} · ${await comfyInfo(s.comfyUrl).catch((e: Error) => `ulaşılamıyor (${e.message.slice(0, 80)})`)}`,
+    ...(await withTimeout(serverStates(), 10000).then((st) =>
+      'error' in st
+        ? [`ComfyUI sunucuları: alınamadı (${st.error})`]
+        : s.comfyServers.map((x) => {
+            const z = st.find((y) => y.id === x.id)
+            return `ComfyUI “${x.name}”${x.managed ? ' (AssetForge kurulumu)' : ''}: ${x.url}${x.enabled ? '' : ' · kapalı'} · ${z?.online ? `${z.info}${z.queue ? ` · kuyruk ${z.queue}` : ''}` : `ulaşılamıyor (${(z?.error ?? '?').slice(0, 80)})`}${getSecret(`comfy:${x.id}`) ? ' · token var' : ''}`
+          })
+    )),
+    `ComfyUI workflow kitaplığı: ${s.comfyWorkflows.length} workflow · varsayılan sunucu ${s.comfyDefaultServer || 'auto'}${s.comfyWorkflow ? ` · taşınamayan eski workflow yolu ${exists(s.comfyWorkflow)}` : ''}`,
     `Ajan CLI'ları: ${(await agentClis(true).catch(() => [])).map((c) => `${c.name} ${c.installed ? (c.version ?? c.error ?? 'kurulu') : 'yok'}`).join(' · ') || '?'}`,
     `Ses biçimi: ${s.audioFormat}`,
     `Kimodo: ${s.kimodoBackend} · ${s.kimodoUrl} · klasör ${exists(s.kimodoHome)}${s.kimodoBackend === 'wsl' ? ` · WSL ${s.wslDistro}` : ''}`,

@@ -21,8 +21,8 @@ export interface ParamDef {
   type: 'text' | 'textarea' | 'number' | 'select' | 'bool'
   default: string | number | boolean
   options?: ParamOption[]
-  /** Seçenekler ayarlardan gelir: llm = LLM sağlayıcıları, mcp = MCP sunucuları */
-  source?: 'llm' | 'mcp'
+  /** Seçenekler ayarlardan gelir: llm = LLM sağlayıcıları, mcp = MCP sunucuları, comfyWorkflow = workflow kitaplığı, comfyServer = ComfyUI sunucuları */
+  source?: 'llm' | 'mcp' | 'comfyWorkflow' | 'comfyServer'
   help?: string
 }
 
@@ -326,7 +326,8 @@ export const NODE_DEFS: NodeDef[] = [
     inputs: [{ id: 'prompt', label: 'Prompt', type: 'prompt' }],
     outputs: [{ id: 'image', label: 'Görsel', type: 'image' }],
     params: [
-      { id: 'workflow', label: 'Workflow dosyası', type: 'text', default: '', help: 'Boş = Ayarlardaki varsayılan. {{PROMPT}}, {{NEGATIVE}}, {{SEED}} yer tutucuları' },
+      { id: 'workflow', label: 'Workflow', type: 'select', default: '', source: 'comfyWorkflow', help: 'Ayarlar → Yerel araçlar → ComfyUI → Workflow kitaplığı' },
+      { id: 'server', label: 'ComfyUI sunucusu', type: 'select', default: '', source: 'comfyServer', help: 'Otomatik = açık, gerekli düğüm ve modelleri olan, kuyruğu en kısa sunucu' },
       { id: 'seed', label: 'Seed', type: 'number', default: -1, help: '-1 = rastgele' }
     ]
   },
@@ -349,7 +350,22 @@ export const NODE_DEFS: NodeDef[] = [
       { id: 'anim', label: 'Animasyon', type: 'anim' }
     ],
     params: [
-      { id: 'workflow', label: 'Workflow dosyası (API formatı)', type: 'text', default: '', help: 'ComfyUI → Workflow → Export (API). Boş = Ayarlardaki varsayılan' },
+      {
+        id: 'workflow',
+        label: 'Workflow',
+        type: 'select',
+        default: '',
+        source: 'comfyWorkflow',
+        help: 'Ayarlar → Yerel araçlar → ComfyUI → Workflow kitaplığına ekleyin (ComfyUI → Workflow → Export (API))'
+      },
+      {
+        id: 'server',
+        label: 'ComfyUI sunucusu',
+        type: 'select',
+        default: '',
+        source: 'comfyServer',
+        help: 'Otomatik = açık, gerekli düğüm ve modelleri olan, kuyruğu en kısa sunucu. Örn. 3D’yi bir bilgisayarda, sesi diğerinde üretin.'
+      },
       { id: 'text', label: 'Metin (prompt bağlı değilse)', type: 'textarea', default: '' },
       { id: 'seed', label: 'Seed', type: 'number', default: -1, help: '-1 = her çalıştırmada yeni' },
       { id: 'seconds', label: 'Süre (sn, ses/animasyon)', type: 'number', default: 0, help: '0 = prompttaki süre ya da workflow’daki değer' },

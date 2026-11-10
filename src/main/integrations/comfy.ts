@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Yerel ComfyUI: AssetForge kurar (Python 3.12 + CUDA PyTorch + ComfyUI + Manager), arka planda başlatır,
 // gerektiğinde kendiliğinden açar. Kullanıcının kendi ComfyUI'ı aynı adreste çalışıyorsa ona dokunulmaz.
-import type { ComfyLocalStatus } from '../../shared/types'
+import type { ComfyLocalStatus, ComfyServer } from '../../shared/types'
+import { DEFAULT_COMFY_URL, isLocalUrl, normalizeComfyUrl, portOf } from '../../shared/comfyServers'
 import { comfyInfo } from '../providers/comfyui'
 import { getSettings } from '../settings'
 import { resourcePath, sleep } from '../util'
@@ -9,27 +10,19 @@ import { run, type LogFn } from './process'
 
 const script = () => resourcePath('comfyui', 'setup_native.ps1')
 
-/** Adres bu bilgisayarı mı gösteriyor? Uzak sunucu kurulamaz/başlatılamaz. */
-export function isLocalUrl(url: string): boolean {
-  try {
-    return ['127.0.0.1', 'localhost', '[::1]'].includes(new URL(url).hostname)
-  } catch {
-    return false
-  }
+export { isLocalUrl, portOf }
+
+/** AssetForge'un kurduğu "bu bilgisayar" kaydı (listede her zaman bir tane bulunur) */
+export function managedServer(): ComfyServer {
+  const list = getSettings().comfyServers
+  return list.find((x) => x.managed) ?? { id: 'local', name: 'Bu bilgisayar', url: DEFAULT_COMFY_URL, enabled: true, managed: true }
 }
 
-export function portOf(url: string): number {
-  try {
-    const u = new URL(url)
-    return Number(u.port) || (u.protocol === 'https:' ? 443 : 80)
-  } catch {
-    return 8188
-  }
-}
+const managedUrl = () => normalizeComfyUrl(managedServer().url) || DEFAULT_COMFY_URL
 
 function step(name: string, log?: LogFn, timeoutMs?: number) {
   const s = getSettings()
-  return run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script(), '-Step', name, '-Root', s.comfyHome, '-Port', String(portOf(s.comfyUrl))], { log, timeoutMs })
+  return run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script(), '-Step', name, '-Root', s.comfyHome, '-Port', String(portOf(managedUrl()))], { log, timeoutMs })
 }
 
 function parseJson<T>(out: string): T | null {
@@ -46,14 +39,15 @@ function parseJson<T>(out: string): T | null {
 
 export async function comfyLocalStatus(): Promise<ComfyLocalStatus> {
   const s = getSettings()
-  const remote = !isLocalUrl(s.comfyUrl)
+  const url = managedUrl()
+  const remote = !isLocalUrl(url)
   let info: string | undefined
   try {
-    info = await comfyInfo(s.comfyUrl)
+    info = await comfyInfo(url)
   } catch {
     info = undefined
   }
-  const base = { healthy: !!info, info, home: s.comfyHome, url: s.comfyUrl, remote }
+  const base = { healthy: !!info, info, home: s.comfyHome, url, remote }
   if (remote) return { ...base, running: !!info, steps: [] }
   const st = parseJson<Record<string, boolean>>((await step('status', undefined, 60000)).out) ?? {}
   return {
@@ -71,7 +65,7 @@ export async function comfyLocalStatus(): Promise<ComfyLocalStatus> {
 /** Tek kurulum adımı; satır satır log akar */
 export async function comfyLocalStep(name: string, log: LogFn): Promise<void> {
   if (!['env', 'clone', 'deps', 'start', 'stop'].includes(name)) throw new Error(`Bilinmeyen adım: ${name}`)
-  if (!isLocalUrl(getSettings().comfyUrl)) throw new Error('ComfyUI adresi bu bilgisayar değil; kurulum yalnızca yerel adreste (127.0.0.1) yapılabilir.')
+  if (!isLocalUrl(managedUrl())) throw new Error('“Bu bilgisayar” kaydının adresi bu bilgisayarı göstermiyor; kurulum yalnızca yerel adreste (127.0.0.1) yapılabilir.')
   const r = await step(name, log, 2 * 60 * 60 * 1000)
   if (r.code !== 0) throw new Error(`ComfyUI adımı başarısız (${name}). Ayrıntı yukarıdaki çıktıda.`)
   if (name === 'start') await waitReady(log, 180)
@@ -82,7 +76,7 @@ export async function comfyLocalLogs(): Promise<string> {
 }
 
 async function waitReady(log: LogFn, seconds: number, signal?: AbortSignal): Promise<string> {
-  const url = getSettings().comfyUrl
+  const url = managedUrl()
   const until = Date.now() + seconds * 1000
   let last = ''
   while (Date.now() < until) {
@@ -103,19 +97,26 @@ async function waitReady(log: LogFn, seconds: number, signal?: AbortSignal): Pro
   throw new Error(`ComfyUI ${seconds} sn içinde açılmadı (${last}). Son günlük: ${tail.slice(0, 500)}`)
 }
 
+/** Yerel kurulum tamam mı (başlatılabilir mi)? */
+export async function managedInstalled(): Promise<boolean> {
+  if (!isLocalUrl(managedUrl())) return false
+  const st = parseJson<Record<string, boolean>>((await step('status', undefined, 60000)).out) ?? {}
+  return !!(st.venv && st.torch && st.cloned && st.deps)
+}
+
 /**
- * İş akışı çalışmadan önce: sunucu yanıt veriyorsa hiçbir şey yapma; yerel kurulum hazırsa başlat ve bekle;
- * değilse ne yapılacağını söyleyen bir hata ver.
+ * "Bu bilgisayar" kaydı için, iş akışı çalışmadan önce: sunucu yanıt veriyorsa hiçbir şey yapma; yerel kurulum
+ * hazırsa başlat ve bekle; değilse ne yapılacağını söyleyen bir hata ver.
  */
 export async function ensureComfy(log: LogFn, signal?: AbortSignal): Promise<void> {
-  const s = getSettings()
+  const url = managedUrl()
   try {
-    await comfyInfo(s.comfyUrl)
+    await comfyInfo(url)
     return
   } catch {
     /* kapalı */
   }
-  if (!isLocalUrl(s.comfyUrl)) throw new Error(`ComfyUI'a ulaşılamadı (${s.comfyUrl}). Uzak sunucu açık mı?`)
+  if (!isLocalUrl(url)) throw new Error(`ComfyUI'a ulaşılamadı (${url}). Uzak sunucu açık mı?`)
   const st = parseJson<Record<string, boolean>>((await step('status', undefined, 60000)).out) ?? {}
   if (!(st.venv && st.torch && st.cloned && st.deps)) {
     throw new Error('ComfyUI kapalı ve bu bilgisayarda kurulu değil. Ayarlar → Yerel araçlar → ComfyUI’dan “Kur” adımlarını çalıştırın ya da kendi ComfyUI’ınızı açın.')

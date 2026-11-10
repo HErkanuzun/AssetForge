@@ -17,6 +17,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CATEGORY_META, defaultParams, NODE_DEF_MAP, NODE_DEFS, PORT_COLORS, portsCompatible, type NodeCategory } from '../../../shared/nodes'
 import { PIPELINE_TEMPLATES } from '../../../shared/templates'
+import { KIND_LABEL } from '../../../shared/comfyServers'
 import type { ParamDef } from '../../../shared/nodes'
 import type { Pipeline, PipelineEdge, PipelineNode, SettingsPublic } from '../../../shared/types'
 import { ForgeNode, RunStateCtx, type ForgeRFNode } from '../components/ForgeNode'
@@ -38,8 +39,29 @@ function toRFEdge(e: PipelineEdge, nodes: PipelineNode[]): Edge {
   return { ...e, animated: false, style: { stroke: t ? PORT_COLORS[t] : '#888', strokeWidth: 2 } }
 }
 
-/** Seçenekleri ayarlardan gelen parametreler (LLM sağlayıcıları, MCP sunucuları) */
-function paramOptions(pd: ParamDef, settings: SettingsPublic | null): { value: string; label: string }[] {
+/** Seçenekleri ayarlardan gelen parametreler (LLM sağlayıcıları, MCP sunucuları, ComfyUI kitaplığı ve sunucuları) */
+function paramOptions(pd: ParamDef, settings: SettingsPublic | null, current = ''): { value: string; label: string }[] {
+  if (pd.source === 'comfyWorkflow') {
+    const lib = settings?.comfyWorkflows ?? []
+    const def = lib.find((w) => w.id === settings?.comfyDefaultWorkflow)
+    const list = [
+      { value: '', label: `Varsayılan (${def?.name ?? 'yerleşik SDXL'})` },
+      ...lib.map((w) => ({ value: w.id, label: w.produces.length ? `${w.name} · ${w.produces.map((k) => KIND_LABEL[k]).join(', ')}` : w.name }))
+    ]
+    // Eski sürümlerde yazılmış dosya yolu ya da silinmiş bir workflow
+    if (current && !lib.some((w) => w.id === current)) list.push({ value: current, label: /[\\/]/.test(current) ? `Dosya: ${current}` : `(silinmiş workflow)` })
+    return list
+  }
+  if (pd.source === 'comfyServer') {
+    const servers = settings?.comfyServers ?? []
+    const def = servers.find((x) => x.id === settings?.comfyDefaultServer)
+    return [
+      { value: '', label: `Workflow’un / Ayarlar’ın seçimi (${def?.name ?? 'Otomatik'})` },
+      { value: 'auto', label: 'Otomatik' },
+      ...servers.map((x) => ({ value: x.id, label: x.enabled ? x.name : `${x.name} (kapalı)` })),
+      ...(current && current !== 'auto' && !servers.some((x) => x.id === current) ? [{ value: current, label: '(silinmiş sunucu → Otomatik)' }] : [])
+    ]
+  }
   if (pd.source === 'llm')
     return [
       { value: '', label: 'Yapımcı asistanının modeli' },
@@ -274,7 +296,7 @@ function Editor({ goJobs }: { goJobs: () => void }) {
                 return (
                   <Field key={pd.id} label={pd.label} help={pd.help}>
                     {pd.type === 'select' ? (
-                      <Select value={String(v)} onChange={(x) => setParam(pd.id, x)} options={paramOptions(pd, settings)} />
+                      <Select value={String(v)} onChange={(x) => setParam(pd.id, x)} options={paramOptions(pd, settings, String(v))} />
                     ) : pd.type === 'bool' ? (
                       <Toggle value={v === true} onChange={(x) => setParam(pd.id, x)} />
                     ) : pd.type === 'number' ? (

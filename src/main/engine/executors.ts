@@ -16,9 +16,10 @@ import { loadMotion, motionInfo, saveMotion, type StoredMotion } from '../anim/s
 import { runInUe } from '../integrations/ue'
 import { exportAssemblyToUe } from './ueAssembly'
 import { assetContext, bibleContext, generatePrompt, reviewAsset } from '../providers/claude'
-import { comfyRun, kindOfFile } from '../providers/comfyui'
+import { comfyRun, kindOfFile, type ComfyRunOptions } from '../providers/comfyui'
 import { runTaskAgent, walk, type AgentEngine } from '../agent/taskAgent'
-import { ensureComfy } from '../integrations/comfy'
+import { resolveWorkflow } from '../integrations/comfyLibrary'
+import { withComfyServer } from '../integrations/comfyServers'
 import { soundEffect } from '../providers/elevenlabs'
 import { createTask, downloadModelTask, waitTask, type MeshyTask } from '../providers/meshy'
 import { allProviders, getSecret, getSettings } from '../settings'
@@ -128,10 +129,13 @@ async function modelArtifact(ctx: ExecCtx, task: MeshyTask, resource: MeshyResou
 }
 
 /** Düğümdeki workflow → Ayarlardaki varsayılan → yerleşik SDXL şablonu */
-function comfyWorkflowPath(ctx: ExecCtx, p: Params): string {
-  const own = str(p.workflow).trim().replace(/^"|"$/g, '')
-  if (own) return own
-  return getSettings().comfyWorkflow || resourcePath('comfyui', 'default_workflow_api.json')
+/** Workflow'u kitaplıktan bulur, uygun ComfyUI sunucusunu seçer ve işi orada çalıştırır */
+async function runComfy(ctx: ExecCtx, p: Params, opts: Omit<ComfyRunOptions, 'url' | 'token' | 'apiKey' | 'workflowPath' | 'log' | 'warn' | 'signal'>) {
+  const wf = resolveWorkflow(str(p.workflow))
+  ctx.log(`Workflow: ${wf.name}`)
+  return withComfyServer({ choice: str(p.server), workflowServer: wf.serverId, workflowPath: wf.path, log: ctx.log, warn: ctx.warn, signal: ctx.signal }, (srv) =>
+    comfyRun({ ...opts, url: srv.url, token: srv.token, apiKey: getSecret('comfy'), workflowPath: wf.path, log: ctx.log, warn: ctx.warn, signal: ctx.signal })
+  )
 }
 
 /** -1 = her çalıştırmada yeni; sabit seed kalite döngüsünde her denemede kaydırılır */
@@ -292,19 +296,11 @@ const executors: Record<string, Executor> = {
 
   'image.comfyui': async (ctx, p, inputs) => {
     const pr = need(inputs, 'prompt', 'prompt').prompt
-    const s = getSettings()
-    await ensureComfy(ctx.log, ctx.signal)
-    const r = await comfyRun({
-      url: s.comfyUrl,
-      apiKey: getSecret('comfy'),
-      workflowPath: comfyWorkflowPath(ctx, p),
+    const r = await runComfy(ctx, p, {
       values: { prompt: pr.prompt, negative: pr.negative_prompt, seed: comfySeed(ctx, p) },
       outDir: ctx.dir,
       baseName: assetBaseName(ctx.asset),
-      log: ctx.log,
-      warn: ctx.warn,
-      progress: ctx.progress,
-      signal: ctx.signal
+      progress: ctx.progress
     })
     if (!r.files.image.length) throw new Error('ComfyUI görsel döndürmedi (workflow’da Save Image düğümü var mı?)')
     return { outputs: { image: { kind: 'image', files: r.files.image } } }
@@ -319,11 +315,7 @@ const executors: Record<string, Executor> = {
     const audio = inputs.audio
     const seconds = pr?.duration_seconds || num(p.seconds, 0) || undefined
     const base = assetBaseName(ctx.asset)
-    await ensureComfy(ctx.log, ctx.signal)
-    const r = await comfyRun({
-      url: s.comfyUrl,
-      apiKey: getSecret('comfy'),
-      workflowPath: comfyWorkflowPath(ctx, p),
+    const r = await runComfy(ctx, p, {
       values: { prompt: text, negative: pr?.negative_prompt || undefined, seed: comfySeed(ctx, p), seconds },
       uploads: {
         image: img?.kind === 'image' ? img.files[0] : undefined,
@@ -332,10 +324,7 @@ const executors: Record<string, Executor> = {
       },
       outDir: ctx.dir,
       baseName: base,
-      log: ctx.log,
-      warn: ctx.warn,
       progress: (v) => ctx.progress(Math.min(90, v * 0.9)),
-      signal: ctx.signal,
       timeoutMin: num(p.timeout, 30)
     })
     if (r.skipped.length) ctx.log(`Tanınmayan çıktılar atlandı: ${r.skipped.join(', ')}`)

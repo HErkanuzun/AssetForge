@@ -245,9 +245,101 @@ export function collectOutputs(outputs: Record<string, Record<string, unknown>>,
   return saved.length ? saved : found
 }
 
+// ── Kitaplık ve sunucu uygunluğu ───────────────────────────────────
+
+/** /object_info yanıtı: düğüm türü → giriş tanımları. Seçimli girişler ya [[seçenekler], {...}] ya da ["COMBO", {options}] */
+export type ObjectInfo = Record<string, { input?: { required?: Record<string, unknown[]>; optional?: Record<string, unknown[]> } }>
+
+const MODEL_EXT = /\.(safetensors|ckpt|pt|pth|bin|gguf|onnx|sft)$/i
+
+/** Kaydetme düğümünün çıktı türü (başlıkta AF:… varsa o) */
+function outputKind(node: ComfyNode): ComfyKind | null {
+  const role = titleRole(node._meta?.title)
+  if (role === 'image' || role === 'model' || role === 'audio' || role === 'anim') return role
+  const c = node.class_type
+  if (/^(Save|Preview)Image|ImageSave|SaveAnimated/i.test(c)) return 'image'
+  if (/^Save(GLB|3D|Mesh)|Preview3D|Export(GLB|Mesh)|SaveGLTF|SaveOBJ/i.test(c)) return 'model'
+  if (/^(Save|Preview)Audio/i.test(c)) return 'audio'
+  if (/BVH|Motion.*Save|Save.*Motion/i.test(c)) return 'anim'
+  return null
+}
+
+export interface WorkflowSummary {
+  classTypes: string[]
+  roles: string[]
+  produces: ComfyKind[]
+  models: string[]
+}
+
+/** Kitaplığa eklerken: API formatı mı, hangi düğümleri ve modelleri kullanıyor, AssetForge neyi doldurabilir, ne üretir */
+export function analyzeWorkflow(source: string): WorkflowSummary {
+  // prepareWorkflow arayüz formatını ve bozuk JSON'u anlaşılır hatayla reddeder
+  const { workflow } = prepareWorkflow(source, {})
+  const nodes = Object.values(workflow).filter((n) => n && typeof n.class_type === 'string')
+  const roles = new Set<string>()
+  for (const [role, token] of PLACEHOLDERS) if (source.includes(token)) roles.add(role)
+  for (const n of nodes) {
+    const r = titleRole(n._meta?.title)
+    if (!r || r === 'anim') continue
+    // AF:audio başlıklı bir kaydetme düğümü giriş değil çıktıdır: yazılabilir bir giriş yuvası olmalı
+    const want = TEXT_ROLES.includes(r) ? 'string' : 'number'
+    if (ROLE_INPUTS[r].some((k) => k in n.inputs && !isLink(n.inputs[k])) || Object.values(n.inputs).some((v) => typeof v === want)) roles.add(r)
+  }
+  // Başlık yoksa AssetForge'un tahmin ettiği yerler
+  if (nodes.some((n) => isLink(n.inputs.positive))) roles.add('prompt')
+  if (nodes.some((n) => isLink(n.inputs.negative))) roles.add('negative')
+  if (nodes.some((n) => typeof n.inputs.seed === 'number' || typeof n.inputs.noise_seed === 'number')) roles.add('seed')
+  if (nodes.filter((n) => n.class_type === 'LoadImage').length === 1) roles.add('image')
+  if (nodes.filter((n) => n.class_type.startsWith('Load3D')).length === 1) roles.add('model')
+  if (nodes.filter((n) => n.class_type === 'LoadAudio').length === 1) roles.add('audio')
+  const produces = [...new Set(nodes.map(outputKind).filter((k): k is ComfyKind => !!k))]
+  const models = [...new Set(nodes.flatMap((n) => Object.values(n.inputs).filter((v): v is string => typeof v === 'string' && MODEL_EXT.test(v))))]
+  const order = ['prompt', 'negative', 'seed', 'seconds', 'image', 'model', 'audio']
+  return {
+    classTypes: [...new Set(nodes.map((n) => n.class_type))].sort(),
+    roles: [...roles].sort((a, b) => order.indexOf(a) - order.indexOf(b)),
+    produces,
+    models
+  }
+}
+
+function choicesOf(spec: unknown[] | undefined): string[] | null {
+  if (!Array.isArray(spec)) return null
+  if (Array.isArray(spec[0])) return spec[0].map(String)
+  const opts = (spec[1] as { options?: unknown } | undefined)?.options
+  if (spec[0] === 'COMBO' && Array.isArray(opts)) return opts.map(String)
+  return null
+}
+
+/** Workflow bu sunucuda çalışır mı: eksik düğüm türleri ve sunucuda bulunmayan model dosyaları */
+export function checkFit(source: string, info: ObjectInfo): { missingNodes: string[]; missingModels: string[] } {
+  const { workflow } = prepareWorkflow(source, {})
+  const missingNodes = new Set<string>()
+  const missingModels = new Set<string>()
+  for (const n of Object.values(workflow)) {
+    if (!n || typeof n.class_type !== 'string') continue
+    const def = info[n.class_type]
+    if (!def) {
+      missingNodes.add(n.class_type)
+      continue
+    }
+    for (const [k, v] of Object.entries(n.inputs)) {
+      if (typeof v !== 'string' || !MODEL_EXT.test(v)) continue
+      const choices = choicesOf(def.input?.required?.[k] ?? def.input?.optional?.[k])
+      // Windows'ta alt klasörler ters bölüyle listelenir
+      const norm = (x: string) => x.replace(/\\/g, '/').toLowerCase()
+      if (choices && !choices.some((c) => norm(c) === norm(v))) missingModels.add(v)
+    }
+  }
+  return { missingNodes: [...missingNodes].sort(), missingModels: [...missingModels].sort() }
+}
+
 // ── HTTP ────────────────────────────────────────────────────────────
 
 const base = (url: string) => url.trim().replace(/\/+$/, '')
+
+/** Uzak sunucu (ters vekil, kiralık GPU) için erişim token'ı */
+export const authHeaders = (token?: string): Record<string, string> => (token ? { Authorization: `Bearer ${token}` } : {})
 
 async function request(url: string, init: RequestInit & { signal?: AbortSignal }, what: string): Promise<Response> {
   try {
@@ -259,22 +351,44 @@ async function request(url: string, init: RequestInit & { signal?: AbortSignal }
 }
 
 /** Sunucu sürümü ve GPU: Ayarlar'daki "Bağlantıyı test et" için */
-export async function comfyInfo(url: string): Promise<string> {
-  const r = await request(`${base(url)}/system_stats`, { signal: AbortSignal.timeout(8000) }, 'sistem bilgisi')
+export async function comfyInfo(url: string, token?: string, timeoutMs = 8000): Promise<string> {
+  const r = await request(`${base(url)}/system_stats`, { headers: authHeaders(token), signal: AbortSignal.timeout(timeoutMs) }, 'sistem bilgisi')
+  if (r.status === 401 || r.status === 403) throw new Error(`ComfyUI erişimi reddetti (${r.status}) — token doğru mu?`)
   if (!r.ok) throw new Error(`ComfyUI yanıtı ${r.status}`)
-  const j = (await r.json()) as { system?: { comfyui_version?: string }; devices?: { name?: string; vram_total?: number }[] }
+  let j: { system?: { comfyui_version?: string }; devices?: { name?: string; vram_total?: number }[] }
+  try {
+    j = (await r.json()) as typeof j
+  } catch (e) {
+    throw new Error('Bu adresteki sunucu ComfyUI değil', { cause: e })
+  }
+  if (!j || typeof j !== 'object' || !('system' in j || 'devices' in j)) throw new Error('Bu adresteki sunucu ComfyUI değil')
   const d = j.devices?.[0]
   const gpu = d?.name ? ` · ${d.name.replace(/^cuda:\d+\s*/, '').replace(/\s*:\s*cudaMallocAsync$/, '')}${d.vram_total ? ` ${Math.round(d.vram_total / 2 ** 30)} GB` : ''}` : ''
   return `ComfyUI ${j.system?.comfyui_version ?? '?'}${gpu}`
 }
 
-async function upload(url: string, file: string, subfolder: string, signal?: AbortSignal): Promise<string> {
+/** Kuyruktaki iş sayısı (çalışan + bekleyen) */
+export async function comfyQueue(url: string, token?: string): Promise<number> {
+  const r = await request(`${base(url)}/queue`, { headers: authHeaders(token), signal: AbortSignal.timeout(5000) }, 'kuyruk')
+  if (!r.ok) throw new Error(`ComfyUI yanıtı ${r.status}`)
+  const q = (await r.json()) as { queue_running?: unknown[]; queue_pending?: unknown[] }
+  return (q.queue_running?.length ?? 0) + (q.queue_pending?.length ?? 0)
+}
+
+/** Sunucudaki düğüm türleri ve seçenekleri (model listeleri dahil); büyük yanıt, çağıran önbelleğe alır */
+export async function comfyObjectInfo(url: string, token?: string): Promise<ObjectInfo> {
+  const r = await request(`${base(url)}/object_info`, { headers: authHeaders(token), signal: AbortSignal.timeout(20000) }, 'düğüm listesi')
+  if (!r.ok) throw new Error(`ComfyUI yanıtı ${r.status}`)
+  return (await r.json()) as ObjectInfo
+}
+
+async function upload(url: string, file: string, subfolder: string, signal?: AbortSignal, token?: string): Promise<string> {
   const form = new FormData()
   form.append('image', new Blob([fs.readFileSync(file)]), path.basename(file))
   form.append('type', 'input')
   form.append('subfolder', subfolder)
   form.append('overwrite', 'true')
-  const r = await request(`${base(url)}/upload/image`, { method: 'POST', body: form, signal }, 'dosya yükleme')
+  const r = await request(`${base(url)}/upload/image`, { method: 'POST', body: form, headers: authHeaders(token), signal }, 'dosya yükleme')
   if (!r.ok) throw new Error(`ComfyUI dosyayı kabul etmedi (${r.status}): ${(await r.text()).slice(0, 200)}`)
   const j = (await r.json()) as { name: string; subfolder?: string }
   return j.subfolder ? `${j.subfolder}/${j.name}` : j.name
@@ -304,6 +418,8 @@ type HistoryEntry = {
 
 export interface ComfyRunOptions {
   url: string
+  /** Sunucu erişim token'ı (Authorization: Bearer) */
+  token?: string
   /** Comfy hesabı anahtarı: partner düğümleri (Meshy, Tripo, ElevenLabs …) için */
   apiKey?: string
   workflowPath: string
@@ -336,7 +452,7 @@ export async function comfyRun(o: ComfyRunOptions): Promise<ComfyResult> {
   ] as const) {
     const file = o.uploads?.[role]
     if (!file) continue
-    values[role] = await upload(root, file, sub, o.signal)
+    values[role] = await upload(root, file, sub, o.signal, o.token)
     o.log(`ComfyUI'a yüklendi: ${values[role]}`)
   }
 
@@ -354,7 +470,9 @@ export async function comfyRun(o: ComfyRunOptions): Promise<ComfyResult> {
   let promptId = ''
   let ws: WebSocket | null = null
   try {
-    ws = new WebSocket(`${root.replace(/^http/i, 'ws')}/ws?clientId=${clientId}`)
+    const wsUrl = `${root.replace(/^http/i, 'ws')}/ws?clientId=${clientId}`
+    // Node'un WebSocket'i (undici) başlık seçeneğini kabul eder; tarayıcı standardında yok
+    ws = o.token ? new (WebSocket as unknown as new (u: string, init: unknown) => WebSocket)(wsUrl, { headers: authHeaders(o.token) }) : new WebSocket(wsUrl)
     ws.onmessage = (ev) => {
       if (typeof ev.data !== 'string') return // önizleme kareleri (ikili)
       try {
@@ -383,7 +501,7 @@ export async function comfyRun(o: ComfyRunOptions): Promise<ComfyResult> {
       {
         method: 'POST',
         signal: o.signal,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders(o.token) },
         body: JSON.stringify({ prompt: workflow, client_id: clientId, ...(o.apiKey ? { extra_data: { api_key_comfy_org: o.apiKey } } : {}) })
       },
       'workflow gönderme'
@@ -398,10 +516,10 @@ export async function comfyRun(o: ComfyRunOptions): Promise<ComfyResult> {
       try {
         await sleep(1500, o.signal)
       } catch (e) {
-        await cancel(root, promptId)
+        await cancel(root, promptId, o.token)
         throw e
       }
-      const h = await request(`${root}/history/${promptId}`, { signal: o.signal }, 'durum sorgusu')
+      const h = await request(`${root}/history/${promptId}`, { headers: authHeaders(o.token), signal: o.signal }, 'durum sorgusu')
       entry = ((await h.json()) as Record<string, HistoryEntry>)[promptId]
       if (entry?.status?.status_str === 'error' || (wsError && entry)) {
         const err = entry.status?.messages?.find((m) => m[0] === 'execution_error')?.[1] as { node_type?: string; exception_message?: string } | undefined
@@ -410,7 +528,7 @@ export async function comfyRun(o: ComfyRunOptions): Promise<ComfyResult> {
       }
       if (entry && (entry.status?.completed || entry.status?.status_str === 'success' || (!entry.status && Object.keys(entry.outputs ?? {}).length))) break
       if (Date.now() > deadline) {
-        await cancel(root, promptId)
+        await cancel(root, promptId, o.token)
         throw new Error(`ComfyUI zaman aşımı (${o.timeoutMin || 30} dk)`)
       }
     }
@@ -426,7 +544,7 @@ export async function comfyRun(o: ComfyRunOptions): Promise<ComfyResult> {
         continue
       }
       const q = new URLSearchParams({ filename: f.filename, subfolder: f.subfolder, type: f.type })
-      const r = await request(`${root}/view?${q}`, { signal: o.signal }, 'çıktı indirme')
+      const r = await request(`${root}/view?${q}`, { headers: authHeaders(o.token), signal: o.signal }, 'çıktı indirme')
       if (!r.ok) throw new Error(`ComfyUI çıktısı indirilemedi: ${f.filename} (${r.status})`)
       const n = files[f.kind].length + 1
       const ext = path.extname(f.filename).toLowerCase() || '.png'
@@ -446,11 +564,12 @@ export async function comfyRun(o: ComfyRunOptions): Promise<ComfyResult> {
 }
 
 /** Kuyruktan çıkar; yalnızca bizim işimiz çalışıyorsa durdur (kullanıcının başka işine dokunma) */
-async function cancel(root: string, promptId: string): Promise<void> {
-  const post = (p: string, body: unknown) => fetch(`${root}${p}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(5000) })
+async function cancel(root: string, promptId: string, token?: string): Promise<void> {
+  const post = (p: string, body: unknown) =>
+    fetch(`${root}${p}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(token) }, body: JSON.stringify(body), signal: AbortSignal.timeout(5000) })
   try {
     await post('/queue', { delete: [promptId] })
-    const q = (await (await fetch(`${root}/queue`, { signal: AbortSignal.timeout(5000) })).json()) as { queue_running?: unknown[][] }
+    const q = (await (await fetch(`${root}/queue`, { headers: authHeaders(token), signal: AbortSignal.timeout(5000) })).json()) as { queue_running?: unknown[][] }
     if (q.queue_running?.some((item) => item[1] === promptId)) await post('/interrupt', { prompt_id: promptId })
   } catch {
     /* sunucu kapanmış olabilir */
