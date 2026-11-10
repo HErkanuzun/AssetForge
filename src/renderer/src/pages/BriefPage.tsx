@@ -113,7 +113,10 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
     if (assetId) return addLink(assetId)
     const files = [...e.dataTransfer.files].filter((f) => IMG_EXT.test(f.name))
     if (!files.length) return toast('Yalnızca görsel dosyaları veya kütüphane asset’leri bırakılabilir')
-    setImages((cur) => [...cur, ...files.map((f) => ({ path: window.forge.pathForFile(f), preview: URL.createObjectURL(f) }))])
+    Promise.all(files.map(async (f) => ({ path: await window.forge.dropFile(f), preview: URL.createObjectURL(f) }))).then(
+      (list) => setImages((cur) => [...cur, ...list]),
+      (err: Error) => toast('Görsel eklenemedi: ' + err.message, 'error')
+    )
   }
 
   const pickImages = async () => {

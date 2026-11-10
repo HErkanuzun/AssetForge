@@ -21,6 +21,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - "Otomatik" skips servers that are off or missing a node or model the workflow needs, then picks the one with the shortest queue. Jobs that start at the same time spread across free servers.
   - The job log says which server was used and why the others were skipped.
   - "Sunucularda denetle" in the library shows, for each server, which nodes and models are missing.
+- **OpenAI-compatible image and voice steps:** the image and sound jobs that ComfyUI can do now also have an OpenAI-compatible option. They work with OpenAI and with local or hosted servers that follow the same API, such as LocalAI, Kokoro TTS or a gateway.
+  - "Görsel (OpenAI uyumlu)" makes images from text, or edits a reference image.
+  - "Ses Satırı (TTS)" turns a line of dialogue into speech: pick the voice, speed, format and delivery notes.
+  - Both use the OpenAI-compatible entries in Settings → AI models; new presets are OpenAI, Kokoro TTS and LocalAI.
+  - New template: "Ses Satırı — Replik + TTS" (the AI writes the line, TTS speaks it, quality check, Unreal import).
+- **Generic HTTP step** ("HTTP İsteği"): connect any generation service with an HTTP API without waiting for a built-in node.
+  - Fill the request with the prompt, seed, image, audio or model (as a path, base64 or data URI).
+  - Pick the result from the response (a URL, base64 or the raw file), and poll jobs that finish later.
+  - The API key is only sent to the service's own address.
+- **Web server: use AssetForge from a browser and share it with your team** (Settings → "Web ve paylaşım"). The browser shows the same app with the same project and jobs, and changes appear for everyone at once.
+  - Accounts with roles. The owner can do everything. An editor can edit and start generation, but can't touch Settings, keys, installs or Unreal Python. A viewer can only look.
+  - Invite links with a role, an expiry time and a number of uses. Passwords are stored as salted hashes.
+  - When two people save at the same time, their changes are merged instead of overwriting each other.
+  - Files dropped or picked in the browser are uploaded into the project folder. Editors can't make the app read files outside the project folder.
+  - Server-only mode: close the window and keep serving from the tray icon, start with `--headless`, or choose "Açılışta pencere açılmasın".
+  - By default it is reachable only from this PC. Turn on "Yerel ağa aç" for your network; Settings explains Tailscale and Cloudflare Tunnel for access from outside.
 
 ## [0.5.0] - 2026-11-10
 

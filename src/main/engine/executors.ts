@@ -2,7 +2,7 @@
 // Her node tipinin çalıştırıcısı.
 import fs from 'node:fs'
 import path from 'node:path'
-import type { Artifact, AssetSpec, Bible, GeneratedPrompt, Job, MeshyResource, ParamValue, QAReport } from '../../shared/types'
+import type { Artifact, AssetSpec, Bible, GeneratedPrompt, Job, LlmProvider, MeshyResource, ParamValue, QAReport } from '../../shared/types'
 import { assetBaseName, parseSizeMeters } from '../../shared/templates'
 import { runAssembly, runBlender, runBlenderAnim } from '../integrations/blender'
 import { planAssembly, reviewAssembly, RIGGER_GUIDE, toForgePlan, type LlmPlan } from '../agent/assemblyPlanner'
@@ -22,7 +22,9 @@ import { resolveWorkflow } from '../integrations/comfyLibrary'
 import { withComfyServer } from '../integrations/comfyServers'
 import { soundEffect } from '../providers/elevenlabs'
 import { createTask, downloadModelTask, waitTask, type MeshyTask } from '../providers/meshy'
-import { allProviders, getSecret, getSettings } from '../settings'
+import { allProviders, getSecret, getSettings, providerKey } from '../settings'
+import { openaiImage, openaiSpeech } from '../providers/openaiMedia'
+import { httpRun, type HttpKind } from '../providers/httpGeneric'
 import { downloadTo, ensureDir, fileToDataUri, resourcePath, truncateWords } from '../util'
 
 export interface ExecCtx {
@@ -129,6 +131,51 @@ async function modelArtifact(ctx: ExecCtx, task: MeshyTask, resource: MeshyResou
 }
 
 /** Düğümdeki workflow → Ayarlardaki varsayılan → yerleşik SDXL şablonu */
+/** İndirilen dosyaları türlerine göre hat çıktılarına çevirir; BVH gerekirse Blender ile FBX'e dönüştürülür */
+async function mediaOutputs(ctx: ExecCtx, f: Record<'image' | 'model' | 'audio' | 'anim', string[]>, want: { seconds?: number; loop?: boolean }): Promise<Record<string, Artifact>> {
+  const s = getSettings()
+  const base = assetBaseName(ctx.asset)
+  const seconds = want.seconds
+  const pr = { loop: want.loop }
+  const outputs: Record<string, Artifact> = {}
+  if (f.image.length) outputs.image = { kind: 'image', files: f.image }
+  const mesh = f.model.find((x) => x.endsWith('.glb')) ?? f.model[0]
+  if (mesh) outputs.model = { kind: 'model', file: mesh, glb: mesh.endsWith('.glb') ? mesh : undefined, thumbnail: f.image[0] }
+  if (f.audio.length) outputs.audio = { kind: 'audio', files: f.audio, target: seconds ? { seconds, loop: pr?.loop } : undefined }
+  const bvh = f.anim.find((x) => x.endsWith('.bvh'))
+  let fbx = f.anim.find((x) => x.endsWith('.fbx'))
+  if (bvh || fbx) {
+    const clip = `AS_${base}`
+    const rootMotion = ctx.asset.extra['RootMotion'] || 'root'
+    let seconds = 0
+    if (bvh) {
+      const b = parseBvh(fs.readFileSync(bvh, 'utf8'))
+      seconds = Math.round(b.frames * b.frameTime * 100) / 100
+      ctx.log(`BVH: ${b.frames} kare, ${seconds} sn`)
+    }
+    if (!fbx && bvh) {
+      if (!s.blenderPath) throw new Error('BVH’yi Unreal’a aktarmak için FBX’e çevirmek gerekiyor; Ayarlar → Yerel araçlar’dan Blender yolunu girin')
+      const a = await runBlenderAnim({ blenderPath: s.blenderPath, bvh, out: path.join(ctx.dir, `${clip}.fbx`), rootMotion, log: ctx.log, signal: ctx.signal })
+      fbx = a.file
+      seconds = a.duration
+    }
+    outputs.anim = { kind: 'animation', clip, bvh: bvh ?? '', fbx: fbx!, seconds, rootMotion, loop: pr?.loop }
+  }
+  return outputs
+}
+
+/** Düğümde seçilen OpenAI uyumlu sağlayıcı; boşsa ilk OpenAI uyumlu kayıt */
+function openaiProvider(id: string): LlmProvider {
+  const list = getSettings().llmProviders.filter((x) => x.kind === 'openai')
+  const found = id ? list.find((x) => x.id === id) : list[0]
+  if (found) return found
+  throw new Error(
+    id
+      ? 'Seçilen OpenAI uyumlu sağlayıcı artık yok; düğümde başka bir sağlayıcı seçin'
+      : 'OpenAI uyumlu sağlayıcı yok. Ayarlar → Yapay zeka modelleri’nden ekleyin (ör. OpenAI: https://api.openai.com/v1, yerel Kokoro: http://127.0.0.1:8880/v1)'
+  )
+}
+
 /** Workflow'u kitaplıktan bulur, uygun ComfyUI sunucusunu seçer ve işi orada çalıştırır */
 async function runComfy(ctx: ExecCtx, p: Params, opts: Omit<ComfyRunOptions, 'url' | 'token' | 'apiKey' | 'workflowPath' | 'log' | 'warn' | 'signal'>) {
   const wf = resolveWorkflow(str(p.workflow))
@@ -307,7 +354,6 @@ const executors: Record<string, Executor> = {
   },
 
   'comfy.workflow': async (ctx, p, inputs) => {
-    const s = getSettings()
     const pr = promptOf(inputs)
     const text = pr?.prompt || str(p.text).trim() || undefined
     const img = inputs.image
@@ -328,31 +374,8 @@ const executors: Record<string, Executor> = {
       timeoutMin: num(p.timeout, 30)
     })
     if (r.skipped.length) ctx.log(`Tanınmayan çıktılar atlandı: ${r.skipped.join(', ')}`)
-    const outputs: Record<string, Artifact> = {}
     const f = r.files
-    if (f.image.length) outputs.image = { kind: 'image', files: f.image }
-    const mesh = f.model.find((x) => x.endsWith('.glb')) ?? f.model[0]
-    if (mesh) outputs.model = { kind: 'model', file: mesh, glb: mesh.endsWith('.glb') ? mesh : undefined, thumbnail: f.image[0] }
-    if (f.audio.length) outputs.audio = { kind: 'audio', files: f.audio, target: seconds ? { seconds, loop: pr?.loop } : undefined }
-    const bvh = f.anim.find((x) => x.endsWith('.bvh'))
-    let fbx = f.anim.find((x) => x.endsWith('.fbx'))
-    if (bvh || fbx) {
-      const clip = `AS_${base}`
-      const rootMotion = ctx.asset.extra['RootMotion'] || 'root'
-      let seconds = 0
-      if (bvh) {
-        const b = parseBvh(fs.readFileSync(bvh, 'utf8'))
-        seconds = Math.round(b.frames * b.frameTime * 100) / 100
-        ctx.log(`BVH: ${b.frames} kare, ${seconds} sn`)
-      }
-      if (!fbx && bvh) {
-        if (!s.blenderPath) throw new Error('BVH’yi Unreal’a aktarmak için FBX’e çevirmek gerekiyor; Ayarlar → Yerel araçlar’dan Blender yolunu girin')
-        const a = await runBlenderAnim({ blenderPath: s.blenderPath, bvh, out: path.join(ctx.dir, `${clip}.fbx`), rootMotion, log: ctx.log, signal: ctx.signal })
-        fbx = a.file
-        seconds = a.duration
-      }
-      outputs.anim = { kind: 'animation', clip, bvh: bvh ?? '', fbx: fbx!, seconds, rootMotion, loop: pr?.loop }
-    }
+    const outputs = await mediaOutputs(ctx, f, { seconds, loop: pr?.loop })
     if (!Object.keys(outputs).length) throw new Error('ComfyUI çıktı vermedi. Workflow’da Save Image / Save Audio / Save 3D gibi bir kaydetme düğümü olmalı.')
     ctx.log(
       `Çıktılar: ${Object.entries(f)
@@ -360,6 +383,105 @@ const executors: Record<string, Executor> = {
         .map(([k, v]) => `${k} ×${v.length}`)
         .join(', ')}`
     )
+    ctx.progress(100)
+    return { outputs }
+  },
+
+  'image.openai': async (ctx, p, inputs) => {
+    const pr = need(inputs, 'prompt', 'prompt').prompt
+    const provider = openaiProvider(str(p.provider))
+    const src = inputs.image?.kind === 'image' ? inputs.image.files[0] : undefined
+    const model = str(p.model).trim() || 'gpt-image-1'
+    ctx.log(`${provider.name} · ${model}${src ? ' · görselden düzenleme' : ''}`)
+    ctx.progress(10)
+    const files = await openaiImage({
+      provider,
+      model,
+      prompt: pr.prompt,
+      image: src,
+      n: num(p.n, 1),
+      size: str(p.size) || undefined,
+      quality: str(p.quality) || undefined,
+      outDir: ctx.dir,
+      baseName: assetBaseName(ctx.asset),
+      signal: ctx.signal
+    })
+    ctx.progress(100)
+    return { outputs: { image: { kind: 'image', files } } }
+  },
+
+  'audio.speech': async (ctx, p, inputs) => {
+    const pr = promptOf(inputs)
+    const text = (pr?.prompt || str(p.text)).trim()
+    if (!text) throw new Error('Seslendirilecek metin yok: Prompt Motoru’nu (Ses Satırı hedefi) bağlayın ya da “Metin” alanını doldurun')
+    const provider = openaiProvider(str(p.provider))
+    const format = str(p.format) || 'wav'
+    const model = str(p.model).trim() || 'gpt-4o-mini-tts'
+    ctx.log(`${provider.name} · ${model} · ${str(p.voice) || 'alloy'}: “${text.slice(0, 80)}${text.length > 80 ? '…' : ''}”`)
+    ctx.progress(10)
+    const file = await openaiSpeech({
+      provider,
+      model,
+      voice: str(p.voice).trim() || 'alloy',
+      text,
+      format,
+      speed: num(p.speed, 1),
+      instructions: str(p.instructions),
+      out: path.join(ctx.dir, `${assetBaseName(ctx.asset)}.${format}`),
+      signal: ctx.signal
+    })
+    ctx.progress(100)
+    return { outputs: { audio: { kind: 'audio', files: [file] } } }
+  },
+
+  'http.request': async (ctx, p, inputs) => {
+    const pr = promptOf(inputs)
+    const kind = (['image', 'model', 'audio', 'anim'].includes(str(p.output)) ? str(p.output) : 'model') as HttpKind
+    const img = inputs.image?.kind === 'image' ? inputs.image.files[0] : undefined
+    const model = inputs.model?.kind === 'model' ? (inputs.model.glb ?? inputs.model.file) : undefined
+    const audio = inputs.audio?.kind === 'audio' ? inputs.audio.files[0] : undefined
+    const tpl = `${str(p.url)}\n${str(p.headers)}\n${str(p.body)}\n${str(p.poll_url)}`
+    // Büyük dosyalar yalnızca şablonda istendiyse base64'e çevrilir
+    const b64 = (f: string | undefined, name: string) => (f && tpl.includes(name) ? fs.readFileSync(f).toString('base64') : undefined)
+    const seconds = pr?.duration_seconds || undefined
+    const authId = str(p.auth)
+    const authProvider = authId ? allProviders().find((x) => x.id === authId) : undefined
+    if (authId && !authProvider) ctx.warn(`Kimlik sağlayıcısı bulunamadı (${authId}); anahtarsız gönderiliyor`)
+    const files = await httpRun({
+      method: str(p.method) === 'GET' ? 'GET' : 'POST',
+      url: str(p.url),
+      headers: str(p.headers),
+      token: authProvider ? providerKey(authProvider) : undefined,
+      bodyType: (['json', 'multipart', 'none'].includes(str(p.body_type)) ? str(p.body_type) : 'json') as 'json' | 'multipart' | 'none',
+      body: str(p.body),
+      values: {
+        PROMPT: pr?.prompt ?? '',
+        NEGATIVE: pr?.negative_prompt ?? '',
+        SEED: comfySeed(ctx, p),
+        SECONDS: seconds ?? '',
+        ASSET: ctx.asset.name,
+        IMAGE_B64: b64(img, 'IMAGE_B64'),
+        IMAGE_DATA_URI: img && tpl.includes('IMAGE_DATA_URI') ? fileToDataUri(img) : undefined,
+        AUDIO_B64: b64(audio, 'AUDIO_B64'),
+        MODEL_B64: b64(model, 'MODEL_B64')
+      },
+      files: { image: img, model, audio },
+      kind,
+      resultPath: str(p.result_path),
+      idPath: str(p.id_path),
+      pollUrl: str(p.poll_url),
+      statusPath: str(p.status_path),
+      doneValues: str(p.done_values),
+      timeoutMin: num(p.timeout, 30),
+      outDir: ctx.dir,
+      baseName: assetBaseName(ctx.asset),
+      log: ctx.log,
+      signal: ctx.signal
+    })
+    ctx.log(`İndirildi: ${files.map((f) => path.basename(f)).join(', ')}`)
+    const byKind: Record<HttpKind, string[]> = { image: [], model: [], audio: [], anim: [] }
+    byKind[kind] = files
+    const outputs = await mediaOutputs(ctx, byKind, { seconds, loop: pr?.loop })
     ctx.progress(100)
     return { outputs }
   },

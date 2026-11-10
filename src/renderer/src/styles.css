@@ -2360,3 +2360,36 @@ select.input {
     width: 200px;
   }
 }
+
+/* Web ve paylaşım */
+.web-led {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--dim);
+  flex: none;
+}
+.web-led.on {
+  background: var(--ok);
+  box-shadow: 0 0 10px var(--ok);
+}
+.web-led.err {
+  background: var(--warn);
+}
+.web-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 6px;
+}
+.web-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #111;
+  background: linear-gradient(135deg, #ff6a2b, #ff9a3c);
+}

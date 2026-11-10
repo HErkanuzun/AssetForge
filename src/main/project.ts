@@ -10,11 +10,8 @@ const PROJECT_FILE = 'forge-project.json'
 export function loadProject(dir: string): Project {
   ensureDir(dir)
   const file = path.join(dir, PROJECT_FILE)
-  if (!fs.existsSync(file)) {
-    const p = defaultProject(path.basename(dir))
-    saveProject(dir, p)
-    return p
-  }
+  // Yeni proje de diskten okunup aynı tamamlamadan geçer (ilk yükleme ile sonrakiler aynı olsun)
+  if (!fs.existsSync(file)) saveProject(dir, defaultProject(path.basename(dir)))
   const p = JSON.parse(fs.readFileSync(file, 'utf8')) as Project
   // Eski dosyalarda eksik alanları tamamla
   const b = defaultBible()

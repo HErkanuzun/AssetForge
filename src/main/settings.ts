@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { setLogSecrets } from './log'
-import type { ComfyServer, ComfyWorkflowEntry, LlmProvider, LlmRoles, McpExpose, McpServerConfig, SettingsPatch, SettingsPublic } from '../shared/types'
+import type { ComfyServer, ComfyWorkflowEntry, LlmProvider, LlmRoles, McpExpose, McpServerConfig, SettingsPatch, SettingsPublic, WebConfig } from '../shared/types'
 import { migrateComfyServers } from '../shared/comfyServers'
 
 type SecretName = 'anthropic' | 'meshy' | 'elevenlabs' | 'huggingface' | 'comfy' | `llm:${string}` | `comfy:${string}`
@@ -37,6 +37,8 @@ interface SettingsFile {
   llmRoles: LlmRoles
   mcpServers: McpServerConfig[]
   mcpExpose: McpExpose
+  /** Paylaşım için web sunucusu (tarayıcıdan aynı uygulama) */
+  web: WebConfig
   /** Claude için web araması (referans araştırması) */
   webSearch: boolean
   /** safeStorage ile şifrelenmiş, base64 */
@@ -85,6 +87,7 @@ function defaults(): SettingsFile {
     llmRoles: { assistant: 'claude', prompts: 'claude', vision: 'claude' },
     mcpServers: [],
     mcpExpose: { enabled: true, port: 9560, token: crypto.randomBytes(18).toString('base64url') },
+    web: { enabled: false, port: 9570, lan: false, headless: false },
     webSearch: true,
     secrets: {}
   }
@@ -114,6 +117,7 @@ export function getSettings(): SettingsFile {
   // Kimodo büyük bir diske taşındıysa ComfyUI de yanına kurulur
   cache.comfyServers = migrateComfyServers(loaded)
   if (!Array.isArray(cache.comfyWorkflows)) cache.comfyWorkflows = []
+  cache.web = { ...d.web, ...loaded.web }
   if (!loaded.comfyHome) cache.comfyHome = path.join(path.dirname(cache.kimodoHome), 'comfyui')
   if (!loaded.mcpExpose) persist() // MCP token'ı bir kez üretilip saklansın
   refreshLogSecrets()
@@ -217,6 +221,7 @@ export function publicSettings(): SettingsPublic {
     llmRoles: s.llmRoles,
     mcpServers: s.mcpServers,
     mcpExpose: s.mcpExpose,
+    web: s.web,
     webSearch: s.webSearch,
     hasKeys: {
       anthropic: !!getSecret('anthropic'),

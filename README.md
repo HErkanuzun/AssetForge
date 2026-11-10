@@ -57,6 +57,8 @@ It is built for indie developers, technical artists and students who want **cons
 - **"Producer" AI agent (Ctrl+J).** An in-app assistant with 20+ tools: write assets, run pipelines, review previews, generate animations and run Python inside Unreal. Paid or irreversible actions always ask for confirmation.
 - **MCP server and client.** AssetForge exposes a token-protected [Model Context Protocol](https://modelcontextprotocol.io) server at `http://127.0.0.1:9560/mcp`, so Claude Code, Claude Desktop or any MCP client can drive your asset pipeline. External MCP servers (Blender MCP, Unreal MCP, filesystem…) can be plugged in as tools.
 - **Bring your own model.** Assign different LLMs to the assistant, the prompt engine and vision QA.
+- **Any generation backend.** Run steps on ComfyUI (one or more servers on your network), on any OpenAI-compatible image or text-to-speech API, or on any HTTP API through the generic HTTP step.
+- **Web server for teams.** Open the same app in a browser and invite people as editors or viewers. Everyone works on one project on one PC, and the app can also run as a server only, with no window.
 - **Game-ready characters.** UE5 Manny/Quinn bone naming, LODs, IK Rig and retargeter, and a shared SOMA skeleton with automatic retargeting.
 
 ## Screenshots
@@ -130,6 +132,9 @@ Yes. Any OpenAI-compatible or Anthropic-compatible endpoint works, including ful
 
 **Can I control it from Claude Code or another AI agent?**
 Yes. Connect any MCP client to `http://127.0.0.1:9560/mcp` with the token shown in Settings.
+
+**Can my team use it together?**
+Yes. Turn on the web server in Settings → "Web ve paylaşım", set an owner password and send invite links. By default it is reachable only from your PC. You can open it to your local network, or use Tailscale or Cloudflare Tunnel for access from outside. On a local network the connection is plain HTTP, so use a tunnel on networks you don't trust.
 
 **Which skeleton do animations use?**
 Clips are generated on Kimodo's SOMA skeleton, renamed to UE5 Manny bones with root motion in Blender, and retargeted to your character in Unreal.

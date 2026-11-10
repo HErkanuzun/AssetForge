@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
-import type { Job, Project, SettingsPublic } from '../../shared/types'
+import type { Job, Project, SettingsPublic, WebMe } from '../../shared/types'
 
 interface Toast {
   id: number
@@ -28,6 +28,10 @@ interface Store {
   /** Hat başlat; parentId verilirse ana asset'in işi bitene kadar bekletir */
   startRun: (pipelineId: string, assetIds: string[], waitFor?: string) => Promise<void>
   deferredCount: number
+  /** Kim bağlı: masaüstünde sahip; tarayıcıda giriş yapan kişi ve rolü */
+  me: WebMe | null
+  /** İzleyici: değişiklik yapamaz */
+  readOnly: boolean
 }
 
 const Ctx = createContext<Store | null>(null)
@@ -38,7 +42,7 @@ export function useStore(): Store {
   return s
 }
 
-export const forgeUrl = (file: string) => 'forge://local/' + encodeURIComponent(file)
+export const forgeUrl = (file: string) => (window.forge.isWeb ? '/files/' : 'forge://local/') + encodeURIComponent(file)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [project, setProjectState] = useState<Project | null>(null)
@@ -51,6 +55,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [deferredCount, setDeferredCount] = useState(0)
   const saveTimer = useRef<number | undefined>(undefined)
   const latest = useRef<Project | null>(null)
+  const [me, setMe] = useState<WebMe | null>(null)
+  const readOnly = me?.role === 'viewer'
+  const readOnlyRef = useRef(false)
+  readOnlyRef.current = readOnly
+  /** Başkasının değişikliği geldiğinde artar: o sırada yoldaki kaydın sürüm bilgisi artık geçersiz */
+  const externalSeq = useRef(0)
+  const pending = useRef(false)
 
   const toast = useCallback((text: string, kind: Toast['kind'] = 'info') => {
     const id = Date.now() + Math.random()
@@ -58,10 +69,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), kind === 'error' ? 9000 : 4500)
   }, [])
 
+  /**
+   * Kaydeder. Sunucu başkalarının değişikliklerini birleştirdiyse yeni hali alır; bu arada yeni bir yerel
+   * düzenleme yapıldıysa eski sürüm numarası korunur, böylece sonraki kayıt da doğru birleştirilir.
+   */
+  const persist = useCallback(async (p: Project) => {
+    pending.current = false
+    if (readOnlyRef.current) return
+    const seq = externalSeq.current
+    const r = await window.forge.project.save(p)
+    const cur = latest.current
+    if (!cur || seq !== externalSeq.current) return
+    if (r.project) {
+      if (cur === p) {
+        latest.current = r.project
+        setProjectState(r.project)
+      }
+    } else latest.current = { ...cur, rev: r.rev }
+  }, [])
+
   const saveNow = useCallback(async () => {
     window.clearTimeout(saveTimer.current)
-    if (latest.current) await window.forge.project.save(latest.current)
-  }, [])
+    if (latest.current) await persist(latest.current)
+  }, [persist])
 
   const setProject = useCallback((p: Project) => {
     latest.current = p
@@ -75,11 +105,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       latest.current = next
       setProjectState(next)
       window.clearTimeout(saveTimer.current)
+      pending.current = true
       saveTimer.current = window.setTimeout(() => {
-        window.forge.project.save(next).catch((e: Error) => toast('Kaydedilemedi: ' + e.message, 'error'))
+        persist(next).catch((e: Error) => toast('Kaydedilemedi: ' + e.message, 'error'))
       }, 500)
     },
-    [toast]
+    [toast, persist]
   )
 
   const refreshJobs = useCallback(async () => setJobs(await window.forge.jobs()), [])
@@ -104,10 +135,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   )
 
   const reload = useCallback(async () => {
-    const [p, s, j] = await Promise.all([window.forge.project.load(), window.forge.settings.get(), window.forge.jobs()])
+    const [p, s, j, who] = await Promise.all([window.forge.project.load(), window.forge.settings.get(), window.forge.jobs(), window.forge.web.me()])
     setProject(p)
     setSettings(s)
     setJobs(j)
+    setMe(who)
     window.forge.library.thumbs().then(setThumbs, () => undefined)
   }, [setProject])
 
@@ -115,9 +147,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     reload().catch((e: Error) => toast(e.message, 'error'))
-    // Asistan ya da MCP istemcisi projeyi değiştirdi → bekleyen kaydı iptal edip diskteki hali al
+    // Asistan, MCP istemcisi ya da başka bir kişi projeyi değiştirdi
     const offProject = window.forge.onProjectChanged((p) => {
-      window.clearTimeout(saveTimer.current)
+      if (pending.current && latest.current && !readOnlyRef.current) {
+        // Kaydedilmemiş yerel düzenleme var: hemen kaydet; sunucu iki tarafı birleştirip döndürür
+        window.clearTimeout(saveTimer.current)
+        persist(latest.current).catch((e: Error) => toast('Kaydedilemedi: ' + e.message, 'error'))
+        return
+      }
+      externalSeq.current++
       setProject(p)
     })
     const offExternal = window.forge.agent.onExternal((name) => toast(`Claude (MCP) → ${name}`, 'info'))
@@ -149,7 +187,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       offProject()
       offExternal()
     }
-  }, [reload, toast, update, setProject])
+  }, [reload, toast, update, setProject, persist])
 
   return (
     <Ctx.Provider
@@ -170,7 +208,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         thumbs,
         refreshThumbs,
         startRun,
-        deferredCount
+        deferredCount,
+        me,
+        readOnly
       }}
     >
       {children}

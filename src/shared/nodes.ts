@@ -21,12 +21,12 @@ export interface ParamDef {
   type: 'text' | 'textarea' | 'number' | 'select' | 'bool'
   default: string | number | boolean
   options?: ParamOption[]
-  /** Seçenekler ayarlardan gelir: llm = LLM sağlayıcıları, mcp = MCP sunucuları, comfyWorkflow = workflow kitaplığı, comfyServer = ComfyUI sunucuları */
-  source?: 'llm' | 'mcp' | 'comfyWorkflow' | 'comfyServer'
+  /** Seçenekler ayarlardan gelir: llm = LLM sağlayıcıları, mcp = MCP sunucuları, comfyWorkflow = workflow kitaplığı, comfyServer = ComfyUI sunucuları, openaiProvider = OpenAI uyumlu sağlayıcılar */
+  source?: 'llm' | 'mcp' | 'comfyWorkflow' | 'comfyServer' | 'openaiProvider'
   help?: string
 }
 
-export type NodeCategory = 'input' | 'prompt' | 'agent' | 'comfy' | 'image' | '3d' | 'audio' | 'anim' | 'process' | 'qa' | 'output'
+export type NodeCategory = 'input' | 'prompt' | 'agent' | 'comfy' | 'custom' | 'image' | '3d' | 'audio' | 'anim' | 'process' | 'qa' | 'output'
 
 export interface NodeDef {
   type: string
@@ -43,6 +43,7 @@ export const CATEGORY_META: Record<NodeCategory, { label: string; color: string 
   prompt: { label: 'Prompt', color: '#a855f7' },
   agent: { label: 'Ajan', color: '#6366f1' },
   comfy: { label: 'ComfyUI', color: '#84cc16' },
+  custom: { label: 'Özel API', color: '#06b6d4' },
   image: { label: 'Görsel', color: '#0ea5e9' },
   '3d': { label: '3D', color: '#f97316' },
   audio: { label: 'Ses', color: '#22c55e' },
@@ -170,6 +171,33 @@ export const PROMPT_TARGETS: Record<string, PromptTarget> = {
       'Write in English for Stable Diffusion style models: comma-separated descriptive phrases, most important first.',
       'Match the art direction, palette and mood of the project bible.',
       'negative_prompt: text, watermark, blurry, deformed, extra limbs, low quality, off-palette colors.'
+    ]
+  },
+  openai_image: {
+    id: 'openai_image',
+    label: 'OpenAI Uyumlu Görsel',
+    maxChars: 1500,
+    usesNegative: false,
+    usesTexturePrompt: false,
+    usesDuration: false,
+    rules: [
+      'Write in English as natural descriptive sentences (these models follow full sentences better than tag lists).',
+      'State the subject first, then composition and camera, materials, colors (translate palette hex codes into color names), lighting and style from the project bible.',
+      'For reference images for 3D: one isolated object or character, neutral background, even lighting, whole subject in frame, no text or watermark.'
+    ]
+  },
+  voice_line: {
+    id: 'voice_line',
+    label: 'Ses Satırı (konuşma)',
+    maxChars: 600,
+    usesNegative: false,
+    usesTexturePrompt: false,
+    usesDuration: false,
+    rules: [
+      'prompt: ONLY the exact words the character speaks, ready to be read aloud. No stage directions, no quotes, no speaker name.',
+      'Use the language the asset asks for (Language/Dil column or the asset description); default to English.',
+      'Match the character and situation from the project bible; keep it short and natural for games (one to three sentences).',
+      'Use punctuation for delivery (commas for pauses, ! for shouting, ... for hesitation).'
     ]
   },
   elevenlabs_sfx: {
@@ -369,6 +397,103 @@ export const NODE_DEFS: NodeDef[] = [
       { id: 'text', label: 'Metin (prompt bağlı değilse)', type: 'textarea', default: '' },
       { id: 'seed', label: 'Seed', type: 'number', default: -1, help: '-1 = her çalıştırmada yeni' },
       { id: 'seconds', label: 'Süre (sn, ses/animasyon)', type: 'number', default: 0, help: '0 = prompttaki süre ya da workflow’daki değer' },
+      { id: 'timeout', label: 'Zaman aşımı (dk)', type: 'number', default: 30 }
+    ]
+  },
+  {
+    type: 'image.openai',
+    label: 'OpenAI Uyumlu Görsel',
+    category: 'image',
+    description:
+      'OpenAI uyumlu bir görsel ucuyla (/images/generations; görsel bağlıysa /images/edits) görsel üretir: OpenAI gpt-image, LocalAI, LiteLLM, Together, Fireworks … Sağlayıcıyı Ayarlar → Yapay zeka modelleri’nden ekleyin.',
+    inputs: [
+      { id: 'prompt', label: 'Prompt', type: 'prompt' },
+      { id: 'image', label: 'Kaynak görsel (düzenleme)', type: 'image', optional: true }
+    ],
+    outputs: [{ id: 'image', label: 'Görsel', type: 'image' }],
+    params: [
+      { id: 'provider', label: 'Sağlayıcı', type: 'select', default: '', source: 'openaiProvider' },
+      { id: 'model', label: 'Model', type: 'text', default: 'gpt-image-1', help: 'Sunucudaki görsel modelinin adı (ör. gpt-image-1, dall-e-3, flux-schnell, stablediffusion)' },
+      {
+        id: 'size',
+        label: 'Boyut',
+        type: 'select',
+        default: '',
+        options: opts(['', 'Sunucunun varsayılanı'], ['1024x1024', '1024×1024'], ['1536x1024', '1536×1024 (yatay)'], ['1024x1536', '1024×1536 (dikey)'], ['512x512', '512×512'])
+      },
+      {
+        id: 'quality',
+        label: 'Kalite',
+        type: 'select',
+        default: '',
+        options: opts(['', 'Sunucunun varsayılanı'], ['low', 'Düşük'], ['medium', 'Orta'], ['high', 'Yüksek'], ['standard', 'standard (dall-e-3)'], ['hd', 'hd (dall-e-3)'])
+      },
+      { id: 'n', label: 'Adet', type: 'number', default: 1 }
+    ]
+  },
+  {
+    type: 'audio.speech',
+    label: 'Ses Satırı (TTS)',
+    category: 'audio',
+    description:
+      'Metni OpenAI uyumlu bir konuşma ucuyla (/audio/speech) seslendirir: OpenAI TTS, Kokoro-FastAPI, openedai-speech, LocalAI, Chatterbox … Prompt Motoru “Ses Satırı” hedefiyle karakterin repliğini yazabilir.',
+    inputs: [{ id: 'prompt', label: 'Replik', type: 'prompt', optional: true }],
+    outputs: [{ id: 'audio', label: 'Ses', type: 'audio' }],
+    params: [
+      { id: 'provider', label: 'Sağlayıcı', type: 'select', default: '', source: 'openaiProvider' },
+      { id: 'model', label: 'Model', type: 'text', default: 'gpt-4o-mini-tts', help: 'ör. gpt-4o-mini-tts, tts-1, kokoro' },
+      { id: 'voice', label: 'Ses', type: 'text', default: 'alloy', help: 'Sunucudaki ses adı (ör. alloy, nova, af_bella)' },
+      { id: 'text', label: 'Metin (replik bağlı değilse)', type: 'textarea', default: '' },
+      { id: 'instructions', label: 'Söyleyiş talimatı', type: 'textarea', default: '', help: 'Destekleyen modeller için: “yorgun, fısıltıyla” gibi' },
+      { id: 'format', label: 'Biçim', type: 'select', default: 'wav', options: opts(['wav', 'WAV'], ['mp3', 'MP3'], ['flac', 'FLAC'], ['opus', 'Opus']) },
+      { id: 'speed', label: 'Hız', type: 'number', default: 1, help: '0.25 – 4' }
+    ]
+  },
+  {
+    type: 'http.request',
+    label: 'HTTP İsteği',
+    category: 'custom',
+    description:
+      'Standart API’si olmayan herhangi bir projeyi bağlar (kendi 3D/ses/hareket sunucunuz, iş kimliği dönen bulut API’leri). İsteği şablonla kurun: {{PROMPT}}, {{NEGATIVE}}, {{SEED}}, {{SECONDS}}, {{ASSET}}, {{IMAGE_B64}}, {{IMAGE_DATA_URI}}, {{AUDIO_B64}}, {{MODEL_B64}}. Sonucu yanıttaki yoldan (ör. data.0.url) ya da yanıtın kendisinden alır.',
+    inputs: [
+      { id: 'prompt', label: 'Prompt', type: 'prompt', optional: true },
+      { id: 'image', label: 'Görsel', type: 'image', optional: true },
+      { id: 'model', label: 'Model', type: 'model', optional: true },
+      { id: 'audio', label: 'Ses', type: 'audio', optional: true }
+    ],
+    outputs: [
+      { id: 'image', label: 'Görsel', type: 'image' },
+      { id: 'model', label: 'Model', type: 'model' },
+      { id: 'audio', label: 'Ses', type: 'audio' },
+      { id: 'anim', label: 'Animasyon', type: 'anim' }
+    ],
+    params: [
+      { id: 'output', label: 'Çıktı türü', type: 'select', default: 'model', options: opts(['image', 'Görsel'], ['model', '3D model'], ['audio', 'Ses'], ['anim', 'Animasyon (BVH/FBX)']) },
+      { id: 'method', label: 'Yöntem', type: 'select', default: 'POST', options: opts(['POST', 'POST'], ['GET', 'GET']) },
+      { id: 'url', label: 'Adres', type: 'text', default: 'http://127.0.0.1:7860/generate', help: '{{PROMPT}} gibi yer tutucular kullanılabilir' },
+      {
+        id: 'auth',
+        label: 'Kimlik (anahtar)',
+        type: 'select',
+        default: '',
+        source: 'openaiProvider',
+        help: 'Anahtarı bu sağlayıcıdan alıp Authorization: Bearer olarak gönderir; anahtar projeye yazılmaz'
+      },
+      { id: 'headers', label: 'Başlıklar', type: 'textarea', default: '', help: 'Her satıra “Ad: değer”. Anahtar yazmayın; “Kimlik” alanını kullanın' },
+      { id: 'body_type', label: 'Gövde', type: 'select', default: 'json', options: opts(['json', 'JSON şablonu'], ['multipart', 'Çok parçalı (dosya yükleme)'], ['none', 'Yok']) },
+      {
+        id: 'body',
+        label: 'Gövde şablonu',
+        type: 'textarea',
+        default: '{\n  "prompt": "{{PROMPT}}",\n  "seed": {{SEED}}\n}',
+        help: 'JSON: metin yer tutucularını tırnak içine yazın. Çok parçalı: her satıra alan=değer; dosya için alan=@image / @model / @audio'
+      },
+      { id: 'result_path', label: 'Sonuç yolu', type: 'text', default: '', help: 'Boş = yanıtın kendisi dosya. Ör. data.0.url, output.mesh, images.*.url (adres, data: ya da base64)' },
+      { id: 'id_path', label: 'İş kimliği yolu (async)', type: 'text', default: '', help: 'Uç hemen bir iş kimliği dönüyorsa, ör. id' },
+      { id: 'poll_url', label: 'Durum sorgu adresi', type: 'text', default: '', help: 'ör. https://api.ornek.com/v1/jobs/{{ID}}; sonuç yolu bu yanıta uygulanır' },
+      { id: 'status_path', label: 'Durum yolu', type: 'text', default: 'status' },
+      { id: 'done_values', label: 'Bitti değerleri', type: 'text', default: '', help: 'Virgülle; boş = succeeded, completed, done …' },
+      { id: 'seed', label: 'Seed', type: 'number', default: -1, help: '-1 = her çalıştırmada yeni' },
       { id: 'timeout', label: 'Zaman aşımı (dk)', type: 'number', default: 30 }
     ]
   },

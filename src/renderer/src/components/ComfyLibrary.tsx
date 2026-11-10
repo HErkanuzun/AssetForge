@@ -61,8 +61,8 @@ export default function ComfyLibrary() {
   const onDrop = (e: DragEvent) => {
     e.preventDefault()
     setDrag(false)
-    const files = [...e.dataTransfer.files].map((f) => window.forge.pathForFile(f)).filter((p) => /\.json$/i.test(p))
-    if (files.length) void importFiles(files)
+    const files = [...e.dataTransfer.files].filter((f) => /\.json$/i.test(f.name))
+    if (files.length) Promise.all(files.map((f) => window.forge.dropFile(f))).then(importFiles, (err: Error) => toast(err.message, 'error'))
     else toast('Yalnızca .json workflow dosyaları eklenebilir', 'error')
   }
 

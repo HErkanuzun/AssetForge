@@ -185,7 +185,10 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
         e.preventDefault()
         setDrag(false)
         const files = [...e.dataTransfer.files].filter((f) => /\.(png|jpe?g|webp)$/i.test(f.name))
-        setImages((cur) => [...cur, ...files.map((f) => ({ path: window.forge.pathForFile(f), preview: URL.createObjectURL(f) }))])
+        Promise.all(files.map(async (f) => ({ path: await window.forge.dropFile(f), preview: URL.createObjectURL(f) }))).then(
+          (list) => setImages((cur) => [...cur, ...list]),
+          (err: Error) => toast('Görsel eklenemedi: ' + err.message, 'error')
+        )
       }}
     >
       <div className="as-head">

@@ -29,17 +29,24 @@ import type {
   Project,
   SettingsPatch,
   SettingsPublic,
-  UeNode
+  UeNode,
+  WebMe,
+  WebRole,
+  WebStatus,
+  WebUserPublic
 } from '../shared/types'
 
 export interface ForgeApi {
+  /** Tarayıcıdan (web sunucusu üzerinden) mı açıldı */
+  isWeb: boolean
   settings: {
     get(): Promise<SettingsPublic>
     set(patch: SettingsPatch): Promise<SettingsPublic>
   }
   project: {
     load(): Promise<Project>
-    save(p: Project): Promise<void>
+    /** rev: kaydedilen sürüm; project: başkasının değişiklikleriyle birleştiyse yeni hal */
+    save(p: Project): Promise<{ rev: number; project?: Project }>
     pickDir(): Promise<Project | null>
   }
   pickFiles(filters: { name: string; extensions: string[] }[], multi?: boolean): Promise<string[]>
@@ -70,6 +77,8 @@ export interface ForgeApi {
   showItem(p: string): Promise<void>
   /** Sürükle-bırak ile gelen dosyanın diskteki yolu */
   pathForFile(f: File): string
+  /** Bırakılan dosyanın kullanılabilir yolu (tarayıcıda sunucuya yüklenir) */
+  dropFile(f: File): Promise<string>
   brief: {
     create(seed?: { title?: string; kind?: AssetKind }): Promise<Brief>
     list(): Promise<Brief[]>
@@ -160,6 +169,19 @@ export interface ForgeApi {
     produce(id: string, opts?: { keys?: string[]; force?: boolean }): Promise<{ clips: number; phases: number }>
     stop(id: string): Promise<void>
     build(id: string): Promise<NonNullable<AnimSystem['lastBuild']>>
+  }
+  /** Paylaşım: web sunucusu hesapları ve davetler */
+  web: {
+    me(): Promise<WebMe>
+    status(): Promise<WebStatus>
+    setOwner(name: string, password: string): Promise<WebUserPublic>
+    /** Davet bağlantısı döner */
+    invite(role: WebRole, hours?: number, maxUses?: number): Promise<string>
+    revokeInvite(token: string): Promise<void>
+    removeUser(id: string): Promise<void>
+    setRole(id: string, role: WebRole): Promise<void>
+    /** Pencereyi kapatır; sunucu bildirim alanında çalışmaya devam eder */
+    headless(): Promise<void>
   }
 }
 

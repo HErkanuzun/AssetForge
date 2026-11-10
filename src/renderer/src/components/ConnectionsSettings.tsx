@@ -10,6 +10,9 @@ const PRESETS: { label: string; p: Omit<LlmProvider, 'id'> }[] = [
   { label: 'Ollama (yerel)', p: { name: 'Ollama', kind: 'openai', baseUrl: 'http://127.0.0.1:11434/v1', model: 'qwen3:14b', vision: false } },
   { label: 'LM Studio (yerel)', p: { name: 'LM Studio', kind: 'openai', baseUrl: 'http://127.0.0.1:1234/v1', model: 'local-model', vision: false } },
   { label: 'OpenRouter', p: { name: 'OpenRouter', kind: 'openai', baseUrl: 'https://openrouter.ai/api/v1', model: 'meta-llama/llama-4-maverick', vision: true } },
+  { label: 'OpenAI (görsel + ses)', p: { name: 'OpenAI', kind: 'openai', baseUrl: 'https://api.openai.com/v1', model: '', vision: true } },
+  { label: 'Kokoro TTS (yerel ses)', p: { name: 'Kokoro', kind: 'openai', baseUrl: 'http://127.0.0.1:8880/v1', model: '', vision: false } },
+  { label: 'LocalAI (yerel görsel + ses)', p: { name: 'LocalAI', kind: 'openai', baseUrl: 'http://127.0.0.1:8080/v1', model: '', vision: false } },
   { label: 'OpenAI uyumlu (özel)', p: { name: 'Özel', kind: 'openai', baseUrl: 'http://127.0.0.1:8000/v1', model: '', vision: false } },
   { label: 'Anthropic uyumlu uç', p: { name: 'Claude (özel uç)', kind: 'anthropic', baseUrl: '', model: 'claude-sonnet-5-5', vision: true } }
 ]
@@ -89,7 +92,8 @@ export function ModelSettings() {
       <h2>Sağlayıcılar</h2>
       <p className="muted small">
         Claude varsayılandır. Yerel modeller (Ollama, LM Studio, vLLM) ya da başka API’ler (OpenRouter, OpenAI uyumlu her uç) eklenebilir ve görevlere ayrı ayrı atanabilir. Yerel modellerde araç
-        kullanımı (tool calling) destekleyen bir model seçin — ör. Qwen3, Llama 3.3/4, Mistral Small 3.
+        kullanımı (tool calling) destekleyen bir model seçin — ör. Qwen3, Llama 3.3/4, Mistral Small 3. OpenAI uyumlu kayıtlar ayrıca hatlardaki <b>OpenAI Uyumlu Görsel</b> ve <b>Ses Satırı (TTS)</b>{' '}
+        düğümlerinde kullanılır (görsel/ses modelinin adı düğümde seçilir); <b>HTTP İsteği</b> düğümü de anahtarını buradan alabilir.
       </p>
       <div className="prov">
         <b>Claude (Anthropic)</b>

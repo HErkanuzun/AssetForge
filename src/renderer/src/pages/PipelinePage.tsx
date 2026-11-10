@@ -52,6 +52,15 @@ function paramOptions(pd: ParamDef, settings: SettingsPublic | null, current = '
     if (current && !lib.some((w) => w.id === current)) list.push({ value: current, label: /[\\/]/.test(current) ? `Dosya: ${current}` : `(silinmiş workflow)` })
     return list
   }
+  if (pd.source === 'openaiProvider') {
+    // Kimlik alanı her sağlayıcının anahtarını kullanabilir; görsel/ses düğümleri yalnızca OpenAI uyumluları
+    const all = (settings?.llmProviders ?? []).filter((l) => !l.builtin && (pd.id === 'auth' || l.kind === 'openai'))
+    return [
+      { value: '', label: pd.id === 'auth' ? 'Kimlik yok' : all.length ? `İlk OpenAI uyumlu (${all[0].name})` : 'Yok — Ayarlar → Yapay zeka modelleri’nden ekleyin' },
+      ...all.map((l) => ({ value: l.id, label: `${l.name}${l.baseUrl ? ` · ${l.baseUrl.replace(/^https?:\/\//, '').slice(0, 40)}` : ''}${l.hasKey ? '' : ' (anahtarsız)'}` })),
+      ...(current && !all.some((l) => l.id === current) ? [{ value: current, label: '(silinmiş sağlayıcı)' }] : [])
+    ]
+  }
   if (pd.source === 'comfyServer') {
     const servers = settings?.comfyServers ?? []
     const def = servers.find((x) => x.id === settings?.comfyDefaultServer)

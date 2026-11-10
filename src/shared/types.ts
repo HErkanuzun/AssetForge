@@ -135,6 +135,8 @@ export interface Pipeline {
 
 export interface Project {
   version: 1
+  /** Ortak düzenleme için sürüm numarası (diske yazılmaz; birleştirmede kullanılır) */
+  rev?: number
   name: string
   bible: Bible
   assets: AssetSpec[]
@@ -340,6 +342,8 @@ export interface SettingsPublic {
   /** '' = yerleşik SDXL şablonu */
   comfyDefaultWorkflow: string
   comfyHome: string
+  /** Web sunucusu: aynı arayüzü tarayıcıdan paylaşma */
+  web: WebConfig
   blenderPath: string
   /** Unreal MCP sunucusu (Remote Execution yoksa yedek yol) */
   ueMcpUrl: string
@@ -361,6 +365,7 @@ export interface SettingsPatch {
   /** Sunucu erişim token'ları (sunucu kimliği → token; boş = sil) */
   comfyTokens?: Record<string, string>
   comfyHome?: string
+  web?: WebConfig
   blenderPath?: string
   ueMcpUrl?: string
   projectDir?: string
@@ -809,4 +814,56 @@ export interface ConnectEvent {
   message: string
   /** Hata olsa da pano izlenmeye devam ediyor */
   pending?: boolean
+}
+
+// ---------------------------------------------------------------------------
+// Web sunucusu: masaüstü arayüzünün tarayıcıdan birebir kopyası, hesaplar ve roller
+
+export type WebRole = 'owner' | 'editor' | 'viewer'
+
+export interface WebConfig {
+  enabled: boolean
+  port: number
+  /** Ağdaki diğer cihazlar bağlanabilsin (0.0.0.0); kapalıysa yalnızca bu bilgisayar (127.0.0.1) */
+  lan: boolean
+  /** Uygulama açılırken pencere açılmasın, yalnızca sunucu çalışsın (bildirim alanı simgesiyle) */
+  headless: boolean
+}
+
+export interface WebUserPublic {
+  id: string
+  name: string
+  role: WebRole
+  createdAt: number
+  lastSeen?: number
+}
+
+export interface WebInvitePublic {
+  token: string
+  role: WebRole
+  createdAt: number
+  expiresAt: number
+  uses: number
+  maxUses: number
+  url: string
+}
+
+export interface WebStatus {
+  running: boolean
+  port: number
+  /** Bağlanılabilecek adresler (bu bilgisayar + ağ adresleri) */
+  urls: string[]
+  error?: string
+  ownerSet: boolean
+  users: WebUserPublic[]
+  invites: WebInvitePublic[]
+  /** Şu an bağlı tarayıcılar */
+  online: { name: string; role: WebRole; since: number }[]
+}
+
+export interface WebMe {
+  name: string
+  role: WebRole
+  /** Tarayıcıdan mı bağlı (false = masaüstü penceresi) */
+  web: boolean
 }

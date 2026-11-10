@@ -36,7 +36,8 @@ const P: Record<string, string> = {
   terminal: 'M4 17l6-5-6-5M12 19h8',
   chevron: 'M9 6l6 6-6 6',
   back: 'M15 6l-6 6 6 6',
-  gauge: 'M12 14l4-4M3.5 18a9 9 0 1 1 17 0'
+  gauge: 'M12 14l4-4M3.5 18a9 9 0 1 1 17 0',
+  globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18'
 }
 
 export type IconName = keyof typeof P

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, net, protocol, shell, Tray } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -34,7 +34,7 @@ import { briefToAssets, createBrief, libraryThumbnails, sendBrief } from './prov
 import { Runner } from './engine/runner'
 import { importAssetList } from './importers/assetList'
 import { discoverUe, ueStatus } from './integrations/ue'
-import { deleteBrief, listBriefs, listJobs, loadBrief, loadProject, saveBrief, saveProject } from './project'
+import { deleteBrief, listBriefs, listJobs, loadBrief, loadProject, saveBrief } from './project'
 import { clientFor, extractBible, planAnimSystem, suggestMotion, testClaude } from './providers/claude'
 import { generateDesignSection } from './providers/design'
 import { teachUe } from './integrations/ueSkills'
@@ -46,6 +46,16 @@ import type { AnimSystem, AnimSystemKind } from '../shared/types'
 import { applyPlan, buildSystemInUe, deleteSystem, getSystem, listSystems, produceSystem, saveSystem, stopProduce, systemStates, type ProduceOptions } from './anim/systems'
 import { balance } from './providers/meshy'
 import { allProviders, getSettings, publicSettings, setSettings } from './settings'
+import { adoptSynced, loadSynced, saveSynced } from './projectSync'
+import { currentCaller } from './web/caller'
+import { dropUser, emit, onlineClients, setDesktopSink } from './web/hub'
+import { shellEscalation } from './web/policy'
+import { syncWebServer, webError, webRunning, webUrls, type Handler } from './web/server'
+import { createInvite, listInvites, listUsers, ownerSet, removeUser, revokeInvite, setOwner, setRole } from './web/access'
+import type { WebRole, WebStatus } from '../shared/types'
+
+// Geliştirme/deneme: ayrı ayar klasörü (gerçek ayarlara dokunmadan ikinci bir örnek)
+if (process.env.FORGE_USER_DATA) app.setPath('userData', path.resolve(process.env.FORGE_USER_DATA))
 
 initLog(app.getPath('logs'))
 console.info(`[app] AssetForge ${app.getVersion()} başlıyor (Electron ${process.versions.electron}, ${process.platform} ${process.arch})`)
@@ -58,7 +68,8 @@ if (!devHook && !app.requestSingleInstanceLock()) {
   process.exit(0)
 }
 app.on('second-instance', (_e, argv) => {
-  if (!win) return
+  // Yalnızca sunucu modundayken uygulama yeniden açılırsa pencereyi göster
+  if (!win) return showWindow()
   if (win.isMinimized()) win.restore()
   win.focus()
   // Görev çubuğu sağ tık kısayolu: --page=<ad> ile açılan sayfaya git
@@ -74,7 +85,7 @@ const taskbarJob = createJobTaskbar(() => win)
 
 const runner = new Runner(
   (job: Job) => {
-    win?.webContents.send('job:update', job)
+    emit('job:update', job)
     taskbarJob(job)
     // Geliştirme: FORGE_AUTORUN ile başlatılan iş bitince sonucu yazdırıp kapan
     if (process.env.FORGE_AUTORUN && ['done', 'failed', 'canceled'].includes(job.status)) {
@@ -112,6 +123,9 @@ function createWindow(): void {
     if (e.level === 'error' || e.level === 'warning') writeLog(`renderer:${e.level === 'error' ? 'error' : 'warn'}`, `${e.message} (${e.sourceId.split('/').pop()}:${e.lineNumber})`)
   })
   win.webContents.on('render-process-gone', (_e, d) => console.error('[renderer] süreç kapandı:', d.reason, d.exitCode))
+  win.on('closed', () => {
+    win = null
+  })
   win.on('unresponsive', () => console.warn('[renderer] pencere yanıt vermiyor'))
   win.on('responsive', () => console.info('[renderer] pencere yeniden yanıt veriyor'))
   const page = process.env.FORGE_PAGE ?? pageFromArgv(process.argv) ?? ''
@@ -161,7 +175,11 @@ function registerFileProtocol(): void {
   })
 }
 
+/** Tüm işlemler: masaüstü IPC'si ve web sunucusu aynı işleyicileri kullanır */
+const registry = new Map<string, Handler>()
+
 function handle<T extends unknown[], R>(channel: string, fn: (...args: T) => R | Promise<R>): void {
+  registry.set(channel, fn as unknown as Handler)
   ipcMain.handle(channel, async (_e, ...args) => {
     try {
       return { ok: true, value: await fn(...(args as T)) }
@@ -174,15 +192,31 @@ function handle<T extends unknown[], R>(channel: string, fn: (...args: T) => R |
 function registerIpc(): void {
   const dir = () => getSettings().projectDir
 
-  handle('settings:get', () => publicSettings())
+  handle('settings:get', () => {
+    const s = publicSettings()
+    if (currentCaller().role === 'owner') return s
+    // Web'den bağlanan editör/izleyici: MCP anahtarı ve dış MCP başlık/ortam değerleri gizli
+    return { ...s, mcpExpose: { ...s.mcpExpose, token: '' }, mcpServers: s.mcpServers.map((m) => ({ ...m, env: '', headers: '' })) }
+  })
   handle('settings:set', async (patch: SettingsPatch) => {
     setSettings(patch)
     if (patch.mcpExpose) await startMcp()
+    if (patch.web) await startWeb()
     return publicSettings()
   })
 
-  handle('project:load', () => loadProject(dir()))
-  handle('project:save', (p: Project) => saveProject(dir(), p))
+  handle('project:load', () => loadSynced(dir()))
+  handle('project:save', (p: Project) => {
+    const who = currentCaller()
+    if (who.role !== 'owner') {
+      const why = shellEscalation(loadProject(dir()), p)
+      if (why) throw new Error(why)
+    }
+    // Başkası bu arada kaydettiyse değişiklikler birleştirilir; diğer pencerelere yeni hal gider
+    const r = saveSynced(dir(), p)
+    emit('project:changed', r.project, who.clientId)
+    return { rev: r.rev, project: r.merged ? r.project : undefined }
+  })
   handle('project:pickDir', async () => {
     const r = await dialog.showOpenDialog(win!, { properties: ['openDirectory', 'createDirectory'], title: 'Proje klasörü seç' })
     if (r.canceled || !r.filePaths[0]) return null
@@ -219,7 +253,7 @@ function registerIpc(): void {
   handle('test:comfy', (id?: string, draft?: { url?: string; token?: string }) => testServer(id || managedServer().id, draft))
   // Yerel ComfyUI: kurulum, başlat/durdur, tarayıcıda düğüm editörünü aç
   handle('comfy:status', () => comfyLocalStatus())
-  handle('comfy:step', (step: string) => comfyLocalStep(step, (line) => win?.webContents.send('comfy:log', line)))
+  handle('comfy:step', (step: string) => comfyLocalStep(step, (line) => emit('comfy:log', line)))
   handle('comfy:logs', () => comfyLocalLogs())
   handle('comfy:open', (id?: string) => openExternal(normalizeComfyUrl((id && findServer(id)?.url) || managedServer().url)))
   // Birden çok sunucu ve workflow kitaplığı
@@ -241,7 +275,7 @@ function registerIpc(): void {
     const b = loadBrief(dir(), id)
     return b ? { ...b, history: [] } : null
   })
-  handle('brief:send', (id: string, input: BriefInput) => sendBrief(dir(), loadProject(dir()), id, input, (ev) => win?.webContents.send('brief:event', ev)))
+  handle('brief:send', (id: string, input: BriefInput) => sendBrief(dir(), loadProject(dir()), id, input, (ev) => emit('brief:event', ev)))
   handle('brief:patch', (id: string, patch: Partial<Pick<Brief, 'title' | 'kit' | 'status' | 'committedAssetIds'>>) => {
     const b = loadBrief(dir(), id)
     if (!b) throw new Error('Brief bulunamadı')
@@ -259,7 +293,7 @@ function registerIpc(): void {
 
   // Kimodo (NVIDIA hareket üretimi)
   handle('kimodo:status', () => kimodoStatus())
-  handle('kimodo:step', (step: string) => kimodoStep(step, (line) => win?.webContents.send('kimodo:log', line)))
+  handle('kimodo:step', (step: string) => kimodoStep(step, (line) => emit('kimodo:log', line)))
   handle('kimodo:logs', () => kimodoLogs())
   handle('kimodo:suggest', async (text: string, character: string) => {
     const { data, usd } = await suggestMotion(loadProject(dir()).bible, text, character)
@@ -267,7 +301,7 @@ function registerIpc(): void {
   })
 
   // Animasyon sistemleri
-  const sysCtx = () => ({ dir: dir(), runner, notify: (p: Project) => win?.webContents.send('project:changed', p) })
+  const sysCtx = () => ({ dir: dir(), runner, notify: (p: Project) => emit('project:changed', adoptSynced(getSettings().projectDir, p)) })
   handle('animsys:list', (characterId?: string) => listSystems(dir(), characterId))
   handle('animsys:create', (kind: AnimSystemKind, characterId: string, name?: string, style?: string) => saveSystem(sysCtx(), newAnimSystem(kind, characterId, name, style)))
   handle('animsys:save', (sys: AnimSystem) => saveSystem(sysCtx(), sys))
@@ -293,8 +327,8 @@ function registerIpc(): void {
   // Yapımcı asistanı
   const deps = {
     runner,
-    notify: (p: Project) => win?.webContents.send('project:changed', p),
-    emit: (e: unknown) => win?.webContents.send('agent:event', e)
+    notify: (p: Project) => emit('project:changed', adoptSynced(getSettings().projectDir, p)),
+    emit: (e: unknown) => emit('agent:event', e)
   }
   handle('agent:clis', (force?: boolean) => agentClis(!!force))
   handle('agent:list', () => listConvs(dir()))
@@ -324,7 +358,7 @@ function registerIpc(): void {
   handle('connect:start', (service: ConnectService) =>
     connectStart(
       service,
-      (e: ConnectEvent) => win?.webContents.send('connect:event', e),
+      (e: ConnectEvent) => emit('connect:event', e),
       () => {
         if (win?.isMinimized()) win.restore()
         win?.flashFrame(true)
@@ -337,6 +371,45 @@ function registerIpc(): void {
   handle('shell:openPath', (p: string) => openInsideProject(p, dir()))
   handle('shell:showItem', (p: string) => showInsideProject(p, dir()))
 
+  // Web sunucusu: hesaplar, davetler, durum
+  handle('web:me', () => {
+    const c = currentCaller()
+    return { name: c.name, role: c.role, web: c.kind === 'web' }
+  })
+  handle('web:status', (): WebStatus => {
+    const cfg = getSettings().web
+    return {
+      running: webRunning(),
+      port: cfg.port,
+      urls: webRunning() ? webUrls() : [],
+      error: webError(),
+      ownerSet: ownerSet(),
+      users: listUsers(),
+      invites: listInvites(inviteBase()),
+      online: onlineClients().map((c) => ({ name: c.name, role: c.role, since: c.since }))
+    }
+  })
+  handle('web:setOwner', (name: string, password: string) => setOwner(name, password))
+  handle('web:invite', (role: WebRole, hours?: number, maxUses?: number) => {
+    const inv = createInvite(role, hours, maxUses)
+    return `${inviteBase()}/join/${inv.token}`
+  })
+  handle('web:revokeInvite', (token: string) => revokeInvite(token))
+  handle('web:removeUser', (id: string) => {
+    removeUser(id)
+    dropUser(id)
+  })
+  handle('web:setRole', (id: string, role: WebRole) => {
+    setRole(id, role)
+    dropUser(id)
+  })
+  // Pencereyi kapat, sunucu bildirim alanında çalışmaya devam etsin
+  handle('web:headless', () => {
+    if (!webRunning()) throw new Error('Önce web sunucusunu açın')
+    ensureTray()
+    setTimeout(() => win?.close(), 100)
+  })
+
   // Tanılama: hata bildirimine eklenecek dosya ve günlük klasörü
   handle('diag:save', () => saveDiagnostics(win))
   handle('diag:openLogs', async () => {
@@ -345,10 +418,71 @@ function registerIpc(): void {
   })
 }
 
+/** Davet bağlantısı için adres: ağa açıksa bu bilgisayarın ağ adresi */
+function inviteBase(): string {
+  const cfg = getSettings().web
+  const urls = webUrls(cfg.port, cfg.lan)
+  return urls[urls.length > 1 ? 1 : 0]
+}
+
+function startWeb(): Promise<void> {
+  return syncWebServer(getSettings().web, {
+    registry,
+    rendererDir: path.join(__dirname, '../renderer'),
+    projectDir: () => getSettings().projectDir,
+    diagnostics: buildDiagnostics
+  }).then(() => updateTray())
+}
+
+let tray: Tray | null = null
+
+function trayMenu(): Menu {
+  const urls = webRunning() ? webUrls() : []
+  return Menu.buildFromTemplate([
+    { label: 'AssetForge’u aç', click: () => showWindow() },
+    { type: 'separator' },
+    { label: webRunning() ? `Web sunucusu açık · ${onlineClients().length} bağlı` : 'Web sunucusu kapalı', enabled: false },
+    ...urls.map((u) => ({ label: `Kopyala: ${u}`, click: () => clipboard.writeText(u) })),
+    { type: 'separator' },
+    { label: 'Çık', click: () => app.quit() }
+  ])
+}
+
+function updateTray(): void {
+  tray?.setContextMenu(trayMenu())
+  tray?.setToolTip(webRunning() ? `AssetForge — web sunucusu açık (${webUrls()[0]})` : 'AssetForge')
+}
+
+/** Pencere yokken uygulamanın yaşadığını gösteren bildirim alanı simgesi */
+function ensureTray(): void {
+  if (tray) return updateTray()
+  const png = path.join(__dirname, '../../build/icon.png')
+  const make = (img: Electron.NativeImage) => {
+    if (tray) return
+    tray = new Tray(img.resize({ width: 16, height: 16 }))
+    tray.on('click', () => showWindow())
+    // Menü her açılışta tazelensin (bağlı kişi sayısı, adresler)
+    tray.on('right-click', () => tray?.popUpContextMenu(trayMenu()))
+    updateTray()
+  }
+  if (fs.existsSync(png)) make(nativeImage.createFromPath(png))
+  else app.getFileIcon(process.execPath, { size: 'small' }).then(make, () => make(nativeImage.createEmpty()))
+}
+
+function showWindow(): void {
+  if (!win) {
+    console.info('[app] pencere açılıyor')
+    createWindow()
+  } else {
+    if (win.isMinimized()) win.restore()
+    win.focus()
+  }
+}
+
 function startMcp(): Promise<void> {
   return syncMcpServer(
-    () => ({ dir: getSettings().projectDir, runner, notify: (p: Project) => win?.webContents.send('project:changed', p) }),
-    (name) => win?.webContents.send('agent:external', name)
+    () => ({ dir: getSettings().projectDir, runner, notify: (p: Project) => emit('project:changed', adoptSynced(getSettings().projectDir, p)) }),
+    (name) => emit('agent:external', name)
   )
 }
 
@@ -362,7 +496,27 @@ app.whenReady().then(() => {
   setupJumpList()
   registerFileProtocol()
   registerIpc()
-  createWindow()
+  setDesktopSink((channel, payload) => {
+    if (win && !win.isDestroyed()) win.webContents.send(channel, payload)
+  })
+  // Pencereli ya da yalnızca sunucu (--headless ya da Ayarlar → Web → "Pencere açılmasın")
+  const cfg = getSettings().web
+  const headless = !devHook && (process.argv.includes('--headless') || (cfg.enabled && cfg.headless))
+  if (headless) {
+    if (!cfg.enabled) setSettings({ web: { ...cfg, enabled: true } })
+    startWeb()
+      .then(() => {
+        ensureTray()
+        if (!webRunning()) {
+          console.error('[web] yalnızca sunucu modunda sunucu açılamadı; pencere açılıyor:', webError())
+          createWindow()
+        }
+      })
+      .catch((e) => console.error('[web]', e))
+  } else {
+    createWindow()
+    if (cfg.enabled) startWeb().catch((e) => console.error('[web]', e))
+  }
   startMcp().catch((e) => console.error('[mcp]', e))
   // Geliştirme: FORGE_AGENT_TEST="mesaj" → Yapımcı'ya mesaj gönder, sohbeti yazdır, kapan
   const agentTest = process.env.FORGE_AGENT_TEST
@@ -392,5 +546,10 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+  // Web sunucusu açıksa uygulama bildirim alanında çalışmaya devam eder
+  if (webRunning()) {
+    ensureTray()
+    return
+  }
   if (process.platform !== 'darwin') app.quit()
 })

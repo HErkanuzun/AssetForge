@@ -13,6 +13,7 @@ import { allProviders, getSettings, providerFor } from '../settings'
 import { ensureDir, newId, sniffImage } from '../util'
 import { externalTools } from './mcpClient'
 import { builtinTools, type AgentTool, type ToolCtx, type ToolResult } from './tools'
+import { currentCaller } from '../web/caller'
 
 const SYSTEM = `You are "Yapımcı" (the Producer) — the AI production lead built into AssetForge, a game-asset factory for the user's Unreal Engine 5 game. You help with every step of making a high-quality, realistic game: planning, art direction, asset lists, 3D models, textures, characters, vehicles, audio, VFX, animation and Unreal integration. You act through tools; the user watches the results in the app.
 
@@ -151,6 +152,13 @@ async function execTool(dir: string, c: AgentConversation, tools: AgentTool[], c
     item.result = parsed.error
     push()
     return { text: `INVALID_INPUT: ${parsed.error}`, isError: true }
+  }
+  // Web'den bağlanan editör ve izleyiciler bu bilgisayarda kod çalıştıran araçları (Unreal Python, dış MCP) kullanamaz
+  if (currentCaller().role !== 'owner' && (call.name === 'unreal_python' || !builtinTools().some((b) => b.name === call.name))) {
+    item.status = 'denied'
+    item.result = 'Bu araç bu bilgisayarda kod çalıştırır; yalnızca sahip kullanabilir'
+    push()
+    return { text: 'This tool runs code on the host computer and is only available to the owner of this AssetForge. Do not retry it; tell the user.', isError: true }
   }
   const ask = t.confirm?.(parsed.data)
   if (ask) {

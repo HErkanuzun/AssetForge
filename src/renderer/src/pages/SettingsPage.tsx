@@ -10,8 +10,9 @@ import ComfyLocal from '../components/ComfyLocal'
 import ComfyServers from '../components/ComfyServers'
 import ComfyLibrary from '../components/ComfyLibrary'
 import AgentClis from '../components/AgentClis'
+import WebSettings from '../components/WebSettings'
 
-type Section = 'connect' | 'models' | 'project' | 'tools' | 'anim' | 'unreal' | 'mcp' | 'about'
+type Section = 'connect' | 'models' | 'project' | 'tools' | 'anim' | 'unreal' | 'mcp' | 'web' | 'about'
 
 const SECTIONS: { id: Section; label: string; icon: IconName; desc: string; keywords: string }[] = [
   {
@@ -44,6 +45,13 @@ const SECTIONS: { id: Section; label: string; icon: IconName; desc: string; keyw
     icon: 'terminal',
     desc: 'Claude Code / Desktop bağlantısı, dış MCP sunucuları',
     keywords: 'mcp claude code desktop sunucu server token port blender mcp araç'
+  },
+  {
+    id: 'web',
+    label: 'Web ve paylaşım',
+    icon: 'globe',
+    desc: 'Tarayıcıdan erişim, ekip davetleri ve roller, yalnızca sunucu modu',
+    keywords: 'web tarayıcı browser paylaş ekip davet katıl rol editör izleyici sahip parola sunucu headless pencere tailscale cloudflare tünel ağ lan'
   },
   { id: 'about', label: 'Hakkında', icon: 'gauge', desc: 'Sürüm, lisans, destek ve tanılama', keywords: 'sürüm versiyon hakkında lisans github hata bildir destek tanılama günlük log sorun' }
 ]
@@ -130,6 +138,7 @@ export default function SettingsPage() {
   const badge = (id: Section): ReactNode => {
     if (id === 'connect') return missingCore ? <span className="set-dot warn" title="Eksik anahtar var" /> : <span className="set-count">{keyCount}/4</span>
     if (id === 'mcp' && s.mcpExpose.enabled) return <span className="set-dot ok" title="MCP sunucusu açık" />
+    if (id === 'web' && s.web.enabled) return <span className="set-dot ok" title="Web sunucusu açık" />
     return null
   }
 
@@ -331,6 +340,9 @@ export default function SettingsPage() {
       break
     case 'mcp':
       body = <McpSettings />
+      break
+    case 'web':
+      body = <WebSettings />
       break
     case 'about':
       body = (

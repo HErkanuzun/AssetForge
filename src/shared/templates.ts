@@ -129,6 +129,24 @@ export const PIPELINE_TEMPLATES: Pipeline[] = [
     ]
   ),
   chain(
+    'tpl_voice_tts',
+    'Ses Satırı — Replik + TTS',
+    'Karakter repliği: Prompt Motoru repliği yazar → OpenAI uyumlu konuşma ucu (OpenAI TTS, Kokoro, LocalAI…) seslendirir → Unreal.',
+    [
+      ['asset', 'asset.input'],
+      ['prompt', 'prompt.generate', { target: 'voice_line' }],
+      ['voice', 'audio.speech'],
+      ['qa', 'qa.review', { on_fail: 'continue', max_retries: 1 }],
+      ['export', 'export.ue']
+    ],
+    [
+      ['asset', 'asset', 'prompt', 'asset'],
+      ['prompt', 'prompt', 'voice', 'prompt'],
+      ['voice', 'audio', 'qa', 'subject'],
+      ['qa', 'subject', 'export', 'subject']
+    ]
+  ),
+  chain(
     'tpl_texture_comfy',
     'Doku — ComfyUI (QA)',
     'Malzeme/zemin dokusu: tileable prompt → yerel ComfyUI → kalite kontrol → Unreal.',

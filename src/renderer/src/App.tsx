@@ -12,6 +12,9 @@ import LibraryPage from './pages/LibraryPage'
 import PipelinePage from './pages/PipelinePage'
 import SettingsPage from './pages/SettingsPage'
 import { useStore } from './store'
+import type { WebRole } from '../../shared/types'
+
+const ROLE_LABEL: Record<WebRole, string> = { owner: 'Sahip', editor: 'Editör', viewer: 'İzleyici' }
 
 export type Page = 'home' | 'library' | 'anim' | 'pipeline' | 'jobs' | 'design' | 'bible' | 'settings'
 
@@ -51,7 +54,9 @@ const TITLES: Record<Page, string> = {
 }
 
 export default function App() {
-  const { project, settings, jobs, toasts, deferredCount } = useStore()
+  const { project, settings, jobs, toasts, deferredCount, me, readOnly } = useStore()
+  // Tarayıcıdan bağlanan editör/izleyici Ayarlar'ı görmez
+  const canSettings = !me || me.role === 'owner'
   // #library, #anim … ya da #brief:<id> (geliştirme/test için doğrudan açılış)
   const hash = decodeURIComponent(window.location.hash.slice(1))
   const initial = (hash.startsWith('brief:') ? 'home' : hash) as Page
@@ -120,6 +125,7 @@ export default function App() {
 
   let body
   if (!project) body = <div className="stage-empty">Yükleniyor…</div>
+  else if (page === 'settings' && !canSettings) body = <div className="stage-empty">Ayarlar yalnızca proje sahibine açık.</div>
   else if (page === 'home') body = brief ? <BriefPage key={brief.id} id={brief.id} firstMessage={brief.first} onBack={() => setBrief(null)} /> : <HomePage />
   else if (page === 'library') body = <LibraryPage />
   else if (page === 'anim') body = <AnimPage />
@@ -149,7 +155,7 @@ export default function App() {
           </div>
           {NAV.map(item)}
           <div className="rail-sep" />
-          {NAV2.map(item)}
+          {NAV2.filter((n) => n.id !== 'settings' || canSettings).map(item)}
           <div className="rail-foot dim small center" title={settings?.projectDir}>
             {project ? `${project.assets.length}` : ''}
             <br />
@@ -164,6 +170,11 @@ export default function App() {
               {project?.bible.projectName || project?.name || '…'}
             </span>
             <span className="spacer" />
+            {readOnly && (
+              <span className="chip pink" title="Proje sahibi size izleyici rolü verdi: değişiklikler kaydedilmez, üretim başlatılamaz">
+                Yalnızca görüntüleme
+              </span>
+            )}
             {(running > 0 || deferredCount > 0) && (
               <span className="queue-chip" onClick={() => setPage('jobs')}>
                 <span className="pulse" />
@@ -173,6 +184,17 @@ export default function App() {
             <button className={`as-toggle ${assistant ? 'on' : ''}`} onClick={() => setAssistant(!assistant)} title="Yapımcı asistanı (Ctrl+J)">
               <Icon name="spark" size={15} /> Yapımcı
             </button>
+            {me?.web && (
+              <span className="web-user" title={`Tarayıcıdan bağlısınız (${ROLE_LABEL[me.role]})`}>
+                <span className="web-avatar">{me.name.slice(0, 1).toLocaleUpperCase('tr')}</span>
+                <span className="small">
+                  {me.name} · <span className="muted">{ROLE_LABEL[me.role]}</span>
+                </span>
+                <a className="btn ghost" href="/logout">
+                  Çıkış
+                </a>
+              </span>
+            )}
           </header>
           <div className="content">
             {body}

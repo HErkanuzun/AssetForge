@@ -7,6 +7,10 @@ import './assistant.css'
 import './animsys.css'
 import App from './App'
 import { StoreProvider } from './store'
+import { installWebBridge } from './webBridge'
+
+// Tarayıcıdan açıldıysa (web sunucusu) masaüstü köprüsünün yerine HTTP köprüsü
+installWebBridge()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
