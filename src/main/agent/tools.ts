@@ -4,10 +4,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { z } from 'zod'
 import type { AssetKind, AssetSpec, Bible, Job, Project } from '../../shared/types'
+import { designMarkdown } from '../../shared/design'
 import { suggestPipeline } from '../../shared/templates'
 import type { Runner } from '../engine/runner'
 import { kimodoStatus } from '../integrations/kimodo'
-import { discoverUe, execInUe } from '../integrations/ue'
+import { discoverUe, runInUe } from '../integrations/ue'
 import { listBriefs, listJobs, loadBrief, loadProject, saveProject } from '../project'
 import { ANIM_SYSTEMS, animSystemInfo, newAnimSystem, stylePrompt } from '../../shared/animSystems'
 import { applyPlan, buildSystemInUe, getSystem, listSystems, produceSystem, saveSystem, systemStates } from '../anim/systems'
@@ -174,6 +175,18 @@ const AssetFields = z.object({
 
 export function builtinTools(): AgentTool[] {
   return [
+    tool({
+      name: 'get_game_design',
+      description:
+        'Oyun tasarım dokümanı (GDD, Markdown): tek cümlelik fikir, tasarım sütunları, mekanikler, oyun / hikâye döngüleri (akış şeması), hikâye (perdeler, karakterler) ve arayüz ekranları (öğeler, veri bağlantıları, geçişler). Oyun içine bir şey eklerken, UI kurarken ya da kit önerirken önce oku.',
+      schema: z.object({}),
+      readOnly: true,
+      run: async (ctx) => {
+        const p = loadProject(ctx.dir)
+        return p.design ? designMarkdown(p) : 'Bu projede henüz oyun tasarımı yok (AssetForge → Oyun Tasarımı).'
+      }
+    }),
+
     tool({
       name: 'project_overview',
       description:
@@ -649,7 +662,7 @@ export function builtinTools(): AgentTool[] {
       schema: z.object({ code: z.string().describe('Çalıştırılacak Python kodu') }),
       confirm: (d) => `Unreal’da şu Python çalıştırılsın mı?\n\n${clip(d.code, 1500)}`,
       run: async (_ctx, d) => {
-        const r = await execInUe(d.code)
+        const r = await runInUe(d.code)
         return { text: `${r.success ? 'Başarılı' : 'HATA'}\n${clip(r.output, 6000)}${r.result && r.result !== 'None' ? `\nSonuç: ${clip(r.result, 2000)}` : ''}`, isError: !r.success }
       }
     })

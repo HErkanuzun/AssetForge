@@ -7,6 +7,7 @@ import type Anthropic from '@anthropic-ai/sdk'
 import fs from 'node:fs'
 import path from 'node:path'
 import { z } from 'zod'
+import { designContext } from '../../shared/design'
 import type { AssetKind, AssetSpec, Brief, BriefEvent, BriefInput, BriefQuestion, BriefSpec, KitItem, Project } from '../../shared/types'
 import { briefsDir, loadBrief, saveBrief } from '../project'
 import { getSettings } from '../settings'
@@ -54,7 +55,11 @@ const KitSchema = z.object({
         group: z.enum(['model', 'doku', 'ses', 'vfx', 'animasyon']),
         kind: z.enum(KINDS),
         name: z.string().min(1).describe('Turkish asset name'),
-        role: z.string().describe('Short English role tag'),
+        role: z
+          .string()
+          .describe(
+            'Short English role tag. For vehicle/prop sounds use exactly one of: engine_loop, engine_start, engine_stop, horn, door_open, door_close, trunk_open, trunk_close, hood_open, hood_close (other sounds: free tag like impact_metal, skid_asphalt)'
+          ),
         purpose: z.string().describe('Turkish: why the game needs it / when it plays'),
         description: z.string().describe('Turkish design note for the prompt engine (materials, intensity, surface, perspective...)'),
         priority: z.enum(['P0', 'P1', 'P2']),
@@ -137,7 +142,7 @@ WHAT TO COVER (adapt to the asset type, skip what is irrelevant)
    - Prop/weapon: static / interactive (moving parts) / hero prop.
 5. Performance budget: propose a triangle budget for the tier (hero character 40-60k, NPC/creature 15-30k, vehicle 30-80k by tier, props usually 1-15k). Never accept "10 million polygons": explain LODs (50/25/10%) are generated automatically.
 6. World context — this is what makes the kit complete. Ask about the game's tone (chill/cozy vs tense/realistic), the surfaces and environments it touches (asphalt, sand, mud, snow, water, grass…), weather, and its interactions:
-   - Vehicle: what comes out when it moves (exhaust smoke, dust per surface, mud spray, tire tracks), what happens on collision (sparks, debris, glass, dents/damage state), sounds (dynamic engine, start/stop, idle, door open/close, horn, crash/impact per material, tire skid per surface, suspension creaks).
+   - Vehicle: the vehicle is rigged automatically (wheels, opening doors/trunk/hood, exhaust and light sockets, dent zones) and its door/trunk/horn/engine sounds are wired in Unreal by role tag, so give every such sound the standard role tag. What comes out when it moves (exhaust smoke, dust per surface, mud spray, tire tracks), what happens on collision (sparks, debris, glass, dents/damage state), sounds (dynamic engine, start/stop, idle, door open/close, horn, crash/impact per material, tire skid per surface, suspension creaks).
    - Character: footsteps per surface, cloth/gear foley, voice efforts (later), locomotion and interaction animations.
    - Creature/weapon/prop: impacts, use sounds, VFX, destruction.
 7. Engine sounds are DYNAMIC: explain in one sentence that the engine is rendered as several seamless RPM layers that Unreal crossfades and pitches by RPM/throttle in a MetaSound (that is how games make engines react). Create ONE kit item for it with "dynamic" set (layers 5-6, realistic idle/max rpm for that engine).
@@ -305,7 +310,11 @@ export async function sendBrief(dir: string, project: Project, briefId: string, 
     const model = getSettings().claudeModel
     const system: Anthropic.Beta.BetaTextBlockParam[] = [
       { type: 'text', text: DIRECTOR },
-      { type: 'text', text: `PROJECT BIBLE\n${bibleContext(project.bible)}\n\n${libraryContext(project)}`, cache_control: { type: 'ephemeral' } }
+      {
+        type: 'text',
+        text: [`PROJECT BIBLE\n${bibleContext(project.bible)}`, designContext(project.design), libraryContext(project)].filter(Boolean).join('\n\n'),
+        cache_control: { type: 'ephemeral' }
+      }
     ]
 
     for (let round = 0; round < 8; round++) {

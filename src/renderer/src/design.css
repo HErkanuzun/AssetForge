@@ -1,0 +1,150 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/* Oyun Tasarımı sayfası */
+.design .card {
+  margin-bottom: 14px;
+}
+.design .ai-bar {
+  border-color: rgba(255, 106, 43, 0.35);
+}
+.design-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+.design-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.design-block:last-child {
+  border-bottom: 0;
+}
+
+.loops {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+}
+.loop-list {
+  width: 240px;
+  flex: none;
+  align-self: flex-start;
+  min-width: 0;
+}
+/* Uzun seçenek adları seçim kutusunu sütundan taşırmasın */
+.loop-list select {
+  width: 100%;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+.loop-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+}
+.loop-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.loop-item.on {
+  border-color: var(--line2);
+  background: rgba(255, 255, 255, 0.07);
+}
+.loop-editor {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.loop-canvas {
+  position: relative;
+  height: 520px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg2);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.loop-tools {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+}
+.loop-node {
+  min-width: 140px;
+  max-width: 220px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 2px solid;
+  background: var(--panel2);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+.loop-node.sel {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
+}
+.loop-type {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.loop-note {
+  color: var(--muted);
+  font-size: 11px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.screens {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.screen-canvas {
+  height: 460px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg2);
+  margin-top: 10px;
+}
+.screen-node {
+  background: var(--panel2) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--line2) !important;
+  border-radius: 10px !important;
+  font-size: 12px;
+}
+.screen-node.selected {
+  border-color: var(--accent) !important;
+}
+@media (max-width: 1100px) {
+  .screens,
+  .loops {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+  .loop-list {
+    width: 100%;
+  }
+}

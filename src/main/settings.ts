@@ -12,7 +12,11 @@ interface SettingsFile {
   claudeModel: string
   comfyUrl: string
   comfyWorkflow: string
+  /** AssetForge'un kurduğu yerel ComfyUI klasörü (venv + ComfyUI deposu) */
+  comfyHome: string
   blenderPath: string
+  /** Unreal MCP sunucusu (Remote Execution yoksa yedek yol) */
+  ueMcpUrl: string
   projectDir: string
   audioFormat: string
   concurrency: number
@@ -53,7 +57,9 @@ function defaults(): SettingsFile {
     claudeModel: 'claude-opus-5-5',
     comfyUrl: 'http://127.0.0.1:8188',
     comfyWorkflow: '',
+    comfyHome: path.join(app.getPath('userData'), 'comfyui'),
     blenderPath: detectBlender(),
+    ueMcpUrl: 'http://127.0.0.1:8000/mcp',
     projectDir: path.join(app.getPath('documents'), 'AssetForge', 'Projem'),
     // 44.1 kHz PCM ElevenLabs Pro plan ister; 24 kHz tüm planlarda çalışır
     audioFormat: 'pcm_24000',
@@ -96,6 +102,8 @@ export function getSettings(): SettingsFile {
   // Geliştirme kancası: yalnızca bu oturum için; dosyaya yazılmaz
   if (process.env.FORGE_PROJECT_DIR) cache.projectDir = process.env.FORGE_PROJECT_DIR
   if (!cache.blenderPath) cache.blenderPath = d.blenderPath
+  // Kimodo büyük bir diske taşındıysa ComfyUI de yanına kurulur
+  if (!loaded.comfyHome) cache.comfyHome = path.join(path.dirname(cache.kimodoHome), 'comfyui')
   if (!loaded.mcpExpose) persist() // MCP token'ı bir kez üretilip saklansın
   refreshLogSecrets()
   return cache
@@ -171,7 +179,9 @@ export function publicSettings(): SettingsPublic {
     claudeModel: s.claudeModel,
     comfyUrl: s.comfyUrl,
     comfyWorkflow: s.comfyWorkflow,
+    comfyHome: s.comfyHome,
     blenderPath: s.blenderPath,
+    ueMcpUrl: s.ueMcpUrl,
     projectDir: s.projectDir,
     audioFormat: s.audioFormat,
     concurrency: s.concurrency,

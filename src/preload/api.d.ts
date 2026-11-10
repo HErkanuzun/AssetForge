@@ -4,6 +4,7 @@ import type {
   AnimSystemClipState,
   AnimSystemKind,
   AgentConversation,
+  ComfyLocalStatus,
   ConnectEvent,
   ConnectService,
   AgentEvent,
@@ -13,6 +14,8 @@ import type {
   AssetKind,
   AssetSpec,
   Bible,
+  DesignSection,
+  GameDesign,
   Brief,
   BriefEvent,
   BriefInput,
@@ -38,6 +41,12 @@ export interface ForgeApi {
   pickFiles(filters: { name: string; extensions: string[] }[], multi?: boolean): Promise<string[]>
   importAssets(file: string): Promise<ImportResult>
   extractBible(pdfs: string[], current: Bible, categoryHint: string): Promise<{ data: Partial<Bible>; usd: number }>
+  design: {
+    generate(project: Project, section: DesignSection, instruction: string, engine: 'api' | 'claude-code' | 'codex'): Promise<{ data: Partial<GameDesign>; usd: number }>
+    exportMd(project: Project): Promise<string>
+    /** Tasarımı ve asset kurallarını Unreal Agent Skill olarak yazar */
+    teachUe(project: Project): Promise<string[]>
+  }
   run: {
     start(pipelineId: string, assetIds: string[]): Promise<Job[]>
     cancel(jobId: string): Promise<void>
@@ -47,6 +56,7 @@ export interface ForgeApi {
   onNavigate(cb: (page: string) => void): () => void
   onJobUpdate(cb: (job: Job) => void): () => void
   ueDiscover(): Promise<UeNode[]>
+  ueStatus(): Promise<{ remote: UeNode[]; mcp: boolean; python: string }>
   testClaude(): Promise<string>
   testMeshy(): Promise<number>
   /** ComfyUI sürümü ve GPU */
@@ -100,6 +110,15 @@ export interface ForgeApi {
   mcp: {
     status(): Promise<{ servers: McpServerStatus[]; expose: { running: boolean; url: string } }>
     test(id: string): Promise<McpServerStatus>
+  }
+  /** AssetForge'un kurduğu yerel ComfyUI */
+  comfy: {
+    status(): Promise<ComfyLocalStatus>
+    step(step: string): Promise<void>
+    logs(): Promise<string>
+    /** Düğüm editörünü tarayıcıda açar */
+    open(): Promise<void>
+    onLog(cb: (line: string) => void): () => void
   }
   kimodo: {
     status(): Promise<KimodoStatus>

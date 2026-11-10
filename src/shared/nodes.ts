@@ -21,10 +21,12 @@ export interface ParamDef {
   type: 'text' | 'textarea' | 'number' | 'select' | 'bool'
   default: string | number | boolean
   options?: ParamOption[]
+  /** Seçenekler ayarlardan gelir: llm = LLM sağlayıcıları, mcp = MCP sunucuları */
+  source?: 'llm' | 'mcp'
   help?: string
 }
 
-export type NodeCategory = 'input' | 'prompt' | 'comfy' | 'image' | '3d' | 'audio' | 'anim' | 'process' | 'qa' | 'output'
+export type NodeCategory = 'input' | 'prompt' | 'agent' | 'comfy' | 'image' | '3d' | 'audio' | 'anim' | 'process' | 'qa' | 'output'
 
 export interface NodeDef {
   type: string
@@ -39,6 +41,7 @@ export interface NodeDef {
 export const CATEGORY_META: Record<NodeCategory, { label: string; color: string }> = {
   input: { label: 'Girdi', color: '#64748b' },
   prompt: { label: 'Prompt', color: '#a855f7' },
+  agent: { label: 'Ajan', color: '#6366f1' },
   comfy: { label: 'ComfyUI', color: '#84cc16' },
   image: { label: 'Görsel', color: '#0ea5e9' },
   '3d': { label: '3D', color: '#f97316' },
@@ -354,6 +357,49 @@ export const NODE_DEFS: NodeDef[] = [
     ]
   },
   {
+    type: 'agent.task',
+    label: 'Ajan Görevi',
+    category: 'agent',
+    description:
+      'Seçtiğin yapay zekâ (Claude, OpenAI uyumlu bir model, Claude Code ya da Codex) bu adımı kendi başına yapar: bağladığın araçları (Blender MCP, Unreal MCP, terminal…) kullanır, dosyaları bu düğümün klasörüne bırakır. Model / görsel / ses olarak sonraki düğümlere geçer. Kalite kontrol geri bildirimi bu düğüme gelir.',
+    inputs: [
+      { id: 'asset', label: 'Asset', type: 'asset', optional: true },
+      { id: 'prompt', label: 'Prompt', type: 'prompt', optional: true },
+      { id: 'image', label: 'Görsel', type: 'image', optional: true },
+      { id: 'model', label: 'Model', type: 'model', optional: true },
+      { id: 'audio', label: 'Ses', type: 'audio', optional: true }
+    ],
+    outputs: [
+      { id: 'model', label: 'Model', type: 'model' },
+      { id: 'image', label: 'Görsel', type: 'image' },
+      { id: 'audio', label: 'Ses', type: 'audio' }
+    ],
+    params: [
+      {
+        id: 'engine',
+        label: 'Motor',
+        type: 'select',
+        default: 'api',
+        options: opts(['api', 'API (Ayarlar’daki LLM)'], ['claude-code', 'Claude Code (aboneliğinle)'], ['codex', 'Codex CLI (aboneliğinle)']),
+        help: 'API: Ayarlar → Yapay zekâ’daki sağlayıcı. Claude Code / Codex: bilgisayarında kurulu, giriş yapılmış CLI'
+      },
+      { id: 'provider', label: 'LLM (API motoru)', type: 'select', default: '', source: 'llm', help: 'Boş = Yapımcı asistanının modeli' },
+      { id: 'mcp', label: 'Araçlar (MCP)', type: 'select', default: '', source: 'mcp', help: 'Ayarlar → MCP’de eklediğin sunucular. Bu düğümde onay sormadan çalışırlar' },
+      { id: 'shell', label: 'Terminal kullanabilsin', type: 'bool', default: false, help: 'Komut çalıştırabilir (blender --background, ffmpeg, python…). Yalnızca güvendiğin görevlerde aç' },
+      {
+        id: 'task',
+        label: 'Görev',
+        type: 'textarea',
+        default: '',
+        help: 'Ne yapsın? Ör. "Blender’da asset’in low-poly modelini kur, tekerlekleri ayrı obje yap, GLB olarak kaydet". {asset} = asset adı'
+      },
+      { id: 'expect', label: 'Beklenen çıktı', type: 'select', default: 'model', options: opts(['model', '3D model'], ['image', 'Görsel'], ['audio', 'Ses'], ['any', 'Ne üretirse']) },
+      { id: 'cli_model', label: 'CLI modeli', type: 'text', default: '', help: 'Claude Code / Codex için; boş = CLI varsayılanı' },
+      { id: 'max_rounds', label: 'En fazla tur (API)', type: 'number', default: 40 },
+      { id: 'timeout', label: 'Zaman aşımı (dk)', type: 'number', default: 30 }
+    ]
+  },
+  {
     type: 'model.meshy.text3d',
     label: 'Meshy Metin→3D',
     category: '3d',
@@ -452,6 +498,33 @@ export const NODE_DEFS: NodeDef[] = [
     ]
   },
   {
+    type: 'rig.assembly',
+    label: 'Montaj ve Hareket Rigi',
+    category: 'process',
+    description:
+      'Modeli Blender’da ölçer; yapay zekâ ölçülü görünüşlere bakıp hareketli parçaları (tekerlek, kapı, kaput, bagaj, kapak…) keser, pivotlarına kemik koyar, efekt noktalarını (egzoz, far, toz), ezilme bölgelerini (morph target + hasar maskesi) ve açılma/kapanma kliplerini ekler, kit seslerini kliplere eşler. Kontrol render’larına bakıp kendi planını düzeltir. Unreal Export bunu iskeletli mesh + araç / obje Blueprint’i olarak kurar.',
+    inputs: [
+      { id: 'model', label: 'Model', type: 'model' },
+      { id: 'image', label: 'Referans görsel', type: 'image', optional: true }
+    ],
+    outputs: [{ id: 'model', label: 'Rigli model', type: 'model' }],
+    params: [
+      {
+        id: 'engine',
+        label: 'Motor',
+        type: 'select',
+        default: 'api',
+        options: opts(['api', 'API (Ayarlar’daki LLM)'], ['claude-code', 'Claude Code (aboneliğinle)'], ['codex', 'Codex CLI (aboneliğinle)']),
+        help: 'Claude Code / Codex: kontrol render’larına kendisi bakar, Blender’ı kendisi çalıştırır'
+      },
+      { id: 'provider', label: 'LLM (API motoru, görsel destekli)', type: 'select', default: '', source: 'llm', help: 'Boş = Ayarlar’daki kalite kontrol (görsel) modeli' },
+      { id: 'extra', label: 'Ek talimat', type: 'textarea', default: '', help: 'Ör. "4 kapı ve bagaj açılsın, kaput açılmasın"' },
+      { id: 'length', label: 'Gerçek uzunluk (m)', type: 'number', default: 0, help: '0 = asset boyutundan ya da modelden' },
+      { id: 'rounds', label: 'Kontrol turu', type: 'number', default: 2, help: 'Yapay zekâ kontrol render’larına bakıp planı en fazla bu kadar düzeltir' },
+      { id: 'plan', label: 'Elle plan (JSON)', type: 'textarea', default: '', help: 'Doluysa yapay zekâ atlanır; biçim resources/python/forge_assembly.py başında' }
+    ]
+  },
+  {
     type: 'qa.review',
     label: 'Kalite Kontrol',
     category: 'qa',
@@ -527,7 +600,9 @@ export const NODE_DEFS: NodeDef[] = [
       { id: 'auto_import', label: "Unreal'a otomatik import", type: 'bool', default: true },
       { id: 'content_path', label: 'İçerik yolu', type: 'text', default: '', help: 'Boş = <UE kökü>/<kategori>' },
       { id: 'lods', label: 'LOD oranları', type: 'text', default: '0.5,0.25,0.1', help: 'İskeletli mesh için; boş = LOD yok' },
-      { id: 'ik_rig', label: 'IK Rig + Manny retarget', type: 'bool', default: true, help: 'İskeletli mesh için IK Rig ve Manny→karakter retargeter kurar' }
+      { id: 'ik_rig', label: 'IK Rig + Manny retarget', type: 'bool', default: true, help: 'İskeletli mesh için IK Rig ve Manny→karakter retargeter kurar' },
+      { id: 'template', label: 'Araç şablonu', type: 'text', default: '', help: 'Montajlı araç için kopyalanacak araç Blueprint’i (/Game/...). Boş = projedeki KV şablonlarından uygun olanı' },
+      { id: 'kit_wait', label: 'Kit seslerini bekle (dk)', type: 'number', default: 20, help: 'Montajlı araçta kapı / motor / korna sesleri hâlâ üretiliyorsa en fazla bu kadar beklenir' }
     ]
   }
 ]

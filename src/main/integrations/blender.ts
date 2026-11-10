@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { ModelStats } from '../../shared/types'
 import { ensureDir, resourcePath } from '../util'
+import { run } from './process'
 
 export interface BlenderResult {
   file: string
@@ -115,4 +116,44 @@ export function runBlenderAnim(opts: { blenderPath: string; bvh: string; out: st
       resolve({ file: opts.out, ...st })
     })
   })
+}
+
+/** forge_assembly.py: analyze (ölçülü görünüşler) ya da build (parçala, rigle, hasar, klipler) */
+export async function runAssembly(opts: {
+  blenderPath: string
+  cmd: 'analyze' | 'build'
+  input: string
+  outDir: string
+  name: string
+  front?: string
+  plan?: Record<string, unknown>
+  log: (m: string) => void
+  signal?: AbortSignal
+}): Promise<Record<string, unknown>> {
+  if (!opts.blenderPath || !fs.existsSync(opts.blenderPath)) throw new Error('Blender bulunamadı. Ayarlar → Blender yolu')
+  ensureDir(opts.outDir)
+  const args = ['-b', '--factory-startup', '-P', resourcePath('python', 'forge_assembly.py'), '--', opts.cmd, '--in', opts.input, '--out', opts.outDir, '--name', opts.name]
+  if (opts.front) args.push(`--front=${opts.front}`)
+  if (opts.plan) {
+    const planFile = path.join(opts.outDir, 'plan.json')
+    fs.writeFileSync(planFile, JSON.stringify(opts.plan, null, 1))
+    args.push('--plan', planFile)
+  }
+  const r = await run(opts.blenderPath, args, {
+    log: (l) => {
+      if (l.startsWith('[FORGE]')) opts.log(l.slice(8))
+    },
+    signal: opts.signal,
+    timeoutMs: 20 * 60 * 1000
+  })
+  const file = path.join(opts.outDir, opts.cmd === 'analyze' ? 'analysis.json' : 'assembly.json')
+  if (r.code !== 0 || !fs.existsSync(file)) {
+    const err = r.out
+      .split(/\r?\n/)
+      .filter((l) => /Error|Traceback|SystemExit|raise/.test(l))
+      .slice(-4)
+      .join(' | ')
+    throw new Error(`Blender montaj adımı (${opts.cmd}) başarısız: ${err || r.out.slice(-400)}`)
+  }
+  return JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, unknown>
 }

@@ -210,3 +210,15 @@ describe('sahte ComfyUI sunucusuyla uçtan uca', () => {
     await expect(comfyRun({ url: 'http://127.0.0.1:9', workflowPath: wfFile, values: {}, outDir: dir, baseName: 'x', log: () => undefined })).rejects.toThrow(/ulaşılamadı/)
   })
 })
+
+describe('yerel ComfyUI adresi', () => {
+  it('yalnızca bu bilgisayardaki adres yönetilir; port adresten okunur', async () => {
+    const { isLocalUrl, portOf } = await import('../src/main/integrations/comfy')
+    expect(isLocalUrl('http://127.0.0.1:8188')).toBe(true)
+    expect(isLocalUrl('http://localhost:9000/')).toBe(true)
+    expect(isLocalUrl('http://192.168.1.20:8188')).toBe(false)
+    expect(isLocalUrl('bozuk')).toBe(false)
+    expect(portOf('http://127.0.0.1:8190')).toBe(8190)
+    expect(portOf('http://127.0.0.1')).toBe(80)
+  })
+})

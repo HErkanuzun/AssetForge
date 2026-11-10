@@ -54,6 +54,7 @@ export const PIPELINE_TEMPLATES: Pipeline[] = [
       ['qa_img', 'qa.review', { min_score: 7 }],
       ['gen', 'model.meshy.image3d'],
       ['blender', 'blender.process'],
+      ['rig', 'rig.assembly', { engine: 'claude-code' }],
       ['qa', 'qa.review'],
       ['export', 'export.ue']
     ],
@@ -64,7 +65,9 @@ export const PIPELINE_TEMPLATES: Pipeline[] = [
       ['qa_img', 'subject', 'gen', 'image'],
       ['prompt', 'prompt', 'gen', 'prompt'],
       ['gen', 'model', 'blender', 'model'],
-      ['blender', 'model', 'qa', 'subject'],
+      ['blender', 'model', 'rig', 'model'],
+      ['qa_img', 'subject', 'rig', 'image'],
+      ['rig', 'model', 'qa', 'subject'],
       ['qa', 'subject', 'export', 'subject']
     ]
   ),
@@ -142,6 +145,31 @@ export const PIPELINE_TEMPLATES: Pipeline[] = [
       ['img', 'image', 'qa', 'subject'],
       ['qa', 'subject', 'export', 'subject']
     ]
+  ),
+  chain(
+    'tpl_agent_blender',
+    'Ajan — Blender MCP ile Model (QA)',
+    'Seçtiğin yapay zekâ Blender MCP üzerinden modeli Blender’da kendisi kurar (parçalar ayrı objeler), GLB kaydeder → Blender temizlik → kalite kontrol → Unreal. Kalite kontrol beğenmezse geri bildirim ajana gider. Blender açık ve BlenderMCP eklentisi bağlı olmalı (Ayarlar → MCP).',
+    [
+      ['asset', 'asset.input'],
+      [
+        'agent',
+        'agent.task',
+        {
+          task: 'Build {asset} in Blender through the Blender MCP tools as a game-ready low-poly model that matches the asset description and the project bible. Use clean, separate, well-named objects for parts that must move (wheels, doors, lids, levers), apply simple PBR materials, keep the triangle budget, then export the whole model as GLB into the output folder and render a preview PNG there.',
+          expect: 'model'
+        }
+      ],
+      ['blender', 'blender.process'],
+      ['qa', 'qa.review'],
+      ['export', 'export.ue']
+    ],
+    [
+      ['asset', 'asset', 'agent', 'asset'],
+      ['agent', 'model', 'blender', 'model'],
+      ['blender', 'model', 'qa', 'subject'],
+      ['qa', 'subject', 'export', 'subject']
+    ]
   )
 ]
 
@@ -175,9 +203,9 @@ PIPELINE_TEMPLATES.push(
     ]
   ),
   chain(
-    'tpl_vehicle_body',
-    'Araç — Gövde (Konsept→3D)',
-    'Araç gövdesi: referans görsel → kalite kapısı → görsel→3D → Blender (boyut, bütçe, pivot) → kalite kontrol → Unreal. Süspansiyon/teker rigi Araç modülünde.',
+    'tpl_vehicle_rig',
+    'Araç — Konsept→3D + Rig → Unreal',
+    'Araç: referans görsel → kalite kapısı → görsel→3D → Blender (boyut, bütçe, pivot) → montaj ve hareket rigi (tekerlek, kapı, bagaj, efekt noktaları, ezilme bölgeleri, klipler) → kalite kontrol → Unreal (iskeletli mesh, fizik, Anim BP, kit sesleri, araç Blueprint’i).',
     [
       ['asset', 'asset.input'],
       [
@@ -269,7 +297,7 @@ export function suggestPipeline(a: { kind: string; role?: string; dynamic?: unkn
     case 'creature':
       return 'tpl_prop_concept3d'
     case 'vehicle':
-      return 'tpl_vehicle_body'
+      return 'tpl_vehicle_rig'
     case 'sfx':
     case 'music':
       return 'tpl_sfx'

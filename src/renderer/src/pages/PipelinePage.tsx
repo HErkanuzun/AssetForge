@@ -17,7 +17,8 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CATEGORY_META, defaultParams, NODE_DEF_MAP, NODE_DEFS, PORT_COLORS, portsCompatible, type NodeCategory } from '../../../shared/nodes'
 import { PIPELINE_TEMPLATES } from '../../../shared/templates'
-import type { Pipeline, PipelineEdge, PipelineNode } from '../../../shared/types'
+import type { ParamDef } from '../../../shared/nodes'
+import type { Pipeline, PipelineEdge, PipelineNode, SettingsPublic } from '../../../shared/types'
 import { ForgeNode, RunStateCtx, type ForgeRFNode } from '../components/ForgeNode'
 import { Field, NumberInput, Select, TextArea, TextInput, Toggle, AsyncButton } from '../components/ui'
 import { useStore } from '../store'
@@ -37,12 +38,29 @@ function toRFEdge(e: PipelineEdge, nodes: PipelineNode[]): Edge {
   return { ...e, animated: false, style: { stroke: t ? PORT_COLORS[t] : '#888', strokeWidth: 2 } }
 }
 
+/** Seçenekleri ayarlardan gelen parametreler (LLM sağlayıcıları, MCP sunucuları) */
+function paramOptions(pd: ParamDef, settings: SettingsPublic | null): { value: string; label: string }[] {
+  if (pd.source === 'llm')
+    return [
+      { value: '', label: 'Yapımcı asistanının modeli' },
+      { value: 'claude', label: 'Claude (Anthropic)' },
+      ...(settings?.llmProviders ?? []).map((l) => ({ value: l.id, label: `${l.name} · ${l.model}` }))
+    ]
+  if (pd.source === 'mcp')
+    return [
+      { value: '', label: 'Tüm etkin sunucular' },
+      { value: 'none', label: 'Hiçbiri' },
+      ...(settings?.mcpServers ?? []).map((m) => ({ value: m.id, label: m.enabled ? m.name : `${m.name} (kapalı)` }))
+    ]
+  return pd.options ?? []
+}
+
 function newPipelineId() {
   return 'pl_' + Date.now().toString(36)
 }
 
 function Editor({ goJobs }: { goJobs: () => void }) {
-  const { project, update, jobs, selectedAssets, saveNow, toast } = useStore()
+  const { project, update, jobs, selectedAssets, saveNow, toast, settings } = useStore()
   const p = project!
   const [pipelineId, setPipelineId] = useState(p.pipelines[0]?.id ?? '')
   const pipeline = p.pipelines.find((pl) => pl.id === pipelineId)
@@ -256,7 +274,7 @@ function Editor({ goJobs }: { goJobs: () => void }) {
                 return (
                   <Field key={pd.id} label={pd.label} help={pd.help}>
                     {pd.type === 'select' ? (
-                      <Select value={String(v)} onChange={(x) => setParam(pd.id, x)} options={pd.options ?? []} />
+                      <Select value={String(v)} onChange={(x) => setParam(pd.id, x)} options={paramOptions(pd, settings)} />
                     ) : pd.type === 'bool' ? (
                       <Toggle value={v === true} onChange={(x) => setParam(pd.id, x)} />
                     ) : pd.type === 'number' ? (

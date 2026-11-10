@@ -3,6 +3,7 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import fs from 'node:fs'
 import path from 'node:path'
+import { designContext } from '../../shared/design'
 import type { AgentConversation, AgentEvent, AgentInput, AgentViewItem, LlmProvider, Project } from '../../shared/types'
 import { oaChatStream, type OaMessage, type OaPart, type OaTool } from '../ai/openai'
 import type { Runner } from '../engine/runner'
@@ -228,7 +229,7 @@ export async function sendAgent(dir: string, convId: string, input: AgentInput, 
   try {
     const tools = [...builtinTools(), ...(await externalTools(dir))]
     const sys = `${SYSTEM}\n\nTODAY: ${new Date().toISOString().slice(0, 10)}`
-    const projectCtx = `PROJECT BIBLE\n${bibleContext(project.bible)}\n\n${libraryContext(project)}`
+    const projectCtx = [`PROJECT BIBLE\n${bibleContext(project.bible)}`, designContext(project.design), libraryContext(project)].filter(Boolean).join('\n\n')
     const userText = [ctxLine, input.text].filter(Boolean).join('\n')
     if (provider.kind === 'anthropic') await anthropicLoop(dir, c, provider, tools, sys, projectCtx, userText, images, deps, ac.signal)
     else await openaiLoop(dir, c, provider, tools, `${sys}\n\n${projectCtx}`, userText, images, deps, ac.signal)

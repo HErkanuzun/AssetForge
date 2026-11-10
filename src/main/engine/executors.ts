@@ -4,19 +4,24 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { Artifact, AssetSpec, Bible, GeneratedPrompt, Job, MeshyResource, ParamValue, QAReport } from '../../shared/types'
 import { assetBaseName, parseSizeMeters } from '../../shared/templates'
-import { runBlender, runBlenderAnim } from '../integrations/blender'
+import { runAssembly, runBlender, runBlenderAnim } from '../integrations/blender'
+import { planAssembly, reviewAssembly, RIGGER_GUIDE, toForgePlan, type LlmPlan } from '../agent/assemblyPlanner'
+import { loadProject } from '../project'
 import { kimodoGenerate, type KimodoRequest } from '../integrations/kimodo'
 import { buildKimodoRequest, type KimodoSpec } from '../anim/motion'
 import { decodeWav, judgeAudio, measureAudio } from '../../shared/audioQa'
 import { parseBvh } from '../../shared/bvh'
 import { judgeMotion, measureMotion } from '../../shared/motionQa'
 import { loadMotion, motionInfo, saveMotion, type StoredMotion } from '../anim/store'
-import { execInUe } from '../integrations/ue'
-import { generatePrompt, reviewAsset } from '../providers/claude'
-import { comfyRun } from '../providers/comfyui'
+import { runInUe } from '../integrations/ue'
+import { exportAssemblyToUe } from './ueAssembly'
+import { assetContext, bibleContext, generatePrompt, reviewAsset } from '../providers/claude'
+import { comfyRun, kindOfFile } from '../providers/comfyui'
+import { runTaskAgent, walk, type AgentEngine } from '../agent/taskAgent'
+import { ensureComfy } from '../integrations/comfy'
 import { soundEffect } from '../providers/elevenlabs'
 import { createTask, downloadModelTask, waitTask, type MeshyTask } from '../providers/meshy'
-import { getSecret, getSettings } from '../settings'
+import { allProviders, getSecret, getSettings } from '../settings'
 import { downloadTo, ensureDir, fileToDataUri, resourcePath, truncateWords } from '../util'
 
 export interface ExecCtx {
@@ -288,6 +293,7 @@ const executors: Record<string, Executor> = {
   'image.comfyui': async (ctx, p, inputs) => {
     const pr = need(inputs, 'prompt', 'prompt').prompt
     const s = getSettings()
+    await ensureComfy(ctx.log, ctx.signal)
     const r = await comfyRun({
       url: s.comfyUrl,
       apiKey: getSecret('comfy'),
@@ -313,6 +319,7 @@ const executors: Record<string, Executor> = {
     const audio = inputs.audio
     const seconds = pr?.duration_seconds || num(p.seconds, 0) || undefined
     const base = assetBaseName(ctx.asset)
+    await ensureComfy(ctx.log, ctx.signal)
     const r = await comfyRun({
       url: s.comfyUrl,
       apiKey: getSecret('comfy'),
@@ -366,6 +373,271 @@ const executors: Record<string, Executor> = {
     )
     ctx.progress(100)
     return { outputs }
+  },
+
+  'agent.task': async (ctx, p, inputs) => {
+    const base = assetBaseName(ctx.asset)
+    const expect = str(p.expect, 'model')
+    const pr = promptOf(inputs)
+    const task = str(p.task).trim().replaceAll('{asset}', ctx.asset.name)
+    if (!task && !pr) throw new Error('Görev boş: düğümün "Görev" alanına ne yapacağını yaz ya da bir Prompt bağla')
+
+    // Girdi dosyaları: ajan okuyabilsin diye yolları ve klasörleri ver
+    const inFiles: string[] = []
+    const lines: string[] = []
+    const img = inputs.image
+    if (img?.kind === 'image') {
+      inFiles.push(...img.files)
+      lines.push(`Reference image(s): ${img.files.join(', ')}`)
+    }
+    const model = inputs.model
+    if (model?.kind === 'model') {
+      inFiles.push(model.glb ?? model.file)
+      lines.push(`Input 3D model: ${model.glb ?? model.file}${model.rigged ? ' (rigged)' : ''}`)
+    }
+    const audio = inputs.audio
+    if (audio?.kind === 'audio') {
+      inFiles.push(...audio.files)
+      lines.push(`Input audio: ${audio.files.join(', ')}`)
+    }
+    const want: Record<string, string> = {
+      model: `a 3D model saved as ${base}.glb (FBX also accepted: ${base}.fbx), real-world scale in meters, pivot at the bottom centre. Also save a preview render ${base}_preview.png if you can.`,
+      image: `image file(s) saved as ${base}.png (or ${base}_01.png, ${base}_02.png …).`,
+      audio: `audio file(s) saved as ${base}.wav (or ${base}_01.wav …), 48 kHz.`,
+      any: 'whatever files the task needs (models .glb/.fbx, images .png, audio .wav).'
+    }
+    const taskText = [
+      'TASK',
+      task || '(see the prompt below)',
+      pr && `\nPROMPT FROM THE PIPELINE\n${pr.prompt}${pr.texture_prompt ? `\nTexture: ${pr.texture_prompt}` : ''}`,
+      `\nASSET\n${assetContext(ctx.asset)}${ctx.parent ? `\nPart of: ${ctx.parent.name}` : ''}`,
+      expect === 'model' && `Triangle budget: about ${triBudget(ctx, 0)}`,
+      lines.length && `\nINPUT FILES\n${lines.join('\n')}`,
+      `\nOUTPUT FOLDER (absolute path): ${ctx.dir}\nDeliver ${want[expect] ?? want.any} Save final files directly into the output folder with absolute paths; files elsewhere are not picked up.`,
+      ctx.feedback.length && `\nREVIEWER FEEDBACK ON THE PREVIOUS ATTEMPT — fix every point:\n${ctx.feedback.map((f, i) => `${i + 1}. ${f}`).join('\n')}`,
+      '\nWhen you are done, reply with a short summary in Turkish: what you made and the file names.'
+    ]
+      .filter(Boolean)
+      .join('\n')
+    const system = `You are a production agent inside AssetForge, a game-asset pipeline for an Unreal Engine 5 game. You complete one pipeline step on your own with the tools you have, without asking questions: make reasonable choices that fit the project bible. Check your result (render or inspect it) before finishing.\n\nPROJECT BIBLE\n${bibleContext(ctx.bible)}`
+
+    let usd = 0
+    const before = new Set(walk(ctx.dir))
+    const summary = await runTaskAgent({
+      engine: str(p.engine, 'api') as AgentEngine,
+      providerId: str(p.provider),
+      mcp: str(p.mcp),
+      system,
+      task: taskText,
+      images: img?.kind === 'image' ? img.files : [],
+      readDirs: [...new Set(inFiles.map((f) => path.dirname(f)))],
+      outDir: ctx.dir,
+      maxRounds: Math.max(1, num(p.max_rounds, 40)),
+      timeoutMin: Math.max(1, num(p.timeout, 30)),
+      shell: bool(p.shell),
+      cliModel: str(p.cli_model).trim(),
+      log: ctx.log,
+      cost: (c) => {
+        usd += c
+        ctx.cost({ usd: c })
+      },
+      signal: ctx.signal
+    })
+    if (summary) ctx.log(`Ajan: ${truncateWords(summary, 120)}`)
+    if (usd) ctx.log(`Maliyet: $${usd.toFixed(3)}`)
+
+    const made = walk(ctx.dir).filter((f) => !before.has(f))
+    const byKind = (k: string) => made.filter((f) => kindOfFile(f) === k).sort()
+    const images = byKind('image')
+    const models = byKind('model')
+    const audios = byKind('audio')
+    const outputs: Record<string, Artifact> = {}
+    if (models.length) {
+      const glb = models.find((f) => f.toLowerCase().endsWith('.glb'))
+      const fbx = models.find((f) => f.toLowerCase().endsWith('.fbx'))
+      outputs.model = { kind: 'model', file: fbx ?? glb ?? models[0], glb, thumbnail: images[0], previews: images.length ? images : undefined }
+    }
+    if (images.length) outputs.image = { kind: 'image', files: images }
+    if (audios.length) outputs.audio = { kind: 'audio', files: audios }
+    ctx.log(`Üretilen dosyalar: ${made.map((f) => path.basename(f)).join(', ') || 'yok'}`)
+    if (expect !== 'any' && !outputs[expect]) {
+      const name = ({ model: '3D model (.glb/.fbx)', image: 'görsel', audio: 'ses' } as Record<string, string>)[expect] ?? expect
+      throw new Error(`Ajan beklenen ${name} dosyasını çıktı klasörüne kaydetmedi. Son mesajı: ${truncateWords(summary || '(yok)', 60)}`)
+    }
+    if (!Object.keys(outputs).length) throw new Error('Ajan hiç dosya üretmedi')
+    ctx.progress(100)
+    return { outputs }
+  },
+
+  'rig.assembly': async (ctx, p, inputs) => {
+    const m = need(inputs, 'model', 'model')
+    const s = getSettings()
+    const base = assetBaseName(ctx.asset)
+    const src = m.glb ?? m.file
+    const kind = ctx.asset.kind
+    const blender = (cmd: 'analyze' | 'build', outDir: string, extra: { front?: string; plan?: Record<string, unknown> }) =>
+      runAssembly({ blenderPath: s.blenderPath, cmd, input: src, outDir, name: base, log: ctx.log, signal: ctx.signal, ...extra })
+
+    const finish = (res: Record<string, unknown>, dir: string): ExecResult => {
+      const checks = Object.values((res.checks as Record<string, string>) ?? {})
+      for (const w of (res.warnings as string[]) ?? []) ctx.warn(`Montaj: ${w}`)
+      const dims = (res.dims as number[]) ?? [0, 0, 0]
+      const parts = (res.parts as { name: string }[]) ?? []
+      ctx.log(
+        `Montaj: ${parts.length} parça (${parts.map((x) => x.name).join(', ') || '—'}), ${(res.sockets as unknown[])?.length ?? 0} soket, ${(res.damage as unknown[])?.length ?? 0} ezilme bölgesi, ${(res.clips as unknown[])?.length ?? 0} klip`
+      )
+      ctx.progress(100)
+      return {
+        outputs: {
+          model: {
+            kind: 'model',
+            file: String(res.mesh),
+            rigged: true,
+            textured: m.textured,
+            thumbnail: checks.find((f) => f.includes('persp')) ?? m.thumbnail,
+            previews: checks,
+            assembly: path.join(dir, 'assembly.json'),
+            stats: {
+              tris: Number(res.tris) || 0,
+              originalTris: m.stats?.originalTris ?? (Number(res.tris) || 0),
+              verts: 0,
+              objects: 1,
+              materials: m.stats?.materials ?? 0,
+              hasUV: m.stats?.hasUV ?? true,
+              dims: [dims[0], dims[1], dims[2]],
+              rigged: true,
+              decimated: m.stats?.decimated ?? false,
+              scaled: Number(res.scale) || 1
+            }
+          }
+        }
+      }
+    }
+
+    // Elle plan: yapay zekâ olmadan doğrudan kur
+    const manual = str(p.plan).trim()
+    if (manual) {
+      let plan: Record<string, unknown>
+      try {
+        plan = JSON.parse(manual)
+      } catch (e) {
+        throw new Error(`Elle plan geçerli JSON değil: ${(e as Error).message}`, { cause: e })
+      }
+      const dir = path.join(ctx.dir, 'build')
+      return finish(await blender('build', dir, { plan }), dir)
+    }
+
+    const engine = str(p.engine, 'api') as AgentEngine
+    if (engine !== 'api') {
+      // CLI ajanı: ölçülü görünüşlere kendisi bakar, plan.json yazar, Blender'ı kendisi çalıştırır, kontrol eder
+      const an = await blender('analyze', path.join(ctx.dir, 'analyze'), { front: '-Y' })
+      const kit = loadProject(ctx.projectDir)
+        .assets.filter((a) => a.parentId === ctx.asset.id && a.role)
+        .map((a) => a.role!)
+      const script = resourcePath('python', 'forge_assembly.py')
+      const buildDir = path.join(ctx.dir, 'build')
+      const q = (x: string) => `"${x}"`
+      const sizeM = parseSizeMeters(ctx.asset.size)
+      const lengthM = num(p.length, 0) || (kind === 'vehicle' && sizeM.length ? Math.max(...sizeM) : 0)
+      const task = [
+        `Make a game-ready assembly of this model: ${src}`,
+        `\nASSET\n${assetContext(ctx.asset)}`,
+        `Kit sound roles available for clip sounds: ${kit.join(', ') || '(none)'}`,
+        lengthM > 0 ? `Real length: ${lengthM} m (plan "size": {"length": ${lengthM}}).` : '',
+        str(p.extra) ? `Extra instructions from the user: ${str(p.extra)}` : '',
+        ctx.feedback.length ? `Reviewer feedback on the previous attempt — fix every point:\n${ctx.feedback.map((f, i) => `${i + 1}. ${f}`).join('\n')}` : '',
+        `\nMEASURED ANALYSIS (front assumed "-Y"): ${path.join(ctx.dir, 'analyze', 'analysis.json')}`,
+        `Renders with a metric grid (look at them): ${Object.values((an.renders as Record<string, string>) ?? {}).join(', ')}`,
+        `\nTOOLS (PowerShell):`,
+        `- Re-analyze with another front axis (if the front does not point +X in the renders): & ${q(s.blenderPath)} -b --factory-startup -P ${q(script)} -- analyze --in ${q(src)} --out ${q(path.join(ctx.dir, 'analyze'))} --front=<+X|-X|+Y|-Y> (keep the = sign)`,
+        `- Build: write ${q(path.join(ctx.dir, 'plan.json'))} then run: & ${q(s.blenderPath)} -b --factory-startup -P ${q(script)} -- build --in ${q(src)} --plan ${q(path.join(ctx.dir, 'plan.json'))} --out ${q(buildDir)} --name ${base}`,
+        `- The plan format is documented at the top of ${script} (read it first). "front" in the plan must match the --front you analysed with.`,
+        `- After each build look at ${buildDir}\\check_*.png (body grey, every part its own colour, dark spheres = pivots) and ${buildDir}\\assembly.json warnings. Fix the plan and rebuild until it is right (max ${Math.max(1, num(p.rounds, 2) + 1)} builds).`,
+        `\nThe final result must be ${buildDir}\\assembly.json from your last build. Reply with a short Turkish summary.`
+      ]
+        .filter(Boolean)
+        .join('\n')
+      const summary = await runTaskAgent({
+        engine,
+        providerId: '',
+        mcp: 'none',
+        system: RIGGER_GUIDE,
+        task,
+        images: [],
+        readDirs: [path.dirname(src), path.dirname(script)],
+        outDir: ctx.dir,
+        maxRounds: 40,
+        timeoutMin: 30,
+        shell: true,
+        cliModel: '',
+        log: ctx.log,
+        cost: (c) => ctx.cost({ usd: c }),
+        signal: ctx.signal
+      })
+      if (summary) ctx.log(`Ajan: ${truncateWords(summary, 80)}`)
+      const file = path.join(buildDir, 'assembly.json')
+      if (!fs.existsSync(file)) throw new Error('Ajan montajı tamamlamadı (assembly.json yok)')
+      return finish(JSON.parse(fs.readFileSync(file, 'utf8')), buildDir)
+    }
+
+    const providerId = str(p.provider)
+    const provider = providerId ? allProviders().find((x) => x.id === providerId) : undefined
+    if (providerId && !provider) throw new Error('Seçilen LLM sağlayıcısı bulunamadı (Ayarlar → Yapay zekâ)')
+    const kitRoles = loadProject(ctx.projectDir)
+      .assets.filter((a) => a.parentId === ctx.asset.id && a.role)
+      .map((a) => a.role!)
+    const sizeM = parseSizeMeters(ctx.asset.size)
+    const lengthM = num(p.length, 0) || (kind === 'vehicle' && sizeM.length ? Math.max(...sizeM) : 0)
+    const extra = [str(p.extra), lengthM > 0 ? `Real length: ${lengthM} m (set length_m).` : ''].filter(Boolean).join('\n')
+    const reference = inputs.image?.kind === 'image' ? inputs.image.files.slice(0, 1) : []
+    const feedback = [...ctx.feedback]
+    let usd = 0
+
+    let front = '-Y'
+    let analysis = await blender('analyze', path.join(ctx.dir, 'analyze'), { front })
+    ctx.progress(10)
+    const renders = () => Object.values((analysis.renders as Record<string, string>) ?? {})
+    const ask = async () => {
+      const r = await planAssembly({ provider, bible: ctx.bible, asset: ctx.asset, kitRoles, analysis, renders: renders(), extra, feedback, reference })
+      usd += r.usd
+      ctx.cost({ usd: r.usd })
+      return r.data
+    }
+    let plan: LlmPlan = await ask()
+    if (plan.front !== front) {
+      // Ön başka yöne bakıyormuş: görünüşleri doğru yönle yeniden çıkar, koordinatları yeniden okut
+      ctx.log(`Modelin önü ${plan.front} yönünde; görünüşler yeniden çıkarılıyor`)
+      front = plan.front
+      analysis = await blender('analyze', path.join(ctx.dir, 'analyze_2'), { front })
+      plan = await ask()
+      plan.front = front as LlmPlan['front']
+    }
+    ctx.log(`Plan: ${plan.notes}`)
+    ctx.progress(30)
+
+    const rounds = Math.max(0, Math.min(5, num(p.rounds, 2)))
+    let res: Record<string, unknown> = {}
+    let dir = ''
+    for (let round = 0; ; round++) {
+      dir = path.join(ctx.dir, `build_${round + 1}`)
+      const forgePlan = toForgePlan(plan, kind)
+      res = await blender('build', dir, { plan: forgePlan })
+      ctx.progress(Math.min(90, 40 + round * 20))
+      if (round >= rounds) break
+      const checks = Object.values((res.checks as Record<string, string>) ?? {})
+      const rv = await reviewAssembly({ provider, bible: ctx.bible, asset: ctx.asset, kitRoles, analysis, renders: renders(), extra, feedback, plan, result: res, checks })
+      usd += rv.usd
+      ctx.cost({ usd: rv.usd })
+      if (rv.data.ok) {
+        ctx.log(`Kontrol ${round + 1}: onaylandı`)
+        break
+      }
+      ctx.log(`Kontrol ${round + 1}: ${rv.data.problems.join(' · ')}`)
+      feedback.push(...rv.data.problems)
+      plan = { ...rv.data.plan, front: plan.front }
+    }
+    if (usd) ctx.log(`Maliyet: $${usd.toFixed(3)}`)
+    return finish(res, dir)
   },
 
   'model.meshy.text3d': async (ctx, p, inputs) => {
@@ -737,6 +1009,26 @@ const executors: Record<string, Executor> = {
       return dest
     }
 
+    if (subject.kind === 'model' && subject.assembly && fs.existsSync(subject.assembly)) {
+      // Montajlı model: araç / hareketli obje olarak kur (mesh + ezilme + klipler + kit sesleri + fizik + Blueprint)
+      const dest = `${contentPath}/${base}`
+      ctx.log(`Export klasörü: ${exportDir}`)
+      if (!bool(p.auto_import, true)) {
+        fs.copyFileSync(subject.assembly, path.join(exportDir, 'assembly.json'))
+        ctx.warn('Montajlı model yalnızca otomatik import ile kurulabilir (açık Unreal Editor gerekir)')
+        return { outputs: {} }
+      }
+      try {
+        const r = await exportAssemblyToUe(ctx, { assemblyFile: subject.assembly, exportDir, dest, name: base, template: str(p.template), kitWaitMin: num(p.kit_wait, 20) })
+        for (const n of r.notes) ctx.log(`  ✓ ${n}`)
+        ctx.log(r.blueprint ? `Unreal'da hazır: ${r.blueprint}` : `Unreal'a aktarıldı → ${dest}`)
+      } catch (e) {
+        if (ctx.signal.aborted) throw e
+        ctx.warn(`Unreal kurulumu tamamlanamadı: ${(e as Error).message}`)
+      }
+      return { outputs: {} }
+    }
+
     if (subject.kind === 'model') {
       const prefix = subject.rigged ? t.naming.skeletalMesh : t.naming.staticMesh
       const name = prefix + base
@@ -758,7 +1050,7 @@ const executors: Record<string, Executor> = {
       for (const [label, f] of Object.entries(subject.animations ?? {})) copy(f, `A_${base}_${label}`)
     } else if (subject.kind === 'audioset') {
       const layers = subject.layers.map((l, i) => ({ file: copy(l.file, `SW_${base}_L${i}`), name: `SW_${base}_L${i}`, base_rpm: l.baseRpm }))
-      items.push({ type: 'dynamic_sound', name: `MS_${base}`, dest: contentPath, file: '', layers })
+      items.push({ type: 'dynamic_sound', name: `MS_${base}`, dest: contentPath, file: '', layers, inputs: { idle: subject.dynamic.idleRpm, max: subject.dynamic.maxRpm } })
       ctx.log(`Dinamik ses: ${layers.length} katman → MS_${base} (girişler: RPM, Throttle)`)
     } else if (subject.kind === 'animation') {
       const fbx = copy(subject.fbx, subject.clip)
@@ -804,7 +1096,7 @@ const executors: Record<string, Executor> = {
 
     if (bool(p.auto_import, true)) {
       try {
-        const r = await execInUe(script)
+        const r = await runInUe(script)
         const line = r.output.split('\n').find((l) => l.startsWith('FORGE_RESULT '))
         if (!r.success) ctx.warn(`Unreal import hatası: ${r.result || r.output.slice(-400)}`)
         else {

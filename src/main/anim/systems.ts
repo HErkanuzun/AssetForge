@@ -7,7 +7,7 @@ import type { AnimSystem, AnimSystemClip, AnimSystemClipState, AssetSpec, Job, P
 import { animSystemInfo, productionPhases, sampleFor, stylePrompt } from '../../shared/animSystems'
 import { assetBaseName, safeName } from '../../shared/templates'
 import type { Runner } from '../engine/runner'
-import { execInUe } from '../integrations/ue'
+import { runInUe } from '../integrations/ue'
 import { listJobs, loadProject, saveProject } from '../project'
 import { ensureDir, resourcePath } from '../util'
 import type { KimodoSpec } from './motion'
@@ -353,7 +353,7 @@ export async function buildSystemInUe(ctx: SysCtx, sysId: string): Promise<NonNu
   fs.writeFileSync(file, script)
   const build: NonNullable<AnimSystem['lastBuild']> = { at: Date.now(), ok: false, notes: [], errors: [], script: file, assets: [] }
   try {
-    const r = await execInUe(script)
+    const r = await runInUe(script)
     const line = r.output.split('\n').find((l) => l.startsWith('FORGE_RESULT '))
     if (line) {
       const res = JSON.parse(line.slice(13)) as { notes: string[]; errors: string[]; assets: string[] }

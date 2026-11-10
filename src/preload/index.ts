@@ -23,6 +23,11 @@ const api: ForgeApi = {
   pickFiles: (filters, multi = false) => call('dialog:pickFiles', filters, multi),
   importAssets: (file) => call('assets:import', file),
   extractBible: (pdfs, current, hint) => call('bible:extract', pdfs, current, hint),
+  design: {
+    generate: (project, section, instruction, engine) => call('design:generate', project, section, instruction, engine),
+    exportMd: (project) => call('design:exportMd', project),
+    teachUe: (project) => call('design:teachUe', project)
+  },
   run: {
     start: (pipelineId, assetIds) => call('run:start', pipelineId, assetIds),
     cancel: (jobId) => call('run:cancel', jobId)
@@ -39,6 +44,7 @@ const api: ForgeApi = {
     return () => ipcRenderer.removeListener('job:update', listener)
   },
   ueDiscover: () => call('ue:discover'),
+  ueStatus: () => call('ue:status'),
   testClaude: () => call('test:claude'),
   testMeshy: () => call('test:meshy'),
   testComfy: () => call('test:comfy'),
@@ -106,6 +112,17 @@ const api: ForgeApi = {
   mcp: {
     status: () => call('mcp:status'),
     test: (id) => call('mcp:test', id)
+  },
+  comfy: {
+    status: () => call('comfy:status'),
+    step: (step) => call('comfy:step', step),
+    logs: () => call('comfy:logs'),
+    open: () => call('comfy:open'),
+    onLog: (cb) => {
+      const listener = (_e: unknown, line: string) => cb(line)
+      ipcRenderer.on('comfy:log', listener)
+      return () => ipcRenderer.removeListener('comfy:log', listener)
+    }
   },
   kimodo: {
     status: () => call('kimodo:status'),

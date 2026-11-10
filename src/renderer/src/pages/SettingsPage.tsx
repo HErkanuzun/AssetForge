@@ -6,6 +6,7 @@ import { Icon, type IconName } from '../components/icons'
 import { useStore } from '../store'
 import { McpSettings, ModelSettings } from '../components/ConnectionsSettings'
 import QuickConnect from '../components/QuickConnect'
+import ComfyLocal from '../components/ComfyLocal'
 
 type Section = 'connect' | 'models' | 'project' | 'tools' | 'anim' | 'unreal' | 'mcp' | 'about'
 
@@ -211,7 +212,11 @@ export default function SettingsPage() {
             title="ComfyUI"
             desc="Görsel, doku, 3D model, ses ve animasyon üreten ComfyUI workflow’larını çalıştırır. Yerel modeller (TRELLIS.2, Hunyuan3D, ACE-Step, Kimodo …) ücretsizdir; partner düğümleri (Meshy, Tripo, Rodin, ElevenLabs …) Comfy hesabı kredisiyle çalışır."
           >
-            <Field label="ComfyUI adresi">
+            <ComfyLocal />
+            <Field label="Kurulum klasörü" help="AssetForge ComfyUI’ı buraya kurar (Python ortamı, ComfyUI, modeller). Modeller büyüdükçe birkaç on GB olabilir.">
+              <TextInput value={s.comfyHome} onChange={(v) => patch({ comfyHome: v })} />
+            </Field>
+            <Field label="ComfyUI adresi" help="Kendi ComfyUI’ınızı kullanıyorsanız onun adresi. 127.0.0.1 dışındaki adreslerde kurulum yönetilmez.">
               <div className="row">
                 <TextInput value={s.comfyUrl} onChange={(v) => patch({ comfyUrl: v })} />
                 <AsyncButton onClick={() => test(window.forge.testComfy, 'ComfyUI')}>Bağlantıyı test et</AsyncButton>
@@ -287,14 +292,22 @@ export default function SettingsPage() {
               <b>Project Settings → Plugins → Python → Enable Remote Execution</b>’ı işaretleyin.
             </li>
             <li>Editör açıkken “Unreal’ı bul”a basın. Unreal Export node’u asset’leri otomatik import eder.</li>
+            <li>
+              Remote Execution yoksa <b>Unreal MCP</b> sunucusu kullanılır (Python çalıştıran bir araç gerekir, ör. ExecutePython). Montajlı araçlarda fizik asset’i ve Anim BP de buradaki araç setiyle
+              kurulur.
+            </li>
           </ol>
           <AsyncButton
             className="primary"
             onClick={async () => {
               try {
-                const nodes = await window.forge.ueDiscover()
-                if (!nodes.length) toast('Açık Unreal Editor bulunamadı (Remote Execution açık mı?)', 'error')
-                else toast(`Bulundu: ${nodes.map((n) => `${n.projectName} (UE ${n.engineVersion})`).join(', ')}`, 'ok')
+                const st = await window.forge.ueStatus()
+                const parts = [
+                  st.remote.length ? `Remote Execution: ${st.remote.map((n) => `${n.projectName} (UE ${n.engineVersion})`).join(', ')}` : '',
+                  st.mcp ? `MCP: bağlı${st.python ? ` · Python: ${st.python}` : ' · Python aracı yok'}` : ''
+                ].filter(Boolean)
+                if (!parts.length) toast('Açık Unreal Editor bulunamadı (Remote Execution ya da Unreal MCP açık mı?)', 'error')
+                else toast(parts.join(' · '), 'ok')
               } catch (e) {
                 toast((e as Error).message, 'error')
               }
@@ -303,6 +316,9 @@ export default function SettingsPage() {
             Unreal’ı bul
           </AsyncButton>
           <div style={{ height: 14 }} />
+          <Field label="Unreal MCP adresi" help="Remote Execution yoksa yedek yol; boş = kullanma">
+            <TextInput value={s.ueMcpUrl} onChange={(v) => patch({ ueMcpUrl: v })} />
+          </Field>
           <Field label="Manny/Quinn IK Rig yolu" help="Karakterler bu IK Rig’ten retarget alır (UE5 Third Person şablonundaki varsayılan)">
             <TextInput value={s.mannyIkRig} onChange={(v) => patch({ mannyIkRig: v })} />
           </Field>

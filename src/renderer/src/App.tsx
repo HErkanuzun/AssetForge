@@ -5,6 +5,7 @@ import { ForgeMark, Icon, type IconName } from './components/icons'
 import AnimPage from './pages/AnimPage'
 import BiblePage from './pages/BiblePage'
 import BriefPage from './pages/BriefPage'
+import DesignPage from './pages/DesignPage'
 import HomePage from './pages/HomePage'
 import JobsPage from './pages/JobsPage'
 import LibraryPage from './pages/LibraryPage'
@@ -12,7 +13,7 @@ import PipelinePage from './pages/PipelinePage'
 import SettingsPage from './pages/SettingsPage'
 import { useStore } from './store'
 
-export type Page = 'home' | 'library' | 'anim' | 'pipeline' | 'jobs' | 'bible' | 'settings'
+export type Page = 'home' | 'library' | 'anim' | 'pipeline' | 'jobs' | 'design' | 'bible' | 'settings'
 
 interface Nav {
   page: Page
@@ -34,6 +35,7 @@ const NAV: { id: Page; label: string; icon: IconName }[] = [
   { id: 'jobs', label: 'Üretim', icon: 'jobs' }
 ]
 const NAV2: { id: Page; label: string; icon: IconName }[] = [
+  { id: 'design', label: 'Oyun Tasarımı', icon: 'spark' },
   { id: 'bible', label: 'Proje Kitabı', icon: 'book' },
   { id: 'settings', label: 'Ayarlar', icon: 'settings' }
 ]
@@ -43,6 +45,7 @@ const TITLES: Record<Page, string> = {
   anim: 'Animasyon Stüdyosu',
   pipeline: 'Üretim Hatları',
   jobs: 'Üretim Kuyruğu',
+  design: 'Oyun Tasarımı',
   bible: 'Proje Kitabı',
   settings: 'Ayarlar'
 }
@@ -121,7 +124,21 @@ export default function App() {
   else if (page === 'library') body = <LibraryPage />
   else if (page === 'anim') body = <AnimPage />
   else
-    body = <div className="legacy">{page === 'bible' ? <BiblePage /> : page === 'pipeline' ? <PipelinePage goJobs={() => setPage('jobs')} /> : page === 'jobs' ? <JobsPage /> : <SettingsPage />}</div>
+    body = (
+      <div className="legacy">
+        {page === 'design' ? (
+          <DesignPage />
+        ) : page === 'bible' ? (
+          <BiblePage />
+        ) : page === 'pipeline' ? (
+          <PipelinePage goJobs={() => setPage('jobs')} />
+        ) : page === 'jobs' ? (
+          <JobsPage />
+        ) : (
+          <SettingsPage />
+        )}
+      </div>
+    )
 
   return (
     <NavCtx.Provider value={nav}>

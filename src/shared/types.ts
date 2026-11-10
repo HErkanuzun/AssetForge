@@ -143,7 +143,91 @@ export interface Project {
   clips?: AnimClip[]
   /** Animasyon sistemleri (Blend Space, Motion Matching ...) */
   animSystems?: AnimSystem[]
+  /** Oyun tasarımı: döngüler, hikâye, arayüz ekranları */
+  design?: GameDesign
 }
+
+// ---------------------------------------------------------------------------
+// Oyun tasarımı
+
+export type DesignNodeType = 'action' | 'challenge' | 'reward' | 'progress' | 'decision' | 'story' | 'state'
+
+export interface DesignNode {
+  id: string
+  label: string
+  type: DesignNodeType
+  note: string
+  x: number
+  y: number
+}
+
+export interface DesignEdge {
+  id: string
+  from: string
+  to: string
+  label: string
+}
+
+/** Akış şeması: oyun döngüsü (çekirdek / oturum / meta), hikâye döngüsü ya da serbest akış */
+export interface DesignGraph {
+  id: string
+  name: string
+  scope: 'core' | 'session' | 'meta' | 'story' | 'other'
+  description: string
+  nodes: DesignNode[]
+  edges: DesignEdge[]
+}
+
+export interface StoryAct {
+  id: string
+  title: string
+  summary: string
+  beats: string[]
+}
+
+export interface StoryCharacter {
+  id: string
+  name: string
+  role: string
+  description: string
+  arc: string
+}
+
+export type UiWidgetType = 'text' | 'button' | 'image' | 'bar' | 'list' | 'icon' | 'input' | 'panel'
+
+export interface UiWidget {
+  type: UiWidgetType
+  label: string
+  /** Oyundaki veri kaynağı, ör. "Player.Health", "Vehicle.Speed" */
+  binding: string
+}
+
+export interface UiScreen {
+  id: string
+  name: string
+  purpose: string
+  /** Ne zaman görünür (ör. "sürüş sırasında", "Esc") */
+  when: string
+  /** HUD (oyun üstü) mı, tam ekran menü mü */
+  layer: 'hud' | 'menu' | 'popup'
+  widgets: UiWidget[]
+  /** Geçilebilen ekranların id'leri */
+  next: string[]
+}
+
+export interface GameDesign {
+  pitch: string
+  fantasy: string
+  audience: string
+  pillars: string[]
+  mechanics: { name: string; description: string }[]
+  loops: DesignGraph[]
+  story: { premise: string; themes: string[]; acts: StoryAct[]; characters: StoryCharacter[] }
+  screens: UiScreen[]
+  updatedAt?: number
+}
+
+export type DesignSection = 'core' | 'loops' | 'story' | 'screens'
 
 export type ParamValue = string | number | boolean
 
@@ -200,6 +284,8 @@ export type Artifact =
       rigged?: boolean
       animations?: Record<string, string>
       textured?: boolean
+      /** Montaj ve hareket rigi sonucu (assembly.json): parçalar, soketler, hasar, klipler */
+      assembly?: string
     }
   /** target: istenen süre ve döngü (kalite kontrol karşılaştırır) */
   | { kind: 'audio'; files: string[]; target?: { seconds?: number; loop?: boolean } }
@@ -247,7 +333,10 @@ export interface SettingsPublic {
   kimodoHome: string
   comfyUrl: string
   comfyWorkflow: string
+  comfyHome: string
   blenderPath: string
+  /** Unreal MCP sunucusu (Remote Execution yoksa yedek yol) */
+  ueMcpUrl: string
   projectDir: string
   audioFormat: string
   concurrency: number
@@ -262,7 +351,9 @@ export interface SettingsPatch {
   claudeModel?: string
   comfyUrl?: string
   comfyWorkflow?: string
+  comfyHome?: string
   blenderPath?: string
+  ueMcpUrl?: string
   projectDir?: string
   audioFormat?: string
   concurrency?: number
@@ -510,6 +601,22 @@ export interface KimodoStatus {
   postprocess?: boolean
   /** BIOS sanallaştırma (yalnızca WSL yolu için gerekli) */
   virtualization?: boolean
+  error?: string
+}
+
+/** AssetForge'un yerel olarak kurduğu ComfyUI */
+export interface ComfyLocalStatus {
+  steps: KimodoSetupStep[]
+  /** Adresteki sunucu yanıt veriyor (AssetForge'un kurduğu ya da kullanıcının kendi ComfyUI'ı) */
+  healthy: boolean
+  /** Bizim kurduğumuz sunucu süreci çalışıyor (henüz yanıt vermiyor olabilir) */
+  running: boolean
+  /** Sürüm ve GPU */
+  info?: string
+  home: string
+  url: string
+  /** Adres bu bilgisayar değil: kurulum yönetilmez */
+  remote: boolean
   error?: string
 }
 

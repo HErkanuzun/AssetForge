@@ -100,7 +100,7 @@ def _ms_class(ns, name, variant=""):
     return c
 
 
-def build_engine_metasound(dest, name, waves, bases):
+def build_engine_metasound(dest, name, waves, bases, max_rpm=None):
     sub = unreal.get_engine_subsystem(unreal.MetaSoundBuilderSubsystem)
     res = sub.create_source_builder(name + "_ForgeBuilder", unreal.MetaSoundOutputAudioFormat.MONO, False)
     builder, on_play, audio_outs = res[0], res[1], res[3]
@@ -122,6 +122,17 @@ def build_engine_metasound(dest, name, waves, bases):
 
     rpm = _ms_ok(builder.add_graph_input_node("RPM", "Float", _ms_lit("float", float(bases[0])), False), "RPM girişi")
     thr = _ms_ok(builder.add_graph_input_node("Throttle", "Float", _ms_lit("float", 1.0), False), "Throttle girişi")
+    # RPMAlpha (0-1): yalnızca devir oranı gönderen araçlar için. Etkin devir = RPM + alpha * (max - rölanti);
+    # RPM varsayılanı rölanti olduğundan, RPM gönderen oyunlarda alpha 0 kalır ve davranış değişmez.
+    alpha = _ms_ok(builder.add_graph_input_node("RPMAlpha", "Float", _ms_lit("float", 0.0), False), "RPMAlpha girişi")
+    span = max(1.0, float(max_rpm or bases[-1] * 1.15) - float(bases[0]))
+    a_mul = node("UE", "Multiply", "Float")
+    link(alpha, pin_in(a_mul, "PrimaryOperand"), "alpha→çarp")
+    default(pin_in(a_mul, "AdditionalOperands"), "float", span)
+    a_add = node("UE", "Add", "Float")
+    link(rpm, pin_in(a_add, "PrimaryOperand"), "rpm→topla")
+    link(pin_out(a_mul, "Out"), pin_in(a_add, "AdditionalOperands"), "alpha devri→topla")
+    rpm = pin_out(a_add, "Out")
 
     def semitones_from(base):
         mul = node("UE", "Multiply", "Float")
@@ -401,8 +412,8 @@ for item in MANIFEST["items"]:  # noqa: F821 — MANIFEST üstte eklenir
                 waves.append(wave)
                 bases.append(layer["base_rpm"])
                 entry["imported"] += paths
-            entry["imported"].append(build_engine_metasound(item["dest"], item["name"], waves, bases))
-            entry["notes"].append("MetaSound: %d devir katmanı, girişler RPM + Throttle" % len(waves))
+            entry["imported"].append(build_engine_metasound(item["dest"], item["name"], waves, bases, (item.get("inputs") or {}).get("max")))
+            entry["notes"].append("MetaSound: %d devir katmanı, girişler RPM + Throttle + RPMAlpha (0-1)" % len(waves))
             results.append(entry)
             continue
         options = None

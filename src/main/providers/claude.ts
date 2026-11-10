@@ -42,7 +42,7 @@ export function clientFor(p: LlmProvider): Anthropic {
   return new Anthropic({ apiKey: providerKey(p) ?? 'none', baseURL: p.baseUrl || undefined })
 }
 
-type Content = Anthropic.Beta.BetaContentBlockParam[]
+export type Content = Anthropic.Beta.BetaContentBlockParam[]
 
 /** SDK hatalarını kullanıcıya anlaşılır Türkçe mesajlara çevirir. */
 export async function callClaude<T>(fn: () => Promise<T>): Promise<T> {
@@ -61,20 +61,21 @@ export async function callClaude<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-interface CallResult<T> {
+export interface CallResult<T> {
   data: T
   usd: number
 }
 
-async function structured<S extends z.ZodType>(
+export async function structured<S extends z.ZodType>(
   schema: S,
   system: Anthropic.Beta.BetaTextBlockParam[],
   content: Content,
   effort: Effort,
   maxTokens = 16000,
-  role: 'prompts' | 'vision' = 'prompts'
+  role: 'prompts' | 'vision' = 'prompts',
+  provider?: LlmProvider
 ): Promise<CallResult<z.infer<S>>> {
-  const p = providerFor(role)
+  const p = provider ?? providerFor(role)
   if (p.kind === 'openai') {
     const sys = system.map((b) => b.text).join('\n\n')
     const data = await oaStructured(p, schema, sys, toOaParts(content as Parameters<typeof toOaParts>[0], p.vision), maxTokens)

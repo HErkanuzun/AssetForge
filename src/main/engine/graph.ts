@@ -56,8 +56,8 @@ export function descendants(p: Pipeline, id: string): Set<string> {
   return out
 }
 
-/** Kalite kontrol geri bildirimini kabul eden düğümler: Prompt Motoru ve kendi promptunu yazan Kimodo */
-export const FEEDBACK_NODES = new Set(['prompt.generate', 'anim.kimodo'])
+/** Kalite kontrol geri bildirimini kabul eden düğümler: Prompt Motoru, kendi promptunu yazan Kimodo ve Ajan Görevi */
+export const FEEDBACK_NODES = new Set(['prompt.generate', 'anim.kimodo', 'agent.task', 'rig.assembly'])
 
 /** QA node'una en yakın, geri bildirim alabilen üst düğüm (geriye doğru BFS) */
 export function nearestPrompt(p: Pipeline, qaId: string): string | null {

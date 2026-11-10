@@ -89,15 +89,21 @@ const slug = (s: string) =>
     .replace(/^_|_$/g, '')
     .slice(0, 20) || 'mcp'
 
-/** Etkin tüm MCP sunucularının araçları (bağlanamayanlar atlanır) */
-export async function externalTools(dir: string): Promise<AgentTool[]> {
+/**
+ * Etkin MCP sunucularının araçları (bağlanamayanlar atlanır).
+ * onlyIds: yalnızca bu sunucular (hat içindeki ajan düğümü için). headless: onay sormadan çalışır.
+ */
+export async function externalTools(dir: string, opts: { onlyIds?: string[]; headless?: boolean; errors?: string[] } = {}): Promise<AgentTool[]> {
   const out: AgentTool[] = []
-  const servers = getSettings().mcpServers.filter((s) => s.enabled)
+  const servers = getSettings().mcpServers.filter((s) => s.enabled && (!opts.onlyIds || opts.onlyIds.includes(s.id)))
   const conns = await Promise.all(
     servers.map((s) =>
       ensure(s).then(
         (c) => [s, c] as const,
-        () => null
+        (e: Error) => {
+          opts.errors?.push(`${s.name}: ${e.message}`)
+          return null
+        }
       )
     )
   )
@@ -111,7 +117,7 @@ export async function externalTools(dir: string): Promise<AgentTool[]> {
         description: `[${cfg.name} — dış MCP] ${t.description ?? t.name}`.slice(0, 1000),
         inputSchema: t.inputSchema?.type ? t.inputSchema : { type: 'object', properties: {} },
         parse: (input) => (input && typeof input === 'object' ? { ok: true, data: input } : { ok: false, error: 'object bekleniyor' }),
-        confirm: cfg.autoApprove ? undefined : (d) => `${cfg.name} → ${t.name}\n${JSON.stringify(d, null, 1).slice(0, 1200)}`,
+        confirm: cfg.autoApprove || opts.headless ? undefined : (d) => `${cfg.name} → ${t.name}\n${JSON.stringify(d, null, 1).slice(0, 1200)}`,
         run: async (_ctx, data) => {
           const res = await conn.client.callTool({ name: t.name, arguments: data as Record<string, unknown> }, undefined, { timeout: 10 * 60 * 1000 })
           const texts: string[] = []

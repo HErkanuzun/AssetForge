@@ -99,7 +99,7 @@ describe('node tanımları', () => {
 
   it('select parametrelerinin varsayılanı seçeneklerden biri', () => {
     for (const d of NODE_DEFS)
-      for (const p of d.params.filter((x) => x.type === 'select')) {
+      for (const p of d.params.filter((x) => x.type === 'select' && !x.source)) {
         expect(
           p.options?.map((o) => o.value),
           `${d.type}.${p.id}`

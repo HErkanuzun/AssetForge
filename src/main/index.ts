@@ -7,7 +7,7 @@ import type { AgentInput, AssetKind, Bible, Brief, BriefInput, ConnectEvent, Con
 import { connectCancel, connectStart, connectTryClipboard } from './connect'
 import { buildDiagnostics, saveDiagnostics } from './diagnostics'
 import { initLog, logDir, writeLog } from './log'
-import { hardenApp, isInside, openInsideProject, showInsideProject } from './security'
+import { hardenApp, isInside, openExternal, openInsideProject, showInsideProject } from './security'
 import { createJobTaskbar, pageFromArgv, setupJumpList } from './taskbar'
 import { approve, createConv, deleteConv, listConvs, loadConv, sendAgent, stopConv } from './agent/assistant'
 import { mcpStatus, mcpTest } from './agent/mcpClient'
@@ -15,13 +15,19 @@ import { mcpServerRunning, mcpUrl, syncMcpServer } from './agent/mcpServer'
 import { oaTest } from './ai/openai'
 import { suggestPipeline } from '../shared/templates'
 import { kimodoLogs, kimodoStatus, kimodoStep } from './integrations/kimodo'
+import { comfyLocalLogs, comfyLocalStatus, comfyLocalStep } from './integrations/comfy'
 import { briefToAssets, createBrief, libraryThumbnails, sendBrief } from './providers/brief'
 import { Runner } from './engine/runner'
 import { importAssetList } from './importers/assetList'
-import { discoverUe } from './integrations/ue'
+import { discoverUe, ueStatus } from './integrations/ue'
 import { deleteBrief, listBriefs, listJobs, loadBrief, loadProject, saveBrief, saveProject } from './project'
 import { clientFor, extractBible, planAnimSystem, suggestMotion, testClaude } from './providers/claude'
 import { comfyInfo } from './providers/comfyui'
+import { generateDesignSection } from './providers/design'
+import { teachUe } from './integrations/ueSkills'
+import { designMarkdown } from '../shared/design'
+import type { DesignSection } from '../shared/types'
+import type { AgentEngine } from './agent/taskAgent'
 import { animSystemInfo, newAnimSystem } from '../shared/animSystems'
 import type { AnimSystem, AnimSystemKind } from '../shared/types'
 import { applyPlan, buildSystemInUe, deleteSystem, getSystem, listSystems, produceSystem, saveSystem, stopProduce, systemStates, type ProduceOptions } from './anim/systems'
@@ -178,15 +184,31 @@ function registerIpc(): void {
 
   handle('assets:import', (file: string) => importAssetList(file))
   handle('bible:extract', (pdfs: string[], current: Bible, categoryHint: string) => extractBible({ pdfs, current, categoryHint }))
+  handle('design:generate', (project: Project, section: DesignSection, instruction: string, engine: AgentEngine) =>
+    generateDesignSection({ project, section, instruction, engine, outDir: path.join(dir(), 'design', '.agent') })
+  )
+  handle('design:teachUe', (project: Project) => teachUe(project))
+  handle('design:exportMd', (project: Project) => {
+    const file = path.join(dir(), 'design', 'GDD.md')
+    fs.mkdirSync(path.dirname(file), { recursive: true })
+    fs.writeFileSync(file, designMarkdown(project))
+    return file
+  })
 
   handle('run:start', (pipelineId: string, assetIds: string[]) => runner.start(loadProject(dir()), dir(), pipelineId, assetIds))
   handle('run:cancel', (jobId: string) => runner.cancel(jobId))
   handle('jobs:list', () => listJobs(dir()))
 
   handle('ue:discover', () => discoverUe())
+  handle('ue:status', () => ueStatus())
   handle('test:claude', () => testClaude())
   handle('test:meshy', () => balance())
   handle('test:comfy', () => comfyInfo(getSettings().comfyUrl))
+  // Yerel ComfyUI: kurulum, başlat/durdur, tarayıcıda düğüm editörünü aç
+  handle('comfy:status', () => comfyLocalStatus())
+  handle('comfy:step', (step: string) => comfyLocalStep(step, (line) => win?.webContents.send('comfy:log', line)))
+  handle('comfy:logs', () => comfyLocalLogs())
+  handle('comfy:open', () => openExternal(getSettings().comfyUrl))
 
   // Brief Chat
   handle('brief:create', (seed?: { title?: string; kind?: AssetKind }) => ({ ...createBrief(dir(), seed), history: [] }))

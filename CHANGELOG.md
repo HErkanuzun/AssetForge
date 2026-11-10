@@ -5,6 +5,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+- **Agent task node** ("Ajan Görevi"): an AI you choose does one pipeline step on its own with the tools you connect, and its files go on to the next nodes as a model, image or sound. Engines:
+  - **API:** any LLM from Settings (Claude or an OpenAI-compatible model).
+  - **Claude Code** or **Codex CLI:** uses your own subscription; must be installed and logged in.
+- **Choosing the agent's tools:** pick which MCP server it uses (for example Blender MCP), or all or none, and optionally let it run terminal commands.
+- **Quality-check feedback on agent steps:** when the quality check rejects the result, its feedback goes back to the agent and the step runs again.
+- **New template:** "Ajan — Blender MCP ile Model (QA)". The agent builds the model in Blender with moving parts as separate objects and saves a GLB. Then Blender cleanup, quality check and Unreal import run as usual.
+- **Local ComfyUI managed by AssetForge:** it installs ComfyUI (Python 3.12, CUDA PyTorch), starts it in the background when a ComfyUI node runs, and shows install and server status in Settings.
+- **Assembly and motion rig node** ("Montaj ve Hareket Rigi"): measures the model in Blender, and an AI looks at measured views to cut out moving parts. It places bones at their pivots and adds effect points, dent zones and open/close clips:
+  - Moving parts: wheels, doors, hood, trunk, lids, propellers and similar.
+  - Effect points: exhaust, lights, dust.
+  - Dent zones: morph targets plus a damage mask in the vertex colors.
+  - Clips: open/close animations, with kit sounds assigned to them.
+  - The AI checks its own result renders and fixes its plan. Engines: API, Claude Code or Codex CLI. You can also give a plan by hand (no AI).
+- **Vehicles go into Unreal fully set up:** the Unreal Export node builds a rigged model as a vehicle:
+  - Skeletal mesh with dent morph targets, clips, a physics asset and a vehicle Anim Blueprint.
+  - A vehicle Blueprint copied from the project's vehicle template, with wheel sizes, doors, seats, lights and exhaust set from the rig.
+  - The kit's door, trunk, horn and engine sounds are wired in. Export waits for kit sounds that are still being made.
+- **New template:** "Araç — Konsept→3D + Rig → Unreal", now suggested for vehicles. The Brief director gives vehicle sounds standard role tags so they reach the right slot.
+- **Engine MetaSound** gets an `RPMAlpha` input (0–1), for vehicles that send only a rev ratio. Games that send `RPM` work as before.
+- **Unreal MCP fallback:** when Python Remote Execution is not on, AssetForge reaches the editor through the Unreal MCP server (Settings → Unreal Engine → Unreal MCP address). "Unreal’ı bul" shows both connections.
+- **Game design page** ("Oyun Tasarımı"):
+  - Core idea, design pillars and mechanics.
+  - Gameplay and story loops as editable flowcharts.
+  - Story with acts, beats and characters.
+  - In-game UI screens with their elements, data bindings and screen flow.
+  - Each section can be written or improved by AI (API, Claude Code or Codex).
+  - The Brief director and the producer assistant now know the design.
+  - Export a GDD in Markdown with mermaid flowcharts.
+  - The `get_game_design` MCP tool gives the design to outside agents.
+- **Teach the Unreal AI:** sends the game design and AssetForge's asset rules into the Unreal project as Agent Skills, so any AI connected to Unreal follows them. The rules cover folders, naming, vehicle setup, dent targets and import optimization.
+
+### Fixed
+- The local ComfyUI install no longer stops while downloading ComfyUI. Windows PowerShell treated git's progress messages as errors. A half-finished download is now removed and started again.
+- Starting the local ComfyUI no longer waits until ComfyUI is closed again. The background server kept the starter's output open, so a workflow that had to start ComfyUI never began.
+
 ## [0.4.8] - 2026-11-06
 
 First step of the new direction: ComfyUI becomes AssetForge's production backend, so one integration opens local models and many paid services. AssetForge stays the producer (brief, project bible, prompts, quality checks, Blender, Unreal import). See [ROADMAP.md](ROADMAP.md).

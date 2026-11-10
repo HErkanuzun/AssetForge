@@ -166,7 +166,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
   }
 
   const ctxLabel = [
-    { home: 'Atölye', library: 'Kütüphane', anim: 'Animasyon', pipeline: 'Hatlar', jobs: 'Üretim', bible: 'Proje Kitabı', settings: 'Ayarlar' }[nav.page],
+    { home: 'Atölye', library: 'Kütüphane', anim: 'Animasyon', pipeline: 'Hatlar', jobs: 'Üretim', design: 'Oyun Tasarımı', bible: 'Proje Kitabı', settings: 'Ayarlar' }[nav.page],
     nav.briefId ? 'brief açık' : '',
     selectedAssets.length ? `${selectedAssets.length} seçili asset` : ''
   ]

@@ -4,45 +4,11 @@
 //   native : Windows'ta doğrudan Python 3.12 + CUDA PyTorch (BIOS sanallaştırması gerekmez)
 //   wsl    : WSL2 Ubuntu içinde Docker + NVIDIA Container Toolkit
 // Her iki yol da aynı forge_kimodo_server.py servisini (port 9551) çalıştırır.
-import { spawn } from 'node:child_process'
 import path from 'node:path'
 import type { KimodoSetupStep, KimodoStatus } from '../../shared/types'
 import { getSecret, getSettings } from '../settings'
 import { resourcePath } from '../util'
-
-type LogFn = (line: string) => void
-
-function decode(buf: Buffer): string {
-  // wsl.exe kendi mesajlarını UTF-16LE yazar
-  if (buf.length > 1 && buf.includes(0)) return buf.toString('utf16le')
-  return buf.toString('utf8')
-}
-
-function run(cmd: string, args: string[], opts: { env?: Record<string, string>; log?: LogFn; timeoutMs?: number } = {}): Promise<{ code: number; out: string }> {
-  return new Promise((resolve) => {
-    const proc = spawn(cmd, args, { windowsHide: true, env: { ...process.env, ...opts.env } })
-    let out = ''
-    let pending = ''
-    const onData = (d: Buffer) => {
-      const text = decode(d)
-      out = (out + text).slice(-20000)
-      if (!opts.log) return
-      pending += text
-      const lines = pending.split(/\r?\n/)
-      pending = lines.pop() ?? ''
-      for (const l of lines) if (l.trim()) opts.log(l.trim())
-    }
-    proc.stdout.on('data', onData)
-    proc.stderr.on('data', onData)
-    const timer = opts.timeoutMs ? setTimeout(() => proc.kill(), opts.timeoutMs) : null
-    proc.on('error', (e) => resolve({ code: -1, out: String(e) }))
-    proc.on('close', (code) => {
-      if (timer) clearTimeout(timer)
-      if (pending.trim() && opts.log) opts.log(pending.trim())
-      resolve({ code: code ?? -1, out })
-    })
-  })
-}
+import { run, type LogFn } from './process'
 
 const nativeScript = () => resourcePath('kimodo', 'setup_native.ps1')
 const wslScript = () => resourcePath('kimodo', 'setup_wsl.sh')

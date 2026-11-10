@@ -11,7 +11,7 @@ export const JUMP_PAGES = [
   { page: 'settings', title: 'Ayarlar', description: 'Hesaplar, araçlar ve MCP' }
 ] as const
 
-const PAGES = new Set<string>([...JUMP_PAGES.map((p) => p.page), 'pipeline', 'bible'])
+const PAGES = new Set<string>([...JUMP_PAGES.map((p) => p.page), 'pipeline', 'bible', 'design'])
 
 /** Komut satırındaki --page=<ad> (jump list ve ikinci açılış) */
 export function pageFromArgv(argv: string[]): string | null {
