@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-10
+
 ### Added
 - **Agent task node** ("Ajan Görevi"): an AI you choose does one pipeline step on its own with the tools you connect, and its files go on to the next nodes as a model, image or sound. Engines:
   - **API:** any LLM from Settings (Claude or an OpenAI-compatible model).
