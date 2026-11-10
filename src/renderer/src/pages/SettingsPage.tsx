@@ -9,6 +9,7 @@ import QuickConnect from '../components/QuickConnect'
 import ComfyLocal from '../components/ComfyLocal'
 import ComfyServers from '../components/ComfyServers'
 import ComfyLibrary from '../components/ComfyLibrary'
+import CustomBackends from '../components/CustomBackends'
 import AgentClis from '../components/AgentClis'
 import WebSettings from '../components/WebSettings'
 
@@ -35,7 +36,8 @@ const SECTIONS: { id: Section; label: string; icon: IconName; desc: string; keyw
     label: 'Yerel araçlar',
     icon: 'wand',
     desc: 'Blender ve ComfyUI',
-    keywords: 'blender comfyui workflow kitaplık sunucu adres endpoint uzak ağ bilgisayar token doku texture yerel 3d ses partner comfy hesabı'
+    keywords:
+      'blender comfyui gradio git depo arka uç backend pinokio hugging face space workflow kitaplık sunucu adres endpoint uzak ağ bilgisayar token doku texture yerel 3d ses partner comfy hesabı'
   },
   { id: 'anim', label: 'Animasyon', icon: 'anim', desc: 'NVIDIA Kimodo kurulumu ve servis', keywords: 'kimodo animasyon hareket motion wsl docker cuda hugging face llama' },
   { id: 'unreal', label: 'Unreal Engine', icon: 'cube', desc: 'Remote Execution bağlantısı ve IK Rig', keywords: 'unreal ue5 remote execution python ik rig manny quinn retarget' },
@@ -251,6 +253,15 @@ export default function SettingsPage() {
             <ComfyLocal />
             <Field label="Kurulum klasörü" help="AssetForge ComfyUI’ı buraya kurar (Python ortamı, ComfyUI, modeller). Modeller büyüdükçe birkaç on GB olabilir.">
               <TextInput value={s.comfyHome} onChange={(v) => patch({ comfyHome: v })} />
+            </Field>
+          </Card>
+          <Card
+            title="Özel arka uçlar ve Gradio uygulamaları"
+            desc="ComfyUI’a henüz gelmemiş bir yapay zekâ projesini git deposundan kurun: AssetForge depoyu indirir, kurulum tarifini (assetforge.json ya da önerdiği taslak) gösterir, onaylayınca kendi Python ortamına kurar ve gerektiğinde arka planda başlatır. Hatlarda Gradio Uygulaması düğümüyle kullanılır."
+          >
+            <CustomBackends />
+            <Field label="Kurulum klasörü" help="Her arka uç burada kendi klasöründe durur (depo, Python ortamı, günlük); Hugging Face modelleri _hf alt klasöründe ortak önbelleğe iner.">
+              <TextInput value={s.backendsHome} onChange={(v) => patch({ backendsHome: v })} />
             </Field>
           </Card>
         </>

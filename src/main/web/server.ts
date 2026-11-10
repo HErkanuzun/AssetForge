@@ -26,7 +26,19 @@ export interface WebServerDeps {
 }
 
 /** Bu bilgisayardaki pencereleri/dosya gezginini açan işlemler: tarayıcıdan anlamsız ve tehlikeli */
-const HOST_ONLY = new Set(['dialog:pickFiles', 'project:pickDir', 'shell:openPath', 'shell:showItem', 'comfy:wf:show', 'comfy:open', 'diag:save', 'diag:openLogs', 'web:headless'])
+const HOST_ONLY = new Set([
+  'dialog:pickFiles',
+  'project:pickDir',
+  'shell:openPath',
+  'shell:showItem',
+  'comfy:wf:show',
+  'comfy:open',
+  'backends:folder',
+  'backends:open',
+  'diag:save',
+  'diag:openLogs',
+  'web:headless'
+])
 
 const COOKIE = 'af_session'
 const MAX_CALL_BODY = 32 * 1024 * 1024

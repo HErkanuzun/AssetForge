@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { setLogSecrets } from './log'
-import type { ComfyServer, ComfyWorkflowEntry, LlmProvider, LlmRoles, McpExpose, McpServerConfig, SettingsPatch, SettingsPublic, WebConfig } from '../shared/types'
+import type { ComfyServer, ComfyWorkflowEntry, CustomBackend, LlmProvider, LlmRoles, McpExpose, McpServerConfig, SettingsPatch, SettingsPublic, WebConfig } from '../shared/types'
 import { migrateComfyServers } from '../shared/comfyServers'
 
 type SecretName = 'anthropic' | 'meshy' | 'elevenlabs' | 'huggingface' | 'comfy' | `llm:${string}` | `comfy:${string}`
@@ -19,6 +19,9 @@ interface SettingsFile {
   comfyDefaultServer: string
   comfyWorkflows: ComfyWorkflowEntry[]
   comfyDefaultWorkflow: string
+  customBackends: CustomBackend[]
+  /** Özel arka uçların klasörü (depo + sanal ortam + günlük) */
+  backendsHome: string
   /** AssetForge'un kurduğu yerel ComfyUI klasörü (venv + ComfyUI deposu) */
   comfyHome: string
   blenderPath: string
@@ -68,6 +71,8 @@ function defaults(): SettingsFile {
     comfyDefaultServer: 'auto',
     comfyWorkflows: [],
     comfyDefaultWorkflow: '',
+    customBackends: [],
+    backendsHome: path.join(app.getPath('userData'), 'backends'),
     comfyHome: path.join(app.getPath('userData'), 'comfyui'),
     blenderPath: detectBlender(),
     ueMcpUrl: 'http://127.0.0.1:8000/mcp',
@@ -118,6 +123,9 @@ export function getSettings(): SettingsFile {
   cache.comfyServers = migrateComfyServers(loaded)
   if (!Array.isArray(cache.comfyWorkflows)) cache.comfyWorkflows = []
   cache.web = { ...d.web, ...loaded.web }
+  if (!Array.isArray(cache.customBackends)) cache.customBackends = []
+  // Kimodo ve ComfyUI ile aynı büyük diske
+  if (!loaded.backendsHome) cache.backendsHome = path.join(path.dirname(cache.kimodoHome), 'backends')
   if (!loaded.comfyHome) cache.comfyHome = path.join(path.dirname(cache.kimodoHome), 'comfyui')
   if (!loaded.mcpExpose) persist() // MCP token'ı bir kez üretilip saklansın
   refreshLogSecrets()
@@ -206,6 +214,8 @@ export function publicSettings(): SettingsPublic {
     comfyDefaultServer: s.comfyDefaultServer,
     comfyWorkflows: s.comfyWorkflows,
     comfyDefaultWorkflow: s.comfyDefaultWorkflow,
+    customBackends: s.customBackends,
+    backendsHome: s.backendsHome,
     comfyHome: s.comfyHome,
     blenderPath: s.blenderPath,
     ueMcpUrl: s.ueMcpUrl,

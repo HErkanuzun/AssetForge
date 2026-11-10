@@ -37,6 +37,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - Files dropped or picked in the browser are uploaded into the project folder. Editors can't make the app read files outside the project folder.
   - Server-only mode: close the window and keep serving from the tray icon, start with `--headless`, or choose "Açılışta pencere açılmasın".
   - By default it is reachable only from this PC. Turn on "Yerel ağa aç" for your network; Settings explains Tailscale and Cloudflare Tunnel for access from outside.
+- **Gradio app node** ("Gradio Uygulaması"): runs any Gradio app through its API. That covers a demo installed from a git repo, an app opened by Pinokio, an app on another PC, or a Hugging Face Space.
+  - AssetForge's inputs (prompt, negative, seed, duration, image, 3D model, sound) go to the app's fields by type and name. "Sabit değerler (JSON)" sets any other field.
+  - Images, 3D models and sounds the app returns go on to the next nodes.
+  - Works with Gradio 4 and 5. The saved Hugging Face token is used for Hugging Face Spaces.
+- **Custom backends from a git repo:** add an AI project that has no ComfyUI node yet. Settings → Local tools → "Özel arka uçlar ve Gradio uygulamaları":
+  - AssetForge downloads the repo and shows an install recipe. The recipe comes from the repo's own `assetforge.json`, or AssetForge drafts one from the repo's files (requirements, start file, Gradio or not).
+  - You review and edit the recipe. AssetForge shows every command before anything runs, and installs only after you confirm.
+  - Each project gets its own Python environment (uv) and folder. Hugging Face models go to one shared cache on the same disk.
+  - AssetForge starts the project in the background when a node needs it, and shows its status, log, endpoints and how inputs will be mapped. You can start, stop, reinstall or remove it.
+  - "İncele" shows the endpoints of any running Gradio app.
 
 ## [0.5.0] - 2026-11-10
 

@@ -82,6 +82,7 @@ Tek seferlik üretimler yerine **tutarlı, projeye özel asset** isteyen bağım
 | Anthropic API anahtarı **veya** OpenAI uyumlu uç | prompt, Brief, kalite kontrol, asistan | Ollama veya LM Studio ile yerel modeller de çalışır. |
 | Meshy API anahtarı | 3D model, doku, rig | |
 | ElevenLabs API anahtarı | ses efektleri, motor sesi | |
+| Özel arka uçlar (isteğe bağlı) | Gradio demosu ya da HTTP API'si olan her proje | Bir yapay zekâ projesini git deposundan kurulum tarifiyle kur (depodaki `assetforge.json` ya da AssetForge'un önerdiği taslak). Kendi Python ortamında durur, bir düğüm gerektirince açılır. *Gradio Uygulaması* düğümü Pinokio'nun açtığı, başka bilgisayardaki ya da Hugging Face Space uygulamalarını da çalıştırır. |
 | ComfyUI (isteğe bağlı) | görsel, 3D, ses, hareket | API formatında her workflow; Ayarlar'daki kitaplıkta saklanır. Birden çok ComfyUI sunucusu ekle (bu bilgisayar, ağdaki diğer bilgisayarlar, kiralık GPU); her düğüm birini seçsin ya da otomatik seçilsin. Düğüm başlıklarını `AF:prompt`, `AF:image`, `AF:model`, `AF:audio`, `AF:seed` yap (ya da `{{PROMPT}}` yer tutucuları). Comfy hesabı anahtarı yalnızca partner düğümleri için gerekir. |
 | NVIDIA GPU + ~25 GB disk (isteğe bağlı) | Kimodo metinden hareket | Animasyon sayfasından tek tıkla kurulum. Hugging Face token gerekir. |
 

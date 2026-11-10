@@ -344,6 +344,10 @@ export interface SettingsPublic {
   comfyHome: string
   /** Web sunucusu: aynı arayüzü tarayıcıdan paylaşma */
   web: WebConfig
+  /** Git deposundan kurulan özel arka uçlar (Gradio / HTTP) */
+  customBackends: CustomBackend[]
+  /** Özel arka uçların kurulduğu klasör */
+  backendsHome: string
   blenderPath: string
   /** Unreal MCP sunucusu (Remote Execution yoksa yedek yol) */
   ueMcpUrl: string
@@ -366,6 +370,8 @@ export interface SettingsPatch {
   comfyTokens?: Record<string, string>
   comfyHome?: string
   web?: WebConfig
+  customBackends?: CustomBackend[]
+  backendsHome?: string
   blenderPath?: string
   ueMcpUrl?: string
   projectDir?: string
@@ -670,6 +676,59 @@ export interface ComfyFit {
   missingModels: string[]
   queue?: number
   error?: string
+}
+
+/** Özel arka uç kurulum tarifi (deponun kökündeki assetforge.json ya da Ayarlar'da düzenlenen) */
+export interface BackendRecipe {
+  name: string
+  /** https git adresi */
+  repo: string
+  /** Dal / etiket / commit (boş = varsayılan dal) */
+  ref?: string
+  /** Sanal ortamın Python sürümü (uv ile); boş = sanal ortam yok */
+  python: string
+  /** Depo klasöründe sırayla çalışan komutlar; {uv} {python} {port} {repo} yer tutucuları */
+  install: string[]
+  /** Sunucuyu başlatan komut */
+  start: string
+  port: number
+  /** gradio = Gradio uygulaması (Gradio Uygulaması düğümü), http = başka bir HTTP sunucusu */
+  api: 'gradio' | 'http'
+  env: Record<string, string>
+  /** Hazır olduğunu anlamak için sorgulanan yol */
+  ready: string
+  /** İlk açılışta model indirme dahil bekleme (sn) */
+  startTimeout: number
+  produces: ComfyOutputKind[]
+  notes?: string
+}
+
+export interface CustomBackend {
+  id: string
+  name: string
+  recipe: BackendRecipe
+  addedAt: number
+  /** Tarif deponun kendi assetforge.json'undan mı geldi */
+  recipeFromRepo?: boolean
+}
+
+export interface BackendStatus {
+  id: string
+  cloned: boolean
+  installed: boolean
+  /** Tarif kurulumdan sonra değişti: yeniden kurulmalı */
+  stale: boolean
+  running: boolean
+  healthy: boolean
+  url: string
+  error?: string
+}
+
+/** Gradio uygulamasının bir uç noktası ve AssetForge'un girişleri nasıl eşleyeceği */
+export interface GradioEndpointInfo {
+  name: string
+  params: { name: string; label: string; component: string; type: string; hasDefault: boolean; default?: unknown; role?: string }[]
+  returns: { label: string; component: string; kind?: ComfyOutputKind | null }[]
 }
 
 /** AssetForge'un yerel olarak kurduğu ComfyUI */

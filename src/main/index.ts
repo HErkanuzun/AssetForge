@@ -30,6 +30,8 @@ import {
   workflowFilePath
 } from './integrations/comfyLibrary'
 import { normalizeComfyUrl } from '../shared/comfyServers'
+import { addBackend, backendFolder, backendLogs, backendStatuses, backendUrl, ensureBackend, getBackend, installBackend, removeBackend, stopBackend, updateRecipe } from './integrations/backends'
+import { gradioEndpoints } from './providers/gradio'
 import { briefToAssets, createBrief, libraryThumbnails, sendBrief } from './providers/brief'
 import { Runner } from './engine/runner'
 import { importAssetList } from './importers/assetList'
@@ -267,6 +269,19 @@ function registerIpc(): void {
   handle('comfy:wf:default', (id: string) => setDefaultWorkflow(id))
   handle('comfy:wf:fit', (id: string) => fitWorkflow(id))
   handle('comfy:wf:show', (id: string) => shell.showItemInFolder(workflowFilePath(id)))
+  // Özel arka uçlar (git deposundan) ve Gradio uygulamaları
+  const backendLog = (id: string) => (line: string) => emit('backends:log', { id, line })
+  handle('backends:status', () => backendStatuses())
+  handle('backends:add', (url: string) => addBackend(url, backendLog('_add')))
+  handle('backends:recipe', (id: string, json: string) => updateRecipe(id, json))
+  handle('backends:install', (id: string) => installBackend(id, backendLog(id)))
+  handle('backends:start', (id: string) => ensureBackend(id, backendLog(id)))
+  handle('backends:stop', (id: string) => stopBackend(id))
+  handle('backends:logs', (id: string) => backendLogs(id))
+  handle('backends:remove', (id: string) => removeBackend(id))
+  handle('backends:folder', (id: string) => shell.openPath(backendFolder(id)))
+  handle('backends:open', (id: string) => openExternal(backendUrl(getBackend(id))))
+  handle('gradio:inspect', (url: string) => gradioEndpoints(normalizeComfyUrl(url)))
 
   // Brief Chat
   handle('brief:create', (seed?: { title?: string; kind?: AssetKind }) => ({ ...createBrief(dir(), seed), history: [] }))

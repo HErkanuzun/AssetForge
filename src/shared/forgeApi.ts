@@ -113,6 +113,20 @@ export function createApi(b: ForgeBridge): ForgeApi {
       },
       onLog: (cb) => b.on('comfy:log', cb)
     },
+    backends: {
+      status: () => call('backends:status'),
+      add: (url) => call('backends:add', url),
+      setRecipe: (id, json) => call('backends:recipe', id, json),
+      install: (id) => call('backends:install', id),
+      start: (id) => call('backends:start', id),
+      stop: (id) => call('backends:stop', id),
+      logs: (id) => call('backends:logs', id),
+      remove: (id) => call('backends:remove', id),
+      folder: (id) => call('backends:folder', id),
+      open: (id) => call('backends:open', id),
+      inspect: (url) => call('gradio:inspect', url),
+      onLog: (cb) => b.on('backends:log', cb)
+    },
     kimodo: {
       status: () => call('kimodo:status'),
       step: (step) => call('kimodo:step', step),

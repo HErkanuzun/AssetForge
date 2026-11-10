@@ -14,7 +14,7 @@ export interface HubClient {
   close?: () => void
 }
 
-const OWNER_ONLY = new Set(['connect:event', 'comfy:log', 'kimodo:log'])
+const OWNER_ONLY = new Set(['connect:event', 'comfy:log', 'kimodo:log', 'backends:log'])
 /** Yalnızca masaüstü penceresine (görev çubuğundan sayfa açma) */
 const DESKTOP_ONLY = new Set(['nav:page'])
 

@@ -11,6 +11,7 @@ const VIEW = new Set([
   'ue:status',
   'comfy:status',
   'comfy:servers',
+  'backends:status',
   'brief:list',
   'brief:get',
   'library:thumbs',

@@ -61,6 +61,14 @@ function paramOptions(pd: ParamDef, settings: SettingsPublic | null, current = '
       ...(current && !all.some((l) => l.id === current) ? [{ value: current, label: '(silinmiş sağlayıcı)' }] : [])
     ]
   }
+  if (pd.source === 'backend') {
+    const list = settings?.customBackends ?? []
+    return [
+      { value: '', label: 'Yok (adresi aşağıya yazın)' },
+      ...list.map((b) => ({ value: b.id, label: `${b.name} · ${b.recipe.api === 'gradio' ? 'Gradio' : 'HTTP'}` })),
+      ...(current && !list.some((b) => b.id === current) ? [{ value: current, label: '(kaldırılmış arka uç)' }] : [])
+    ]
+  }
   if (pd.source === 'comfyServer') {
     const servers = settings?.comfyServers ?? []
     const def = servers.find((x) => x.id === settings?.comfyDefaultServer)

@@ -20,6 +20,9 @@ import { comfyRun, kindOfFile, type ComfyRunOptions } from '../providers/comfyui
 import { runTaskAgent, walk, type AgentEngine } from '../agent/taskAgent'
 import { resolveWorkflow } from '../integrations/comfyLibrary'
 import { withComfyServer } from '../integrations/comfyServers'
+import { ensureBackend } from '../integrations/backends'
+import { gradioRun } from '../providers/gradio'
+import { normalizeComfyUrl } from '../../shared/comfyServers'
 import { soundEffect } from '../providers/elevenlabs'
 import { createTask, downloadModelTask, waitTask, type MeshyTask } from '../providers/meshy'
 import { allProviders, getSecret, getSettings, providerKey } from '../settings'
@@ -351,6 +354,55 @@ const executors: Record<string, Executor> = {
     })
     if (!r.files.image.length) throw new Error('ComfyUI görsel döndürmedi (workflow’da Save Image düğümü var mı?)')
     return { outputs: { image: { kind: 'image', files: r.files.image } } }
+  },
+
+  'gradio.app': async (ctx, p, inputs) => {
+    const pr = promptOf(inputs)
+    const text = pr?.prompt || str(p.text).trim() || undefined
+    const backend = str(p.backend).trim()
+    const url = backend ? await ensureBackend(backend, ctx.log, ctx.signal) : normalizeComfyUrl(str(p.url))
+    if (!url) throw new Error('Gradio Uygulaması: bir özel arka uç seçin ya da uygulamanın adresini girin')
+    let overrides: Record<string, unknown> | undefined
+    if (str(p.values).trim()) {
+      try {
+        overrides = JSON.parse(str(p.values)) as Record<string, unknown>
+      } catch (e) {
+        throw new Error(`“Sabit değerler” geçerli JSON değil: ${(e as Error).message}`, { cause: e })
+      }
+    }
+    const img = inputs.image
+    const model = inputs.model
+    const audio = inputs.audio
+    const seconds = pr?.duration_seconds || num(p.seconds, 0) || undefined
+    // Hugging Face Space'leri için kayıtlı HF token'ı (özel Space'ler ve kota)
+    const token = /\.hf\.space$/i.test(new URL(url).hostname) ? getSecret('huggingface') : undefined
+    const r = await gradioRun({
+      url,
+      token,
+      endpoint: str(p.endpoint),
+      values: { prompt: text, negative: pr?.negative_prompt || undefined, seed: comfySeed(ctx, p), seconds },
+      uploads: {
+        image: img?.kind === 'image' ? img.files[0] : undefined,
+        model: model?.kind === 'model' ? (model.glb ?? model.file) : undefined,
+        audio: audio?.kind === 'audio' ? audio.files[0] : undefined
+      },
+      overrides,
+      outDir: ctx.dir,
+      baseName: assetBaseName(ctx.asset),
+      log: ctx.log,
+      warn: ctx.warn,
+      progress: ctx.progress,
+      signal: ctx.signal,
+      timeoutMin: num(p.timeout, 30)
+    })
+    const outputs: Record<string, Artifact> = {}
+    const f = r.files
+    if (f.image.length) outputs.image = { kind: 'image', files: f.image }
+    const mesh = f.model.find((x) => x.endsWith('.glb')) ?? f.model[0]
+    if (mesh) outputs.model = { kind: 'model', file: mesh, glb: mesh.endsWith('.glb') ? mesh : undefined, thumbnail: f.image[0] }
+    if (f.audio.length) outputs.audio = { kind: 'audio', files: f.audio, target: seconds ? { seconds, loop: pr?.loop } : undefined }
+    if (!Object.keys(outputs).length) throw new Error(`Gradio uygulaması görsel, model ya da ses döndürmedi${r.text.length ? ` (metin: ${r.text[0].slice(0, 120)})` : ''}`)
+    return { outputs }
   },
 
   'comfy.workflow': async (ctx, p, inputs) => {
