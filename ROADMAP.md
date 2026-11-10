@@ -6,7 +6,7 @@ AssetForge follows [Semantic Versioning](https://semver.org): `MAJOR.MINOR.PATCH
 - **1.0.0** = first stable release. The project file format and the MCP tool API are frozen, and later breaking changes need a new MAJOR version.
 - Tags look like `v0.4.0`. Pushing a tag builds the Windows installer on GitHub Actions and publishes it as a GitHub Release.
 
-## Where we are: v0.5.0 (alpha), November 2026
+## Where we are: v0.6.0 (alpha), November 2026
 
 About **40 %** of the way to 1.0. The core pipeline works end to end, but some parts are untested with live services and the UI is Turkish only.
 

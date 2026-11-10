@@ -13,7 +13,7 @@
 ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.x-313131?logo=unrealengine)
 ![Electron](https://img.shields.io/badge/Electron-React%20%2B%20TypeScript-47848f?logo=electron)
 ![MCP](https://img.shields.io/badge/MCP-server%20%2B%20client-8a2be2)
-![Version](https://img.shields.io/badge/version-0.5.0%20alpha-orange)
+![Version](https://img.shields.io/badge/version-0.6.0%20alpha-orange)
 
 **English** · [Türkçe](README.tr.md) · [Español](README.es.md) · [简体中文](README.zh-CN.md)
 
@@ -142,7 +142,7 @@ Clips are generated on Kimodo's SOMA skeleton, renamed to UE5 Manny bones with r
 
 ## Versions and roadmap
 
-AssetForge uses [Semantic Versioning](https://semver.org). The current version is **0.5.0 (alpha)**, and 1.0 is estimated in about 6 months.
+AssetForge uses [Semantic Versioning](https://semver.org). The current version is **0.6.0 (alpha)**, and 1.0 is estimated in about 6 months.
 
 | Version | Target | Goal |
 |---|---|---|

@@ -1,6 +1,6 @@
 {
   "name": "assetforge",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "AssetForge — AI game asset pipeline for Unreal Engine 5: text-to-3D (Meshy), text-to-motion (Kimodo), motion matching & blend spaces, AI sound (ElevenLabs), ComfyUI textures, Blender automation and one-click UE5 import.",
   "keywords": [
     "unreal-engine",

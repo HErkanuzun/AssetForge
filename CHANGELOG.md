@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-10
+
 ### Added
 - **Several ComfyUI servers:** Settings → Local tools → ComfyUI now holds a list of servers: this PC, other PCs on your network, or a rented GPU.
   - Change a server's name and address right in its row, test it, turn it on or off, and open its node editor.
