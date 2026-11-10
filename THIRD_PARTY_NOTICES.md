@@ -42,7 +42,7 @@ Generated from `package-lock.json` by `node scripts/third-party-notices.mjs`. Ea
 
 | Package | Version | License |
 |---|---|---|
-| [@anthropic-ai/sdk](https://github.com/anthropics/anthropic-sdk-typescript) | 1.3.0 | Apache-2.0 |
+| [@anthropic-ai/sdk](https://github.com/anthropics/anthropic-sdk-typescript) | 1.6.0 | Apache-2.0 |
 | [@babel/runtime](https://github.com/babel/babel) | 7.29.10 | MIT |
 | [@hono/node-server](https://github.com/honojs/node-server) | 2.1.5 | MIT |
 | [@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/typescript-sdk) | 1.32.2 | MIT |
@@ -54,8 +54,8 @@ Generated from `package-lock.json` by `node scripts/third-party-notices.mjs`. Ea
 | [@types/d3-selection](https://github.com/DefinitelyTyped/DefinitelyTyped) | 3.0.12 | MIT |
 | [@types/d3-transition](https://github.com/DefinitelyTyped/DefinitelyTyped) | 3.0.9 | MIT |
 | [@types/d3-zoom](https://github.com/DefinitelyTyped/DefinitelyTyped) | 3.0.9 | MIT |
-| [@xyflow/react](https://github.com/xyflow/xyflow) | 12.12.0 | MIT |
-| [@xyflow/system](https://github.com/xyflow/xyflow) | 0.0.83 | MIT |
+| [@xyflow/react](https://github.com/xyflow/xyflow) | 12.12.1 | MIT |
+| [@xyflow/system](https://github.com/xyflow/xyflow) | 0.0.84 | MIT |
 | [accepts](https://github.com/jshttp/accepts) | 2.0.0 | MIT |
 | [ajv](https://github.com/ajv-validator/ajv) | 8.20.0 | MIT |
 | [ajv-formats](https://github.com/ajv-validator/ajv-formats) | 3.0.1 | MIT |
@@ -71,15 +71,15 @@ Generated from `package-lock.json` by `node scripts/third-party-notices.mjs`. Ea
 | [cookie-signature](https://github.com/visionmedia/node-cookie-signature) | 1.2.2 | MIT |
 | [cors](https://github.com/expressjs/cors) | 2.8.6 | MIT |
 | [cross-spawn](git@github.com:moxystudio/node-cross-spawn) | 7.0.6 | MIT |
-| [d3-color](https://github.com/d3/d3-color) | 3.1.0 | ISC |
-| [d3-dispatch](https://github.com/d3/d3-dispatch) | 3.0.1 | ISC |
-| [d3-drag](https://github.com/d3/d3-drag) | 3.0.0 | ISC |
-| [d3-ease](https://github.com/d3/d3-ease) | 3.0.1 | BSD-3-Clause |
-| [d3-interpolate](https://github.com/d3/d3-interpolate) | 3.0.1 | ISC |
-| [d3-selection](https://github.com/d3/d3-selection) | 3.0.0 | ISC |
-| [d3-timer](https://github.com/d3/d3-timer) | 3.0.1 | ISC |
-| [d3-transition](https://github.com/d3/d3-transition) | 3.0.1 | ISC |
-| [d3-zoom](https://github.com/d3/d3-zoom) | 3.0.0 | ISC |
+| [d3-color](https://github.com/d3/d3-color) | 3.1.1 | ISC |
+| [d3-dispatch](https://github.com/d3/d3-dispatch) | 3.0.2 | ISC |
+| [d3-drag](https://github.com/d3/d3-drag) | 3.0.1 | ISC |
+| [d3-ease](https://github.com/d3/d3-ease) | 3.0.2 | BSD-3-Clause |
+| [d3-interpolate](https://github.com/d3/d3-interpolate) | 3.0.2 | ISC |
+| [d3-selection](https://github.com/d3/d3-selection) | 3.0.1 | ISC |
+| [d3-timer](https://github.com/d3/d3-timer) | 3.0.2 | ISC |
+| [d3-transition](https://github.com/d3/d3-transition) | 3.0.2 | ISC |
+| [d3-zoom](https://github.com/d3/d3-zoom) | 3.0.1 | ISC |
 | [debug](https://github.com/debug-js/debug) | 4.4.3 | MIT |
 | [depd](https://github.com/dougwilson/nodejs-depd) | 2.0.0 | MIT |
 | [dunder-proto](https://github.com/es-shims/dunder-proto) | 1.0.1 | MIT |
