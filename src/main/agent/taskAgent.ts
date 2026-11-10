@@ -5,7 +5,7 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import fs from 'node:fs'
 import path from 'node:path'
-import type { LlmProvider, McpServerConfig } from '../../shared/types'
+import type { AgentCliInfo, LlmProvider, McpServerConfig } from '../../shared/types'
 import { oaChatStream, type OaMessage, type OaPart, type OaTool } from '../ai/openai'
 import { run } from '../integrations/process'
 import { callClaude, clientFor, usageCost } from '../providers/claude'
@@ -314,6 +314,36 @@ export function findCli(name: 'claude' | 'codex'): string {
       ? 'Claude Code bulunamadı. Kurulum: https://claude.com/claude-code (sonra bir kez "claude" yazıp giriş yapın)'
       : 'Codex CLI bulunamadı. Kurulum: https://developers.openai.com/codex (sonra bir kez "codex login")'
   )
+}
+
+const CLIS: { id: AgentCliInfo['id']; name: string; cmd: 'claude' | 'codex'; install: string }[] = [
+  { id: 'claude-code', name: 'Claude Code', cmd: 'claude', install: 'https://claude.com/claude-code' },
+  { id: 'codex', name: 'Codex CLI', cmd: 'codex', install: 'https://developers.openai.com/codex' }
+]
+let cliCache: AgentCliInfo[] | null = null
+
+/**
+ * Desteklenen iki ajan CLI'sı kurulu mu, sürümü ne? Yalnızca istenince çalışır (Ayarlar'daki
+ * "Tara" düğmesi, tanılama dosyası) ve sonucu oturum boyunca saklar. Hiçbir şey kurmaz, giriş yapmaz.
+ */
+export async function agentClis(force = false): Promise<AgentCliInfo[]> {
+  if (cliCache && !force) return cliCache
+  cliCache = await Promise.all(
+    CLIS.map(async (c): Promise<AgentCliInfo> => {
+      let exe: string
+      try {
+        exe = findCli(c.cmd)
+      } catch {
+        return { id: c.id, name: c.name, installed: false, install: c.install }
+      }
+      const r = await run(exe, ['--version'], { timeoutMs: 10_000 })
+      const version = r.out.trim().split(/\r?\n/)[0]?.slice(0, 120)
+      return r.code === 0 && version
+        ? { id: c.id, name: c.name, installed: true, path: exe, version, install: c.install }
+        : { id: c.id, name: c.name, installed: true, path: exe, error: `sürüm okunamadı (kod ${r.code})`, install: c.install }
+    })
+  )
+  return cliCache
 }
 
 async function runCli(cmd: string, args: string[], o: TaskAgentOptions): Promise<{ code: number; out: string }> {

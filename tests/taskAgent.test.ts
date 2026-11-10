@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { describe, expect, it, vi } from 'vitest'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 
 vi.mock('electron', () => ({ app: { getPath: () => process.cwd(), isPackaged: false }, safeStorage: { isEncryptionAvailable: () => false } }))
 
@@ -80,4 +83,22 @@ describe('Ajan Görevi düğümü', () => {
       'mcp_servers.unreal_mcp.http_headers={"Authorization"="Bearer x"}'
     ])
   })
+})
+
+describe('ajan CLI taraması', () => {
+  it('kurulu CLI sürümünü okur, olmayanı kurulum bağlantısıyla bildirir', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'af-cli-'))
+    // Sahte "claude.exe": node'un kopyası; --version ile kendi sürümünü yazar
+    fs.copyFileSync(process.execPath, path.join(dir, 'claude.exe'))
+    const env = { PATH: process.env.PATH, USERPROFILE: process.env.USERPROFILE, LOCALAPPDATA: process.env.LOCALAPPDATA }
+    Object.assign(process.env, { PATH: dir, USERPROFILE: dir, LOCALAPPDATA: dir })
+    try {
+      const { agentClis } = await import('../src/main/agent/taskAgent')
+      const list = await agentClis(true)
+      expect(list.find((c) => c.id === 'claude-code')).toMatchObject({ installed: true, version: process.version, path: path.join(dir, 'claude.exe') })
+      expect(list.find((c) => c.id === 'codex')).toMatchObject({ installed: false, install: expect.stringMatching(/^https:/) })
+    } finally {
+      Object.assign(process.env, env)
+    }
+  }, 30_000)
 })

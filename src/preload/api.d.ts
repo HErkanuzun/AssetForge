@@ -4,6 +4,7 @@ import type {
   AnimSystemClipState,
   AnimSystemKind,
   AgentConversation,
+  AgentCliInfo,
   ComfyLocalStatus,
   ConnectEvent,
   ConnectService,
@@ -88,6 +89,8 @@ export interface ForgeApi {
     remove(id: string): Promise<void>
     onEvent(cb: (e: AgentEvent) => void): () => void
     /** Dış MCP istemcisi (ör. Claude Code) bir araç çağırdı */
+    /** Kurulu Claude Code / Codex CLI ve sürümleri (force = yeniden tara) */
+    clis(force?: boolean): Promise<AgentCliInfo[]>
     onExternal(cb: (toolName: string) => void): () => void
   }
   onProjectChanged(cb: (p: Project) => void): () => void

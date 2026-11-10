@@ -81,6 +81,7 @@ const api: ForgeApi = {
       ipcRenderer.on('agent:event', listener)
       return () => ipcRenderer.removeListener('agent:event', listener)
     },
+    clis: (force) => call('agent:clis', force),
     onExternal: (cb) => {
       const listener = (_e: unknown, name: string) => cb(name)
       ipcRenderer.on('agent:external', listener)

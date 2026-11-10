@@ -35,9 +35,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - The Brief director and the producer assistant now know the design.
   - Export a GDD in Markdown with mermaid flowcharts.
   - The `get_game_design` MCP tool gives the design to outside agents.
+- **Agent CLI check in Settings:** Settings → AI models shows whether Claude Code and Codex CLI are installed, with their version and path, and links to the install page when one is missing. The diagnostics file lists them too. Thanks to the contributor who suggested this in PR #7.
 - **Teach the Unreal AI:** sends the game design and AssetForge's asset rules into the Unreal project as Agent Skills, so any AI connected to Unreal follows them. The rules cover folders, naming, vehicle setup, dent targets and import optimization.
 
+### Changed
+- Dependency updates: Electron 45.2.3, Anthropic SDK 1.6.0, Vitest 5.1 and others.
+
+### Not yet tested live
+- The Unreal parts (vehicle setup in the editor, Unreal MCP fallback, sending Agent Skills) and planning a design with the API engine pass their automated tests but have not been tried in a live Unreal editor yet. Please report anything that goes wrong.
+
 ### Fixed
+- On the game design page, long loop names no longer push the loop dropdown out of its column.
 - The local ComfyUI install no longer stops while downloading ComfyUI. Windows PowerShell treated git's progress messages as errors. A half-finished download is now removed and started again.
 - Starting the local ComfyUI no longer waits until ComfyUI is closed again. The background server kept the starter's output open, so a workflow that had to start ComfyUI never began.
 

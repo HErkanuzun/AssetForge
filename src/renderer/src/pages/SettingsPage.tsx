@@ -7,6 +7,7 @@ import { useStore } from '../store'
 import { McpSettings, ModelSettings } from '../components/ConnectionsSettings'
 import QuickConnect from '../components/QuickConnect'
 import ComfyLocal from '../components/ComfyLocal'
+import AgentClis from '../components/AgentClis'
 
 type Section = 'connect' | 'models' | 'project' | 'tools' | 'anim' | 'unreal' | 'mcp' | 'about'
 
@@ -23,7 +24,7 @@ const SECTIONS: { id: Section; label: string; icon: IconName; desc: string; keyw
     label: 'Yapay zeka modelleri',
     icon: 'spark',
     desc: 'Claude modeli, yerel ve ek modeller, görev atamaları',
-    keywords: 'model claude ollama lm studio openrouter llm görev atama asistan prompt görsel vision web arama'
+    keywords: 'model claude ollama lm studio openrouter llm görev atama asistan prompt görsel vision web arama claude code codex cli ajan abonelik'
   },
   { id: 'project', label: 'Proje ve üretim', icon: 'folder', desc: 'Proje klasörü, eşzamanlı iş sayısı, ses formatı', keywords: 'proje klasör iş sayısı concurrency ses format wav mp3 çıktı' },
   { id: 'tools', label: 'Yerel araçlar', icon: 'wand', desc: 'Blender ve ComfyUI', keywords: 'blender comfyui workflow doku texture yerel 3d ses partner comfy hesabı' },
@@ -154,7 +155,12 @@ export default function SettingsPage() {
       )
       break
     case 'models':
-      body = <ModelSettings />
+      body = (
+        <>
+          <ModelSettings />
+          <AgentClis />
+        </>
+      )
       break
     case 'project':
       body = (

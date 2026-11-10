@@ -623,6 +623,18 @@ export interface ComfyLocalStatus {
 // ---------------------------------------------------------------------------
 // Yapay zeka sağlayıcıları, Yapımcı asistanı ve MCP bağlantıları
 
+/** Aboneliğinle çalışan ajan CLI'ları (Ajan Görevi, Montaj, Oyun Tasarımı motorları) */
+export interface AgentCliInfo {
+  id: 'claude-code' | 'codex'
+  name: string
+  installed: boolean
+  path?: string
+  version?: string
+  /** Kurulu ama sürüm okunamadı */
+  error?: string
+  install: string
+}
+
 export type LlmKind = 'anthropic' | 'openai'
 
 export interface LlmProvider {

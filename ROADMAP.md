@@ -6,7 +6,7 @@ AssetForge follows [Semantic Versioning](https://semver.org): `MAJOR.MINOR.PATCH
 - **1.0.0** = first stable release. The project file format and the MCP tool API are frozen, and later breaking changes need a new MAJOR version.
 - Tags look like `v0.4.0`. Pushing a tag builds the Windows installer on GitHub Actions and publishes it as a GitHub Release.
 
-## Where we are: v0.4.8 (alpha), November 2026
+## Where we are: v0.5.0 (alpha), November 2026
 
 About **40 %** of the way to 1.0. The core pipeline works end to end, but some parts are untested with live services and the UI is Turkish only.
 
@@ -14,7 +14,10 @@ About **40 %** of the way to 1.0. The core pipeline works end to end, but some p
 |---|---|
 | Node pipeline editor, runner, QA retry loop | ✅ Done |
 | Meshy, ElevenLabs, Blender, UE5 import | ✅ Done |
-| ComfyUI as the production backend (any workflow: images, 3D, audio, motion; partner nodes) | 🟡 Workflow node done; managed install and workflow library next |
+| ComfyUI as the production backend (any workflow: images, 3D, audio, motion; partner nodes) | 🟡 Workflow node and managed local install done and live-tested; ready-made workflow library next |
+| Agent task node (API, Claude Code, Codex CLI with MCP tools) | ✅ Done, live-tested with Claude Code and Codex |
+| Vehicle assembly rig and Unreal vehicle setup | 🟡 Rig live-tested in Blender; Unreal setup not yet tested in a live editor |
+| Game design page (loops, story, UI screens, GDD, Unreal Agent Skills) | ✅ Done |
 | Brief chat, production kits, project bible, spreadsheet import | ✅ Done |
 | Producer agent, multi-LLM providers, MCP server and client | ✅ Done |
 | Animation systems (Blend Space, Montage, Aim Offset, State Machine, Motion Matching) | ✅ Built and verified in UE 5.8 |
@@ -34,7 +37,8 @@ The dates are estimates for one main developer and can move.
 | Version | Target | Goal |
 |---|---|---|
 | **0.4.0** | Nov 2026 | First public alpha: installer, docs in 4 languages, non-commercial license |
-| **0.5.0** | Dec 2026 | ComfyUI as the production backend: AssetForge installs and starts ComfyUI, ready-made workflows (TRELLIS.2 image-to-3D, Hunyuan3D, ACE-Step music, Kimodo motion, Meshy / Tripo / Rodin / ElevenLabs partner nodes), live Kimodo verified, first-run setup wizard |
+| **0.5.0** | Nov 2026 | ✅ Local ComfyUI managed by AssetForge, agent task node (Claude Code / Codex / API), vehicle assembly rig and Unreal vehicle setup, game design page |
+| **0.5.x** | Dec 2026 | Ready-made ComfyUI workflows (TRELLIS.2 image-to-3D, Hunyuan3D, ACE-Step music, Kimodo motion, Meshy / Tripo / Rodin / ElevenLabs partner nodes), live Unreal vehicle test, live Kimodo verified, first-run setup wizard |
 | **0.6.0** | Jan 2027 | Internationalization: English UI (Turkish kept), language switch in Settings |
 | **0.7.0** | Feb 2027 | Quality: unit tests for the pipeline and animation math, CI checks, crash and log reporting |
 | **0.8.0** | Mar 2027 | Content: vehicle rig tier 3 (suspension, brakes), Niagara templates for VFX sprites, more pipeline templates |
