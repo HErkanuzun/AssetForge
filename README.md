@@ -86,6 +86,7 @@ It is built for indie developers, technical artists and students who want **cons
 | Anthropic API key **or** an OpenAI-compatible endpoint | prompts, brief chat, QA, agent | Local models through Ollama or LM Studio work too. |
 | Meshy API key | 3D models, textures, rigging | |
 | ElevenLabs API key | sound effects, engine audio | |
+| Custom backends (optional) | anything with a Gradio demo or HTTP API | Install an AI project from its git repo with an install recipe (`assetforge.json` in the repo, or a draft AssetForge suggests). It gets its own Python environment and starts when a node needs it. The *Gradio app* node also runs apps opened by Pinokio, on another PC, or Hugging Face Spaces. |
 | ComfyUI (optional) | images, 3D, audio, motion | Any API-format workflow, kept in a library in Settings. Add several ComfyUI servers (this PC, other PCs on your network, a rented GPU) and let each node pick one or choose automatically. Name the nodes `AF:prompt`, `AF:image`, `AF:model`, `AF:audio`, `AF:seed` (or use `{{PROMPT}}` placeholders). A Comfy account key is needed only for partner nodes. |
 | NVIDIA GPU + ~25 GB disk (optional) | Kimodo text-to-motion | One-click setup in the Animation page. Needs a Hugging Face token. |
 

@@ -12,6 +12,8 @@ export interface RunOptions {
   /** Standart girdiye yazılıp kapatılır (uzun görev metni komut satırı sınırına takılmasın) */
   input?: string
   signal?: AbortSignal
+  /** Windows: argümanları olduğu gibi geçir (cmd.exe /s /c "…" için) */
+  verbatim?: boolean
 }
 
 function decode(buf: Buffer): string {
@@ -23,7 +25,7 @@ function decode(buf: Buffer): string {
 export function run(cmd: string, args: string[], opts: RunOptions = {}): Promise<{ code: number; out: string }> {
   return new Promise((resolve) => {
     if (opts.signal?.aborted) return resolve({ code: -1, out: 'iptal edildi' })
-    const proc = spawn(cmd, args, { windowsHide: true, cwd: opts.cwd, env: { ...process.env, ...opts.env } })
+    const proc = spawn(cmd, args, { windowsHide: true, cwd: opts.cwd, env: { ...process.env, ...opts.env }, windowsVerbatimArguments: opts.verbatim })
     let out = ''
     let pending = ''
     const onData = (d: Buffer) => {

@@ -15,6 +15,7 @@ About **40 %** of the way to 1.0. The core pipeline works end to end, but some p
 | Node pipeline editor, runner, QA retry loop | ✅ Done |
 | Meshy, ElevenLabs, Blender, UE5 import | ✅ Done |
 | ComfyUI as the production backend (any workflow: images, 3D, audio, motion; partner nodes) | 🟡 Workflow node, managed local install, several servers with automatic choice and a workflow library done; ready-made workflows and running independent steps at the same time next |
+| Custom backends from a git repo (install recipe, own Python environment) and a Gradio app node | ✅ Done, live-tested with a real Gradio app; AI-written recipes next |
 | Agent task node (API, Claude Code, Codex CLI with MCP tools) | ✅ Done, live-tested with Claude Code and Codex |
 | Vehicle assembly rig and Unreal vehicle setup | 🟡 Rig live-tested in Blender; Unreal setup not yet tested in a live editor |
 | Game design page (loops, story, UI screens, GDD, Unreal Agent Skills) | ✅ Done |

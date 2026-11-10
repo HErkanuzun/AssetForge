@@ -21,12 +21,12 @@ export interface ParamDef {
   type: 'text' | 'textarea' | 'number' | 'select' | 'bool'
   default: string | number | boolean
   options?: ParamOption[]
-  /** Seçenekler ayarlardan gelir: llm = LLM sağlayıcıları, mcp = MCP sunucuları, comfyWorkflow = workflow kitaplığı, comfyServer = ComfyUI sunucuları */
-  source?: 'llm' | 'mcp' | 'comfyWorkflow' | 'comfyServer'
+  /** Seçenekler ayarlardan gelir: llm = LLM sağlayıcıları, mcp = MCP sunucuları, comfyWorkflow = workflow kitaplığı, comfyServer = ComfyUI sunucuları, backend = özel arka uçlar */
+  source?: 'llm' | 'mcp' | 'comfyWorkflow' | 'comfyServer' | 'backend'
   help?: string
 }
 
-export type NodeCategory = 'input' | 'prompt' | 'agent' | 'comfy' | 'image' | '3d' | 'audio' | 'anim' | 'process' | 'qa' | 'output'
+export type NodeCategory = 'input' | 'prompt' | 'agent' | 'comfy' | 'custom' | 'image' | '3d' | 'audio' | 'anim' | 'process' | 'qa' | 'output'
 
 export interface NodeDef {
   type: string
@@ -43,6 +43,7 @@ export const CATEGORY_META: Record<NodeCategory, { label: string; color: string 
   prompt: { label: 'Prompt', color: '#a855f7' },
   agent: { label: 'Ajan', color: '#6366f1' },
   comfy: { label: 'ComfyUI', color: '#84cc16' },
+  custom: { label: 'Özel API', color: '#06b6d4' },
   image: { label: 'Görsel', color: '#0ea5e9' },
   '3d': { label: '3D', color: '#f97316' },
   audio: { label: 'Ses', color: '#22c55e' },
@@ -369,6 +370,34 @@ export const NODE_DEFS: NodeDef[] = [
       { id: 'text', label: 'Metin (prompt bağlı değilse)', type: 'textarea', default: '' },
       { id: 'seed', label: 'Seed', type: 'number', default: -1, help: '-1 = her çalıştırmada yeni' },
       { id: 'seconds', label: 'Süre (sn, ses/animasyon)', type: 'number', default: 0, help: '0 = prompttaki süre ya da workflow’daki değer' },
+      { id: 'timeout', label: 'Zaman aşımı (dk)', type: 'number', default: 30 }
+    ]
+  },
+  {
+    type: 'gradio.app',
+    label: 'Gradio Uygulaması',
+    category: 'custom',
+    description:
+      'Herhangi bir Gradio uygulamasını çalıştırır: git deposundan kurduğun özel arka uç, Pinokio’nun açtığı bir uygulama, ağdaki başka bir bilgisayar ya da Hugging Face Space. Girişler (prompt, görsel, model, ses, seed, süre) uygulamanın alanlarına kendiliğinden eşlenir; çıktıdaki görsel / 3D model / ses sonraki düğümlere geçer.',
+    inputs: [
+      { id: 'prompt', label: 'Prompt', type: 'prompt', optional: true },
+      { id: 'image', label: 'Görsel', type: 'image', optional: true },
+      { id: 'model', label: 'Model', type: 'model', optional: true },
+      { id: 'audio', label: 'Ses', type: 'audio', optional: true }
+    ],
+    outputs: [
+      { id: 'image', label: 'Görsel', type: 'image' },
+      { id: 'model', label: 'Model', type: 'model' },
+      { id: 'audio', label: 'Ses', type: 'audio' }
+    ],
+    params: [
+      { id: 'backend', label: 'Uygulama', type: 'select', default: '', source: 'backend', help: 'Özel arka uç seçilirse gerekince kendiliğinden başlatılır. Boş = aşağıdaki adres' },
+      { id: 'url', label: 'Adres (arka uç seçilmediyse)', type: 'text', default: '', help: 'ör. http://127.0.0.1:7860 ya da https://kullanici-uygulama.hf.space' },
+      { id: 'endpoint', label: 'Uç nokta', type: 'text', default: '', help: 'Boş = ilki. Ayarlar → Özel arka uçlar → “Uç noktaları göster” ile görün (ör. /predict)' },
+      { id: 'text', label: 'Metin (prompt bağlı değilse)', type: 'textarea', default: '' },
+      { id: 'values', label: 'Sabit değerler (JSON)', type: 'textarea', default: '', help: 'Parametre adı ya da etiketi → değer, ör. {"steps": 30, "guidance_scale": 7}' },
+      { id: 'seed', label: 'Seed', type: 'number', default: -1, help: '-1 = rastgele' },
+      { id: 'seconds', label: 'Süre (sn, ses)', type: 'number', default: 0, help: '0 = prompttaki süre ya da uygulamanın varsayılanı' },
       { id: 'timeout', label: 'Zaman aşımı (dk)', type: 'number', default: 30 }
     ]
   },

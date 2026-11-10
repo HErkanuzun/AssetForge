@@ -5,7 +5,10 @@ import type {
   AnimSystemKind,
   AgentConversation,
   AgentCliInfo,
+  BackendStatus,
   ComfyFit,
+  CustomBackend,
+  GradioEndpointInfo,
   ComfyLocalStatus,
   ComfyServerState,
   ComfyWorkflowEntry,
@@ -142,6 +145,24 @@ export interface ForgeApi {
       show(id: string): Promise<void>
     }
     onLog(cb: (line: string) => void): () => void
+  }
+  /** Git deposundan kurulan özel arka uçlar ve Gradio uygulamaları */
+  backends: {
+    status(): Promise<BackendStatus[]>
+    /** Depoyu indirir ve tarif önerir (kod çalıştırmaz) */
+    add(url: string): Promise<{ backend: CustomBackend; notes: string[] }>
+    setRecipe(id: string, json: string): Promise<CustomBackend>
+    install(id: string): Promise<void>
+    /** Başlatır ve hazır olana kadar bekler; adresi döner */
+    start(id: string): Promise<string>
+    stop(id: string): Promise<void>
+    logs(id: string): Promise<string>
+    remove(id: string): Promise<void>
+    folder(id: string): Promise<string>
+    open(id: string): Promise<void>
+    /** Gradio uygulamasının uç noktaları ve girişlerin eşlenmesi */
+    inspect(url: string): Promise<GradioEndpointInfo[]>
+    onLog(cb: (m: { id: string; line: string }) => void): () => void
   }
   kimodo: {
     status(): Promise<KimodoStatus>
