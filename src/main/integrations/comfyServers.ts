@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { serverTitle } from '../../shared/i18n/metadata'
+import { UiError, errorEnvelope, errorMessage } from '../../shared/i18n/errors'
+import { message, emitMessage, type MessageDescriptor } from '../../shared/i18n/message'
 // Birden çok ComfyUI sunucusu: durum, bu bilgisayarda arama, workflow'un sunucuda çalışıp çalışamayacağı
 // ve "Otomatik" seçim (açık + gerekli düğüm/modelleri olan + kuyruğu en kısa sunucu).
 import fs from 'node:fs'
@@ -34,7 +37,7 @@ export async function serverState(s: ResolvedServer, timeoutMs = 4000): Promise<
     const queue = await comfyQueue(s.url, s.token).catch(() => undefined)
     return { id: s.id, online: true, info, queue }
   } catch (e) {
-    return { id: s.id, online: false, error: (e as Error).message.slice(0, 200) }
+    return { id: s.id, online: false, ...errorEnvelope(e), uiError: errorEnvelope(e).uiMessage }
   }
 }
 
@@ -44,7 +47,7 @@ export const serverStates = (): Promise<ComfyServerState[]> => Promise.all(listS
 export async function testServer(id: string, draft?: { url?: string; token?: string }): Promise<string> {
   const s = findServer(id)
   const url = normalizeComfyUrl(draft?.url ?? s?.url ?? '')
-  if (!url) throw new Error('Adres boş')
+  if (!url) throw new UiError(message('error.c57854ddda'))
   return comfyInfo(url, draft?.token || s?.token)
 }
 
@@ -82,12 +85,19 @@ async function objectInfo(s: ResolvedServer, fresh = false): Promise<ObjectInfo>
 export async function fitOn(s: ResolvedServer, source: string, fresh = false): Promise<ComfyFit> {
   const base = { serverId: s.id, serverName: s.name, missingNodes: [] as string[], missingModels: [] as string[] }
   const st = await serverState(s)
-  if (!st.online) return { ...base, online: false, ok: false, error: st.error }
+  if (!st.online) return { ...base, online: false, ok: false, error: st.error, uiError: st.uiError }
   try {
     const f = checkFit(source, await objectInfo(s, fresh))
     return { ...base, ...f, online: true, ok: !f.missingNodes.length && !f.missingModels.length, queue: st.queue }
   } catch (e) {
-    return { ...base, online: true, ok: true, queue: st.queue, error: `Uygunluk denetlenemedi: ${(e as Error).message.slice(0, 160)}` }
+    return {
+      ...base,
+      online: true,
+      ok: true,
+      queue: st.queue,
+      error: `Uygunluk denetlenemedi: ${(e as Error).message.slice(0, 160)}`,
+      uiError: message('comfy.fitFailed', { detail: errorMessage(e) })
+    }
   }
 }
 
@@ -97,6 +107,14 @@ export function describeFit(f: ComfyFit): string {
   if (f.missingNodes.length) parts.push(`eksik düğüm: ${f.missingNodes.slice(0, 4).join(', ')}${f.missingNodes.length > 4 ? '…' : ''}`)
   if (f.missingModels.length) parts.push(`eksik model: ${f.missingModels.slice(0, 3).join(', ')}${f.missingModels.length > 3 ? '…' : ''}`)
   return parts.join(' · ') || 'uygun'
+}
+
+export function fitMessage(f: ComfyFit): MessageDescriptor {
+  if (!f.online) return message('comfy.fitOffline', { detail: f.uiError ?? f.error ?? '' })
+  const parts: MessageDescriptor[] = []
+  if (f.missingNodes.length) parts.push(message('comfy.missingNodes', { list: f.missingNodes.join(', ') }))
+  if (f.missingModels.length) parts.push(message('comfy.missingModels', { list: f.missingModels.join(', ') }))
+  return parts.length ? parts.slice(1).reduce((left, right) => message('feedback.join', { left, right }), parts[0]) : message('comfy.fitSuitable')
 }
 
 // Bu uygulamanın sunucuya gönderdiği, bitmemiş işler: aynı anda başlayan işler aynı sunucuya yığılmasın
@@ -124,17 +142,18 @@ async function chooseServer(o: ServerChoice): Promise<ResolvedServer> {
   const want = effectiveChoice(o.choice, o.workflowServer)
   if (want !== 'auto') {
     const s = findServer(want)!
-    if (!s.enabled) throw new Error(`ComfyUI sunucusu “${s.name}” Ayarlar’da kapalı. Açın ya da düğümde başka bir sunucu seçin.`)
+    if (!s.enabled) throw new UiError(message('error.b9380d2734', { p0: String(s.name) }))
     if (s.managed) await ensureComfy(o.log, o.signal)
     const f = await fitOn(s, source)
-    if (!f.online) throw new Error(`ComfyUI sunucusu “${s.name}” yanıt vermiyor (${s.url}). ${f.error ?? ''}`.trim())
-    if (!f.ok) throw new Error(`“${s.name}” bu workflow’u çalıştıramaz — ${describeFit(f)}. ComfyUI Manager’dan eksikleri kurun ya da düğümde başka bir sunucu / Otomatik seçin.`)
-    if (f.error) o.log(f.error)
+    if (!f.online) throw new UiError(message('comfy.serverOffline', { name: serverTitle(s.id, s.name), url: s.url, detail: f.uiError ?? f.error ?? '' }))
+    if (!f.ok) throw new UiError(message('error.fda3a97dbf', { p0: serverTitle(s.id, s.name), p1: fitMessage(f) }))
+    if (f.uiError) emitMessage(o.log, f.uiError)
+    else if (f.error) o.log(f.error)
     return s
   }
 
   const enabled = listServers().filter((s) => s.enabled)
-  if (!enabled.length) throw new Error('Etkin ComfyUI sunucusu yok. Ayarlar → Yerel araçlar → ComfyUI’dan bir sunucu ekleyin ya da açın.')
+  if (!enabled.length) throw new UiError(message('error.2afd2324bf'))
   let fits = await Promise.all(enabled.map((s) => fitOn(s, source)))
   const ranked = () => rankServers(fits.map((f): ServerCandidate => ({ id: f.serverId, online: f.online, fits: f.ok, queue: f.queue ?? 0, inflight: inflight.get(f.serverId) ?? 0 })))
   let best = ranked()[0]
@@ -147,21 +166,24 @@ async function chooseServer(o: ServerChoice): Promise<ResolvedServer> {
     best = ranked()[0]
   }
   if (!best) {
-    const why = fits.map((f) => `${f.serverName}: ${describeFit(f)}`).join(' · ')
-    throw new Error(`Bu workflow’u çalıştırabilecek ComfyUI sunucusu yok — ${why}`)
+    const why = fits
+      .map((f) => message('feedback.namedDetail', { name: serverTitle(f.serverId, f.serverName), detail: fitMessage(f) }))
+      .reduce((left, right) => message('feedback.join', { left, right }))
+    throw new UiError(message('error.1ef8ce61f0', { p0: why }))
   }
   const chosen = enabled.find((s) => s.id === best.id)!
   const skipped = fits.filter((f) => f.serverId !== chosen.id && !(f.online && f.ok))
-  for (const f of skipped) o.log(`ComfyUI: ${f.serverName} atlandı (${describeFit(f)})`)
+  for (const f of skipped) emitMessage(o.log, message('log.6fcef4feaa', { p0: serverTitle(f.serverId, f.serverName), p1: fitMessage(f) }))
   const cf = fits.find((f) => f.serverId === chosen.id)
-  if (cf?.error) o.log(cf.error)
+  if (cf?.uiError) emitMessage(o.log, cf.uiError)
+  else if (cf?.error) o.log(cf.error)
   return chosen
 }
 
 /** Uygun sunucuyu seçer, işi orada çalıştırır; iş bitene kadar o sunucunun yükü sayılır */
 export async function withComfyServer<T>(o: ServerChoice, fn: (s: ResolvedServer) => Promise<T>): Promise<T> {
   const s = await chooseServer(o)
-  o.log(`ComfyUI sunucusu: ${s.name} (${s.url})`)
+  emitMessage(o.log, message('log.dd6c704e59', { p0: String(s.name), p1: String(s.url) }))
   inflight.set(s.id, (inflight.get(s.id) ?? 0) + 1)
   try {
     return await fn(s)

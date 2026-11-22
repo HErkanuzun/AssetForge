@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { renderMessage } from '../../../shared/i18n/message'
+import { pipelineTitle } from '../../../shared/i18n/metadata'
+import { errorMessage } from '../../../shared/i18n/errors'
 import { useEffect, useRef, useState } from 'react'
 import type { AssetKind, Brief } from '../../../shared/types'
 import { useNav } from '../App'
@@ -81,7 +84,7 @@ export default function HomePage() {
   const ta = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    window.forge.brief.list().then(setBriefs, (e: Error) => toast(e.message, 'error'))
+    window.forge.brief.list().then(setBriefs, (e: Error) => toast(errorMessage(e), 'error'))
   }, [toast])
 
   const start = async (msg: string, kind?: AssetKind) => {
@@ -92,7 +95,7 @@ export default function HomePage() {
       const b = await window.forge.brief.create({ title: m.length > 48 ? m.slice(0, 46) + '…' : m, kind })
       nav.openBrief(b.id, m)
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
       setBusy(false)
     }
   }
@@ -212,7 +215,7 @@ export default function HomePage() {
                   <b className="ellipsis">{j.assetName}</b>
                   <span className={`chip ${j.status === 'done' ? 'ok' : j.status === 'failed' ? 'pink' : j.status === 'running' ? 'accent' : ''}`}>{t(`status.${j.status}`)}</span>
                 </div>
-                <div className="muted small ellipsis">{j.pipelineName}</div>
+                <div className="muted small ellipsis">{renderMessage(locale, pipelineTitle(j.pipelineId, j.pipelineName))}</div>
                 <div className="bar">
                   <div style={{ width: `${jobProgress(j)}%` }} />
                 </div>

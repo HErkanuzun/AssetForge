@@ -1,5 +1,6 @@
-import {message} from '../../../shared/i18n/message'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { errorMessage } from '../../../shared/i18n/errors'
+import { message } from '../../../shared/i18n/message'
 // Ayarlar: solda kategori menüsü (arama ile), sağda yalnızca seçili kategori
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { AsyncButton, Field, NumberInput, Select, TextInput } from '../components/ui'
@@ -171,7 +172,7 @@ export default function SettingsPage() {
       const r = await fn()
       toast(message('settings.testOk', { name: label, detail: String(r).slice(0, 60) }), 'ok')
     } catch (e) {
-      toast(`${label}: ${(e as Error).message}`, 'error')
+      toast(message('feedback.namedDetail', { name: label, detail: errorMessage(e) }), 'error')
     }
   }
 
@@ -343,7 +344,7 @@ export default function SettingsPage() {
                 if (!parts.length) toast(message('settings.unrealNotFound'), 'error')
                 else toast(parts.join(' · '), 'ok')
               } catch (e) {
-                toast((e as Error).message, 'error')
+                toast(errorMessage(e), 'error')
               }
             }}
           >
@@ -415,13 +416,13 @@ export default function SettingsPage() {
                     const f = await window.forge.diag.save()
                     if (f) toast(message('settings.diagnosticsSaved', { file: f }), 'ok')
                   } catch (e) {
-                    toast(message('settings.diagnosticsFailed', { detail: (e as Error).message }), 'error')
+                    toast(message('settings.diagnosticsFailed', { detail: errorMessage(e) }), 'error')
                   }
                 }}
               >
                 {t('settings.saveDiagnostics')}
               </AsyncButton>
-              <AsyncButton className="ghost" onClick={() => window.forge.diag.openLogs().catch((e: Error) => toast(e.message, 'error'))}>
+              <AsyncButton className="ghost" onClick={() => window.forge.diag.openLogs().catch((e: Error) => toast(errorMessage(e), 'error'))}>
                 {t('settings.openLogs')}
               </AsyncButton>
               <a className="btn ghost" href="https://github.com/HErkanuzun/AssetForge/issues/new?template=bug_report.yml" target="_blank" rel="noreferrer">
@@ -449,7 +450,7 @@ export default function SettingsPage() {
               try {
                 await patch({ locale: next })
               } catch (error) {
-                toast(message('language.saveFailed', { detail: (error as Error).message }), 'error')
+                toast(message('language.saveFailed', { detail: errorMessage(error) }), 'error')
               } finally {
                 setSavingLocale(false)
               }

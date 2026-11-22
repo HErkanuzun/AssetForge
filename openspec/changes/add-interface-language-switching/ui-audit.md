@@ -1,6 +1,6 @@
 # 界面语言覆盖审计
 
-本清单基于当前起点 `61b126a` 的源码检查，所有条目均为**待实施、待运行验收**；不是声称已完成视觉检查。实施时每行补充词典键范围、en/zh-CN 验收结果和证据。页面路径相对 `src/renderer/src/`，shared/main 另注明。
+本清单最初基于 `61b126a` 的源码检查；当前实现和验收证据见文末。页面路径相对 `src/renderer/src/`，shared/main 另注明。下面的“必验交互”是完整要求，不表示全部操作已经实际执行；文末明确区分已验证和待验收。
 
 ## 页面与操作覆盖矩阵
 
@@ -52,3 +52,36 @@
 3. 旧土耳其语 fixture 同时包含内置模板、自定义改名、已生成资产、任务和聊天；切换后比较项目结构与参数，不能因翻译写回项目。
 4. 在有输入草稿、选中资源、运行任务、已显示 toast/助手面板时来回切换；确认选择与业务状态不丢失，后续反馈使用当前语言。
 5. 新词典缺 key/参数的测试必须失败；源码审计例外限定为用户/外部数据、协议/路径、提示词/技术标识、纯图形，不能把未翻译应用文字列为例外。
+
+## 本轮执行证据（2026-11-22）
+
+所有以下浏览器结果均来自生产构建的 renderer，加本地 HTTP/SSE 确定性 fixture，不是 Electron 实机或真实远程服务。`scripts/verify-interface.mjs` 可复跑并输出 `report.json`（pages/surfaces 包含实际文字、下拉全部 option label/value、placeholder/title/aria-label）及三语首页/设置截图。共 24 个主页面（8 路由 × 3 语言），无 renderer 异常；双语额外打开设置各分类、节点检查器、动画系统、任务详情及设计标签页。直接源码审计为 50 个候选、0 个待分类，不代替完整数据流/交互验收。
+
+| 覆盖矩阵对应区域 | 显示入口 / 词典 | en / zh-CN 已执行的证据 | 尚未逐项执行 |
+| --- | --- | --- | --- |
+| App、Home | app/home、pages、display | 双语主界面、导航、首页、助手展开；截图检查中文字体和主要按钮可读 | 各建议卡点击、viewer 全布局 |
+| Brief | brief、event、legacyEvent | 打开已有 brief，用户/AI Unicode 原文保持；旧版固定应用事件显示双语 | 问题卡、候选/图片附加、解析中与失败全流程 |
+| Library、Assets | surface、assetStatus、pipelineText | 图库/表格/资产页；旧 Üretildi fixture；状态映射与自定义状态测试 | 文件导入成功/失败、批量删除/运行、完整空态 |
+| Anim、AnimSystems | animation/systemRows、metadata、qa | 全部七类系统检查器和 clip 显示；系统/轴/分组/clip 全量元数据测试 | 无角色、构建成功/失败、取消/重试/删除逐项点击 |
+| Pipeline、ForgeNode | nodeDetailRows、metadata、flowLabels | 24 个节点检查器与控件属性/选项；运行弹层；切换时同一弹层 DOM 保留；节点/端口/参数不变测试 | 真实 MCP/模型目录返回的全部动态组合 |
+| Jobs | jobs、feedback、logs、qa | queued/running/done/failed/canceled 五种详情；外部日志原样，失败应用错误双语；费用/时间显示 | 真实输出预览、取消/重试、所有 QA 产物交互 |
+| Design | design、panelLabel、flowLabels | 五个 tab；fixture 含机制、循环节点、故事幕/人物、屏幕及组件；记录下拉与辅助属性 | 节点/边选择、删除/覆盖确认、导出和所有嵌套操作 |
+| Bible | bible、panelLabel | 三语页面及默认字段；源码字段/选项覆盖测试 | 空/有规则色板材质全组合、PDF 提取失败 |
+| Settings 公共/连接 | settings、language、feedback | 双语九分类；零搜索结果仍可切换；真实 selector 保存与失败回滚；缺 key 自动分类入口独立于分类内容 | 全部 API key 测试/删除/重连过程 |
+| models、AgentClis、MCP | panelLabel、appErrors | 双语面板及选项属性快照，fixture 含 CLI/MCP 状态；参数不变测试 | 全预设、服务连接断开/审批与失败组合 |
+| project、tools、ComfyServers | setup、comfy、metadata | 双语面板，本地默认名与自定义服务器，路径/格式选项；默认名与自定义名保护测试 | 目录取消、安装/启动/停止/移动实际操作 |
+| ComfyLibrary、CustomBackends | comfy、backend、panelLabel | 有工作流/配方面板快照；本地服务路由与兼容性回归；recipe 推断消息描述测试 | 复制/替换/删除、全部无效配方和空态 |
+| anim/unreal 设置 | setup、panelLabel、appErrors | 双语设置页与默认 native backend、连接字段、状态快照 | WSL/native 安装下载及全部失败提示实机操作 |
+| web/about 设置 | web、panelLabel | 双语面板；Web 权限/邀请服务测试；支持及许可标签 | 撤销/删除确认、诊断保存/取消实机 |
+| ui、Thumb、KindArt、BvhViewer | display、surface、appErrors | 页面渲染和状态/时间/类别映射测试；Bvh HTTP 应用错误描述 | 完整 3D/BVH 文件加载失败及交互 |
+| Markdown/纯图形 | 不翻译用户 Markdown；图形无应用文字 | Brief 用户/AI 原文不变断言；源码区分外部内容 | 所有富文本样式人工检查 |
+| shared nodes/templates/systems/design/Comfy 元数据 | metadata、nodeDetails、systems、templates、display | 全量标签/help/option 与模板测试；改名实例、ID/default/prompt 不变 | 外部插件自定义元数据只保留原文 |
+| store/main/shared QA/生产者 | message、errors、feedback、logs、qa | 嵌套描述 JSON 往返、无效/循环描述拒绝；已有 toast 切换，后续成功/失败和设置失败双语；原始日志保留 | 无 descriptor 且无法精确识别的历史诊断保留；全部真实服务输出组合未执行 |
+| tray/taskbar/main dialogs/diagnostics | native/taskbar 词典 | 标签构造单测；应用标题/过滤器源码已迁移，包括图片/工作流过滤器 | **未实机打开：Electron 二进制缺失，下载未成功** |
+| Web 登录/邀请/access | web、appErrors | HTTP 测试检查 en/zh-CN 表单、认证失败、无效邀请、429 限流、HTML lang/title、escaping/CSP 与角色权限 | 独立登录/邀请页人工截图 |
+| Settings/preload/webBridge | locale、message/errors | 旧配置、无效更新、读回、权限、脱敏事件测试；fixture SSE 切换 | Electron IPC 原生实机会话与多浏览器角色并行目测 |
+| 启动/字体/状态保留 | LocaleProvider、CSS、flowLabels | 三语加载 document.lang；en/zh 首页/设置截图；切换保留同一草稿 textarea 和 Unicode 值、同一运行弹层、项目 JSON、运行任务 | Electron 重启/跨项目实机操作、每个子面板各尺寸人工排版 |
+
+最终本地检查：typecheck、lint、format:check、audit:interface、build、notices:check 通过；Vitest 23 个测试文件通过、6 个跳过，共 461 项通过、10 项跳过。跳过项需要外部集成环境；没有将跳过计为通过。
+
+OpenSpec 未归档。涉及完整逐项人工/原生验收的任务保持未勾选，源码迁移和本地自动验证不等于已经获得完整发布验收。

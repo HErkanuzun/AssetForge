@@ -1,5 +1,5 @@
-import {renderMessage} from '../../shared/i18n/message'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { renderMessage } from '../../shared/i18n/message'
 import { createContext, useContext, useEffect, useState } from 'react'
 import AssistantPanel from './components/AssistantPanel'
 import { ForgeMark, Icon, type IconName } from './components/icons'
@@ -167,7 +167,7 @@ export default function App() {
           <div className="rail-foot dim small center" title={settings?.projectDir}>
             {project ? `${project.assets.length}` : ''}
             <br />
-            {t('app.assets')}
+            {t(project?.assets.length === 1 ? 'app.asset' : 'app.assets')}
           </div>
         </aside>
         <div className="main">
@@ -213,7 +213,7 @@ export default function App() {
         <div className="toasts">
           {toasts.map((t) => (
             <div key={t.id} className={`toast ${t.kind}`}>
-              {renderMessage(locale,t.text)}
+              {renderMessage(locale, t.text)}
             </div>
           ))}
         </div>

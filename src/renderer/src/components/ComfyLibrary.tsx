@@ -1,6 +1,8 @@
-import {message} from '../../../shared/i18n/message'
-import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { serverText } from '../../../shared/i18n/metadata'
+import { errorMessage } from '../../../shared/i18n/errors'
+import { message, renderMessage } from '../../../shared/i18n/message'
+import { useLocale } from '../i18n'
 // Ayarlar → Yerel araçlar → ComfyUI workflow kitaplığı: dosyadan / sürükle-bırak / yapıştırarak ekle, adlandır,
 // tercih edilen sunucuyu seç, sunucularda eksik düğüm ve model denetle. Düğümler workflow'u bu listeden seçer.
 import { useState, type DragEvent } from 'react'
@@ -10,21 +12,26 @@ import { useStore } from '../store'
 import { Icon } from './icons'
 
 function FitList({ fits }: { fits: ComfyFit[] }) {
-  const {t} = useLocale()
+  const { t, locale } = useLocale()
 
   return (
     <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
       {fits.map((f) => (
         <div key={f.serverId} className="small row" style={{ alignItems: 'flex-start' }}>
           <span className={`chip ${f.ok ? 'ok' : f.online ? 'pink' : ''}`} style={{ flex: 'none' }}>
-            {f.ok ? '✓' : f.online ? '✗' : '–'} {f.serverName}
+            {f.ok ? '✓' : f.online ? '✗' : '–'} {serverText(locale, f.serverId, f.serverName)}
           </span>
           <span className="muted" style={{ flex: 1, minWidth: 0 }}>
             {!f.online
-              ? `${t('comfy.off')}${f.error ? ` — ${f.error.slice(0, 120)}` : ''}`
+              ? `${t('comfy.off')}${f.error ? ` — ${renderMessage(locale, f.uiError ?? f.error).slice(0, 120)}` : ''}`
               : f.ok
-                ? `${t('comfy.canRun')}${f.queue ? t('comfy.queue', {count:f.queue}) : ''}${f.error ? ` · ${f.error}` : ''}`
-                : [f.missingNodes.length ? t('comfy.missingNodes', {list:f.missingNodes.join(', ')}) : '', f.missingModels.length ? t('comfy.missingModels', {list:f.missingModels.join(', ')}) : ''].filter(Boolean).join(' · ')}
+                ? `${t('comfy.canRun')}${f.queue ? t('comfy.queue', { count: f.queue }) : ''}${f.error ? ` · ${renderMessage(locale, f.uiError ?? f.error)}` : ''}`
+                : [
+                    f.missingNodes.length ? t('comfy.missingNodes', { list: f.missingNodes.join(', ') }) : '',
+                    f.missingModels.length ? t('comfy.missingModels', { list: f.missingModels.join(', ') }) : ''
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
           </span>
         </div>
       ))}
@@ -34,7 +41,7 @@ function FitList({ fits }: { fits: ComfyFit[] }) {
 }
 
 export default function ComfyLibrary() {
-  const {t} = useLocale()
+  const { t, locale } = useLocale()
 
   const { settings, setSettings, toast } = useStore()
   const s = settings!
@@ -44,13 +51,13 @@ export default function ComfyLibrary() {
   const [drag, setDrag] = useState(false)
 
   const reload = async () => setSettings(await window.forge.settings.get())
-  const act = async (key: string, fn: () => Promise<unknown>, ok?: string) => {
+  const act = async (key: string, fn: () => Promise<unknown>, ok?: import('../../../shared/i18n/message').UiMessage) => {
     setBusy(key)
     try {
       await fn()
       if (ok) toast(ok, 'ok')
     } catch (e) {
-      toast((e as Error).message.replace(/^Error invoking remote method '[^']+': (Error: )?/, ''), 'error')
+      toast(errorMessage(e), 'error')
     } finally {
       setBusy('')
       await reload()
@@ -61,7 +68,7 @@ export default function ComfyLibrary() {
     act('import', async () => {
       const added: ComfyWorkflowEntry[] = []
       for (const f of files) added.push(await window.forge.comfy.wf.import({ file: f }))
-      if (added.length) toast(message('comfy.added', {name:added.map(w=>w.name).join(', ')}), 'ok')
+      if (added.length) toast(message('comfy.added', { name: added.map((w) => w.name).join(', ') }), 'ok')
     })
 
   const onDrop = (e: DragEvent) => {
@@ -85,9 +92,13 @@ export default function ComfyLibrary() {
       style={drag ? { outline: '2px dashed var(--accent)', outlineOffset: 4, borderRadius: 10 } : undefined}
     >
       <div className="row" style={{ flexWrap: 'wrap', marginBottom: 10 }}>
-        <button className="btn primary" disabled={busy === 'import'} onClick={async () => importFiles(await window.forge.pickFiles([{ name: 'ComfyUI workflow (API)', extensions: ['json'] }], true))}>
-          {busy === 'import' ? <span className="spinner" /> : <Icon name="plus" size={13} />} {t('panel.662d2760c7')} </button>
-        <button className="btn" onClick={() => setPaste(paste ? null : { name: '', json: '' })}> {t('panel.c898c04548')} </button>
+        <button className="btn primary" disabled={busy === 'import'} onClick={async () => importFiles(await window.forge.pickFiles([{ name: t('comfy.workflowFilter'), extensions: ['json'] }], true))}>
+          {busy === 'import' ? <span className="spinner" /> : <Icon name="plus" size={13} />} {t('panel.662d2760c7')}{' '}
+        </button>
+        <button className="btn" onClick={() => setPaste(paste ? null : { name: '', json: '' })}>
+          {' '}
+          {t('panel.c898c04548')}{' '}
+        </button>
         <span className="dim small"> {t('panel.acfcab5145')} </span>
         <span className="spacer" />
         <span className="dim small"> {t('panel.006ac77b36')} </span>
@@ -103,13 +114,7 @@ export default function ComfyLibrary() {
 
       {paste && (
         <div className="mcp-row">
-          <input
-            className="input"
-            style={{ width: '100%', marginBottom: 6 }}
-            placeholder={t('panel.5aace6ffd8')}
-            value={paste.name}
-            onChange={(e) => setPaste({ ...paste, name: e.target.value })}
-          />
+          <input className="input" style={{ width: '100%', marginBottom: 6 }} placeholder={t('panel.5aace6ffd8')} value={paste.name} onChange={(e) => setPaste({ ...paste, name: e.target.value })} />
           <textarea
             className="input"
             rows={6}
@@ -120,7 +125,10 @@ export default function ComfyLibrary() {
           />
           <div className="row" style={{ marginTop: 6 }}>
             <span className="spacer" />
-            <button className="btn ghost" onClick={() => setPaste(null)}> {t('panel.39a8d28c1c')} </button>
+            <button className="btn ghost" onClick={() => setPaste(null)}>
+              {' '}
+              {t('panel.39a8d28c1c')}{' '}
+            </button>
             <button
               className="btn primary"
               disabled={!paste.json.trim() || busy === 'paste'}
@@ -128,10 +136,13 @@ export default function ComfyLibrary() {
                 act('paste', async () => {
                   const w = await window.forge.comfy.wf.import({ json: paste.json, name: paste.name })
                   setPaste(null)
-                  toast(message('comfy.added', {name:w.name}), 'ok')
+                  toast(message('comfy.added', { name: w.name }), 'ok')
                 })
               }
-            > {t('panel.f560a85f28')} </button>
+            >
+              {' '}
+              {t('panel.f560a85f28')}{' '}
+            </button>
           </div>
         </div>
       )}
@@ -139,8 +150,10 @@ export default function ComfyLibrary() {
       {!lib.length && !paste && (
         <div className="set-note">
           <Icon name="flow" size={15} />
-          <span> {t('panel.aa07947909')} <b>Workflow → Export (API)</b> {t('panel.143e0a7247')} <code>AF:prompt</code>,{' '}
-            <code>AF:image</code>, <code>AF:seed</code> {t('panel.aa2e6c9d1a')} </span>
+          <span>
+            {' '}
+            {t('panel.aa07947909')} <b>Workflow → Export (API)</b> {t('panel.143e0a7247')} <code>AF:prompt</code>, <code>AF:image</code>, <code>AF:seed</code> {t('panel.aa2e6c9d1a')}{' '}
+          </span>
         </div>
       )}
 
@@ -169,7 +182,9 @@ export default function ComfyLibrary() {
               <option value=""> {t('panel.9050739103')} </option>
               <option value="auto"> {t('panel.22e7dd248d')} </option>
               {s.comfyServers.map((x) => (
-                <option key={x.id} value={x.id}> {t('panel.a79d5985e0')} {x.name}
+                <option key={x.id} value={x.id}>
+                  {' '}
+                  {t('panel.a79d5985e0')} {serverText(locale, x.id, x.name)}
                 </option>
               ))}
             </select>
@@ -182,15 +197,22 @@ export default function ComfyLibrary() {
                 </span>
               ))
             ) : (
-              <span className="chip" title={t('panel.e7a5327d5a')}> {t('panel.adbaf76e3a')} </span>
+              <span className="chip" title={t('panel.e7a5327d5a')}>
+                {' '}
+                {t('panel.adbaf76e3a')}{' '}
+              </span>
             )}
-            <span className="chip cyan" title={t('panel.f2500b10fb')}> {t('panel.4af6d574cd')} {w.roles.length ? w.roles.join(', ') : 'yok'}
+            <span className="chip cyan" title={t('panel.f2500b10fb')}>
+              {' '}
+              {t('panel.4af6d574cd')} {w.roles.length ? w.roles.join(', ') : t('feedback.none')}
             </span>
             <span className="chip" title={w.classTypes.join('\n')}>
-              {w.classTypes.length} {t('panel.696a122136')} </span>
+              {w.classTypes.length} {t('panel.696a122136')}{' '}
+            </span>
             {w.models.length > 0 && (
               <span className="chip" title={w.models.join('\n')}>
-                {w.models.length} {t('panel.9372c470ee')} </span>
+                {w.models.length} {t('panel.9372c470ee')}{' '}
+              </span>
             )}
             <span className="spacer" />
             <button
@@ -203,19 +225,20 @@ export default function ComfyLibrary() {
                   const r = await window.forge.comfy.wf.fit(w.id)
                   setFits((f) => ({ ...f, [w.id]: r }))
                 } catch (e) {
-                  toast((e as Error).message, 'error')
+                  toast(errorMessage(e), 'error')
                 } finally {
                   setBusy('')
                 }
               }}
             >
-              {busy === `fit:${w.id}` ? <span className="spinner" /> : <Icon name="check" size={13} />} {t('panel.c812701f2d')} </button>
+              {busy === `fit:${w.id}` ? <span className="spinner" /> : <Icon name="check" size={13} />} {t('panel.c812701f2d')}{' '}
+            </button>
             <button
               className="btn ghost"
               title={t('panel.58f10c66ea')}
               onClick={async () => {
-                const [f] = await window.forge.pickFiles([{ name: 'ComfyUI workflow (API)', extensions: ['json'] }])
-                if (f) await act(`rep:${w.id}`, () => window.forge.comfy.wf.replace(w.id, { file: f }), t('comfy.updated', {name:w.name}))
+                const [f] = await window.forge.pickFiles([{ name: t('comfy.workflowFilter'), extensions: ['json'] }])
+                if (f) await act(`rep:${w.id}`, () => window.forge.comfy.wf.replace(w.id, { file: f }), message('comfy.updated', { name: w.name }))
               }}
             >
               <Icon name="refresh" size={13} />
@@ -226,7 +249,7 @@ export default function ComfyLibrary() {
             <button className="btn ghost" title={t('panel.2fbdba3ba5')} onClick={() => window.forge.comfy.wf.show(w.id)}>
               <Icon name="folder" size={13} />
             </button>
-            <button className="btn ghost" title={t('panel.4a4c6d6e3d')} onClick={() => act(`del:${w.id}`, () => window.forge.comfy.wf.remove(w.id), `${w.name} silindi`)}>
+            <button className="btn ghost" title={t('panel.4a4c6d6e3d')} onClick={() => act(`del:${w.id}`, () => window.forge.comfy.wf.remove(w.id), message('common.deleted', { name: w.name }))}>
               <Icon name="trash" size={14} />
             </button>
           </div>

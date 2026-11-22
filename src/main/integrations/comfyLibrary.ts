@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 // ComfyUI workflow kitaplığı: kullanıcının eklediği API formatı workflow'lar AssetForge'un veri klasöründe
 // saklanır (asıl dosya taşınsa da bozulmaz). Düğümler kitaplıktan seçer; her workflow bir sunucu tercih edebilir.
 import { app } from 'electron'
@@ -25,7 +27,7 @@ function uniqueName(want: string): string {
 /** Dosyadan ya da yapıştırılan JSON'dan ekler. Arayüz formatı ve bozuk JSON anlaşılır hatayla reddedilir. */
 export function importWorkflow(o: { file?: string; json?: string; name?: string }): ComfyWorkflowEntry {
   const text = o.json ?? (o.file ? fs.readFileSync(o.file, 'utf8') : '')
-  if (!text.trim()) throw new Error('Workflow boş')
+  if (!text.trim()) throw new UiError(message('error.e54eb7ad68'))
   const sum = analyzeWorkflow(text.replace(/^﻿/, ''))
   const fallback = o.file
     ? path
@@ -49,7 +51,7 @@ export function importWorkflow(o: { file?: string; json?: string; name?: string 
 export function updateWorkflow(id: string, patch: { name?: string; serverId?: string }): ComfyWorkflowEntry {
   const list = listWorkflows()
   const w = list.find((x) => x.id === id)
-  if (!w) throw new Error('Workflow bulunamadı')
+  if (!w) throw new UiError(message('error.98d0194e4b'))
   const next = { ...w, ...(patch.name?.trim() ? { name: patch.name.trim() } : {}), ...(patch.serverId !== undefined ? { serverId: patch.serverId } : {}) }
   saveComfyWorkflows(list.map((x) => (x.id === id ? next : x)))
   return next
@@ -59,7 +61,7 @@ export function updateWorkflow(id: string, patch: { name?: string; serverId?: st
 export function replaceWorkflow(id: string, o: { file?: string; json?: string }): ComfyWorkflowEntry {
   const list = listWorkflows()
   const w = list.find((x) => x.id === id)
-  if (!w) throw new Error('Workflow bulunamadı')
+  if (!w) throw new UiError(message('error.98d0194e4b'))
   const text = (o.json ?? (o.file ? fs.readFileSync(o.file, 'utf8') : '')).replace(/^﻿/, '')
   const next = { ...w, ...analyzeWorkflow(text), source: o.file ?? w.source }
   fs.writeFileSync(fileOf(id), text)
@@ -74,7 +76,7 @@ export function removeWorkflow(id: string): void {
 
 export function duplicateWorkflow(id: string): ComfyWorkflowEntry {
   const w = listWorkflows().find((x) => x.id === id)
-  if (!w) throw new Error('Workflow bulunamadı')
+  if (!w) throw new UiError(message('error.98d0194e4b'))
   const copy = { ...w, id: newId('wf'), name: uniqueName(`${w.name} kopya`), addedAt: Date.now() }
   fs.copyFileSync(fileOf(id), fileOf(copy.id))
   saveComfyWorkflows([...listWorkflows(), copy])
@@ -82,7 +84,7 @@ export function duplicateWorkflow(id: string): ComfyWorkflowEntry {
 }
 
 export function setDefaultWorkflow(id: string): void {
-  if (id && !listWorkflows().some((w) => w.id === id)) throw new Error('Workflow bulunamadı')
+  if (id && !listWorkflows().some((w) => w.id === id)) throw new UiError(message('error.98d0194e4b'))
   saveComfyWorkflows(listWorkflows(), id)
 }
 
@@ -106,7 +108,7 @@ export function resolveWorkflow(param: string): { path: string; name: string; se
     const w = lib.find((x) => x.id === v)
     if (w) return pick(w)
     if (fs.existsSync(v)) return { path: v, name: path.basename(v), serverId: '' }
-    throw new Error(`ComfyUI workflow bulunamadı: ${v}. Düğümde kitaplıktan bir workflow seçin.`)
+    throw new UiError(message('error.6b8b6a773a', { p0: String(v) }))
   }
   const s = getSettings()
   const d = lib.find((x) => x.id === s.comfyDefaultWorkflow)

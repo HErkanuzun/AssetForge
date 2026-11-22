@@ -1,7 +1,9 @@
-import {message} from '../../../shared/i18n/message'
+// SPDX-License-Identifier: AGPL-3.0-only
+import { pipelineText } from '../../../shared/i18n/metadata'
+import { errorMessage } from '../../../shared/i18n/errors'
+import { message } from '../../../shared/i18n/message'
 import { assetStatus } from '../../../shared/i18n/display'
 import { useLocale } from '../i18n'
-// SPDX-License-Identifier: AGPL-3.0-only
 import { useMemo, useState } from 'react'
 import type { AssetKind } from '../../../shared/types'
 import { suggestPipeline } from '../../../shared/templates'
@@ -46,9 +48,11 @@ export default function LibraryPage() {
           <span className="spacer" />
           <div className="seg">
             <button onClick={() => setView('gallery')}>
-              <Icon name="grid" size={14} /> {t('surface.gallery')} </button>
+              <Icon name="grid" size={14} /> {t('surface.gallery')}{' '}
+            </button>
             <button className="on">
-              <Icon name="list" size={14} /> {t('surface.table')} </button>
+              <Icon name="list" size={14} /> {t('surface.table')}{' '}
+            </button>
           </div>
         </div>
         <div className="legacy" style={{ margin: '0 -12px 12px 0' }}>
@@ -61,7 +65,7 @@ export default function LibraryPage() {
     <div className="library" style={{ position: 'relative' }}>
       <div className="lib-head">
         <h1 style={{ margin: 0 }}> {t('surface.library')} </h1>
-        <span className="muted">{p.assets.length} asset</span>
+        <span className="muted">{t('feedback.assetCount', { count: p.assets.length })}</span>
         <span className="spacer" />
         <div className="composer" style={{ padding: '2px 4px 2px 12px', maxWidth: 280, borderRadius: 12 }}>
           <Icon name="search" size={15} style={{ color: 'var(--muted)', alignSelf: 'center' }} />
@@ -69,9 +73,11 @@ export default function LibraryPage() {
         </div>
         <div className="seg">
           <button className="on">
-            <Icon name="grid" size={14} /> {t('surface.gallery')} </button>
+            <Icon name="grid" size={14} /> {t('surface.gallery')}{' '}
+          </button>
           <button onClick={() => setView('table')}>
-            <Icon name="list" size={14} /> {t('surface.table')} </button>
+            <Icon name="list" size={14} /> {t('surface.table')}{' '}
+          </button>
         </div>
       </div>
       <div className="row wrap" style={{ marginBottom: 14 }}>
@@ -96,7 +102,8 @@ export default function LibraryPage() {
             <h2> {t('surface.emptyLibrary')} </h2>
             <p className="muted"> {t('surface.emptyLibraryHelp')} </p>
             <button className="btn primary" onClick={() => nav.go('home')}>
-              <Icon name="spark" size={15} /> {t('surface.workshop')} </button>
+              <Icon name="spark" size={15} /> {t('surface.workshop')}{' '}
+            </button>
           </div>
         </div>
       ) : (
@@ -122,7 +129,7 @@ export default function LibraryPage() {
                 <b>{a.name}</b>
                 <span>
                   {t(`kind.${a.kind}`)} · {a.id}
-                  {a.parentId ? ' · kit' : ''}
+                  {a.parentId ? t('feedback.kitSuffix') : ''}
                 </span>
               </div>
             </div>
@@ -134,7 +141,7 @@ export default function LibraryPage() {
         <div className="selbar">
           <b>{t('surface.selected', { count: selAssets.length })}</b>
           <div style={{ width: 260 }}>
-            <Select value={pl} onChange={setPipelineId} options={p.pipelines.map((x) => ({ value: x.id, label: x.name + (x.id === suggested ? ' ★' : '') }))} />
+            <Select value={pl} onChange={setPipelineId} options={p.pipelines.map((x) => ({ value: x.id, label: pipelineText(locale, x) + (x.id === suggested ? ' ★' : '') }))} />
           </div>
           <button
             className="btn primary"
@@ -148,11 +155,12 @@ export default function LibraryPage() {
                 toast(message('surface.started', { count: selAssets.length }), 'ok')
                 setSelectedAssets([])
               } catch (e) {
-                toast((e as Error).message, 'error')
+                toast(errorMessage(e), 'error')
               }
             }}
           >
-            <Icon name="bolt" size={15} /> {t('surface.generate')} </button>
+            <Icon name="bolt" size={15} /> {t('surface.generate')}{' '}
+          </button>
           <button className="btn ghost" onClick={() => setSelectedAssets([])}>
             <Icon name="x" size={14} />
           </button>

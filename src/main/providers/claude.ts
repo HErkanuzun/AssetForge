@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 // Claude: prompt motoru, görsel kalite kontrol ve Proje Kitabı çıkarımı.
 import Anthropic from '@anthropic-ai/sdk'
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod'
@@ -49,14 +51,14 @@ export async function callClaude<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn()
   } catch (e) {
-    if (e instanceof Anthropic.AuthenticationError) throw new Error('Claude API anahtarı geçersiz (Ayarlar)', { cause: e })
-    if (e instanceof Anthropic.PermissionDeniedError) throw new Error('Claude: bu model/özellik için yetki yok', { cause: e })
-    if (e instanceof Anthropic.NotFoundError) throw new Error(`Claude modeli bulunamadı: ${getSettings().claudeModel}`, { cause: e })
-    if (e instanceof Anthropic.RateLimitError) throw new Error('Claude istek sınırı aşıldı; biraz sonra tekrar deneyin veya eşzamanlı iş sayısını düşürün', { cause: e })
-    if (e instanceof Anthropic.APIConnectionError) throw new Error('Claude sunucusuna bağlanılamadı (internet bağlantısı?)', { cause: e })
-    if (e instanceof Anthropic.APIError) throw new Error(`Claude hatası (${e.status}): ${e.message}`, { cause: e })
+    if (e instanceof Anthropic.AuthenticationError) throw new UiError(message('error.6a8c1a076b'), { cause: e })
+    if (e instanceof Anthropic.PermissionDeniedError) throw new UiError(message('error.0b9c433879'), { cause: e })
+    if (e instanceof Anthropic.NotFoundError) throw new UiError(message('error.6a7fdead89', { p0: String(getSettings().claudeModel) }), { cause: e })
+    if (e instanceof Anthropic.RateLimitError) throw new UiError(message('error.97b215a2fd'), { cause: e })
+    if (e instanceof Anthropic.APIConnectionError) throw new UiError(message('error.59c10f1ecb'), { cause: e })
+    if (e instanceof Anthropic.APIError) throw new UiError(message('error.d90aabf4b3', { p0: String(e.status), p1: String(e.message) }), { cause: e })
     const msg = (e as Error).message ?? String(e)
-    if (/authentication method/i.test(msg)) throw new Error('Claude API anahtarı girilmemiş (Ayarlar → Claude)', { cause: e })
+    if (/authentication method/i.test(msg)) throw new UiError(message('error.ec530f9bc3'), { cause: e })
     throw e
   }
 }
@@ -97,11 +99,11 @@ export async function structured<S extends z.ZodType>(
     )
   )
   if (res.stop_reason === 'refusal') {
-    throw new Error(`Claude isteği reddetti${res.stop_details?.explanation ? `: ${res.stop_details.explanation}` : ''}`)
+    throw new UiError(message('error.fe7214a1e7', { p0: String(res.stop_details?.explanation ? `: ${res.stop_details.explanation}` : '') }))
   }
-  if (res.stop_reason === 'max_tokens') throw new Error('Claude yanıtı token sınırında kesildi')
+  if (res.stop_reason === 'max_tokens') throw new UiError(message('error.181c61c61f'))
   const data = res.parsed_output as z.infer<S> | null
-  if (!data) throw new Error('Claude yapılandırılmış yanıt döndürmedi')
+  if (!data) throw new UiError(message('error.01f6124de9'))
   return { data, usd: usageCost(model, res.usage) }
 }
 
@@ -175,7 +177,7 @@ Principles:
 
 export async function generatePrompt(input: { bible: Bible; asset: AssetSpec; targetId: string; extra: string; feedback: string[] }): Promise<CallResult<GeneratedPrompt>> {
   const target = PROMPT_TARGETS[input.targetId]
-  if (!target) throw new Error(`Bilinmeyen prompt hedefi: ${input.targetId}`)
+  if (!target) throw new UiError(message('error.603b952879', { p0: String(input.targetId) }))
   const system: Anthropic.Beta.BetaTextBlockParam[] = [
     { type: 'text', text: PROMPT_SYSTEM },
     { type: 'text', text: `PROJECT BIBLE\n${bibleContext(input.bible)}`, cache_control: { type: 'ephemeral' } }
@@ -208,7 +210,7 @@ export async function generatePrompt(input: { bible: Bible; asset: AssetSpec; ta
     if (!tooLong) break
     note = `\n\nYour previous prompt was ${data.prompt.length} characters (texture ${data.texture_prompt.length}). Rewrite within ${target.maxChars} characters.`
   }
-  if (!result) throw new Error('Prompt üretilemedi')
+  if (!result) throw new UiError(message('error.2079758561'))
   result.prompt = truncateWords(result.prompt, target.maxChars)
   result.texture_prompt = truncateWords(result.texture_prompt, target.maxChars)
   return { data: result, usd: total }

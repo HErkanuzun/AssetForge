@@ -1,6 +1,9 @@
-import {panelLabel} from '../../../shared/i18n/display'
-import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { message, renderMessage } from '../../../shared/i18n/message'
+import { legacyEvent } from '../../../shared/i18n/events'
+import { errorMessage } from '../../../shared/i18n/errors'
+import { panelLabel } from '../../../shared/i18n/display'
+import { useLocale } from '../i18n'
 // Yapımcı — her ekrandan açılan, projeyi araçlarla yöneten asistan paneli
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { AgentConversation, AgentViewItem } from '../../../shared/types'
@@ -42,18 +45,18 @@ const SUGGEST = [
 ]
 
 function ToolCard({ tool, convId }: { tool: Extract<AgentViewItem, { kind: 'tool' }>; convId: string }) {
-  const {t,locale} = useLocale()
+  const { t, locale } = useLocale()
 
   const [open, setOpen] = useState(false)
   const ext = tool.name.includes('__')
   const [label, icon] = TOOL_LABEL[tool.name] ?? [ext ? tool.name.replace('__', ' → ') : tool.name, 'link' as IconName]
-  const st = { running: 'çalışıyor', done: '', error: 'hata', awaiting: 'onay bekliyor', denied: 'reddedildi' }[tool.status]
+  const st = { running: t('status.running'), done: '', error: t('status.failed'), awaiting: t('assistant.awaiting'), denied: t('assistant.denied') }[tool.status]
   return (
     <div className={`tcard ${tool.status}`}>
       <div className="tcard-head" onClick={() => setOpen(!open)}>
         <span className="tcard-ico">{tool.status === 'running' ? <span className="spinner" /> : <Icon name={icon} size={14} />}</span>
         <span className="ellipsis" style={{ flex: 1 }}>
-          {TOOL_LABEL[tool.name] ? panelLabel(locale,label) : label}
+          {TOOL_LABEL[tool.name] ? panelLabel(locale, label) : label}
           {ext && <span className="dim"> · MCP</span>}
         </span>
         {st && <span className={`chip ${tool.status === 'error' || tool.status === 'denied' ? 'pink' : tool.status === 'awaiting' ? 'accent' : ''}`}>{st}</span>}
@@ -64,8 +67,12 @@ function ToolCard({ tool, convId }: { tool: Extract<AgentViewItem, { kind: 'tool
           <pre>{tool.ask}</pre>
           <div className="row">
             <button className="btn primary" onClick={() => window.forge.agent.approve(convId, tool.id, true)}>
-              <Icon name="check" size={14} /> {t('panel.8f2e0d241d')} </button>
-            <button className="btn" onClick={() => window.forge.agent.approve(convId, tool.id, false)}> {t('panel.fd78c713b1')} </button>
+              <Icon name="check" size={14} /> {t('panel.8f2e0d241d')}{' '}
+            </button>
+            <button className="btn" onClick={() => window.forge.agent.approve(convId, tool.id, false)}>
+              {' '}
+              {t('panel.fd78c713b1')}{' '}
+            </button>
           </div>
         </div>
       )}
@@ -93,7 +100,7 @@ function ToolCard({ tool, convId }: { tool: Extract<AgentViewItem, { kind: 'tool
 }
 
 export default function AssistantPanel({ onClose }: { onClose: () => void }) {
-  const {t,locale} = useLocale()
+  const { t, locale } = useLocale()
 
   const { settings, selectedAssets, toast } = useStore()
   const nav = useNav()
@@ -131,7 +138,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
       if (e.convId !== convRef.current) return
       if (e.type === 'delta') setStream((s) => s + e.text)
       else if (e.type === 'thinking') setThinking(e.on)
-      else if (e.type === 'error') toast(e.error, 'error')
+      else if (e.type === 'error') toast(e.uiMessage ?? e.error, 'error')
     })
   }, [toast])
 
@@ -163,15 +170,28 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
       const r = await window.forge.agent.send(c.id, { text: t, images: imgs, context: { page: nav.page, selectedAssets, briefId: nav.briefId } })
       setConv(r)
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
       window.forge.agent.get(c.id).then((x) => x && setConv(x))
     }
   }
 
   const ctxLabel = [
-    { home: 'Atölye', library: 'Kütüphane', anim: 'Animasyon', pipeline: 'Hatlar', jobs: 'Üretim', design: 'Oyun Tasarımı', bible: 'Proje Kitabı', settings: 'Ayarlar' }[nav.page],
-    nav.briefId ? 'brief açık' : '',
-    selectedAssets.length ? `${selectedAssets.length} seçili asset` : ''
+    t(
+      (
+        {
+          home: 'app.workshop',
+          library: 'app.library',
+          anim: 'app.animation',
+          pipeline: 'app.pipelines',
+          jobs: 'app.jobs',
+          design: 'app.design',
+          bible: 'app.bible',
+          settings: 'app.settings'
+        } as const
+      )[nav.page]
+    ),
+    nav.briefId ? t('assistant.briefOpen') : '',
+    selectedAssets.length ? t('surface.selected', { count: selectedAssets.length }) : ''
   ]
     .filter(Boolean)
     .join(' · ')
@@ -190,7 +210,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
         const files = [...e.dataTransfer.files].filter((f) => /\.(png|jpe?g|webp)$/i.test(f.name))
         Promise.all(files.map(async (f) => ({ path: await window.forge.dropFile(f), preview: URL.createObjectURL(f) }))).then(
           (list) => setImages((cur) => [...cur, ...list]),
-          (err: Error) => toast('Görsel eklenemedi: ' + err.message, 'error')
+          (err: Error) => toast(message('brief.imageFailed', { detail: errorMessage(err) }), 'error')
         )
       }}
     >
@@ -199,7 +219,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <b> {t('panel.b85cc7254c')} </b>
           <div className="dim small ellipsis">
-            {prov ? `${prov.name} · ${prov.model}` : conv ? `${conv.model} (sağlayıcı silinmiş — yeni sohbet aç)` : '—'}
+            {prov ? `${prov.name} · ${prov.model}` : conv ? t('assistant.providerRemoved', { model: conv.model || '' }) : '—'}
             {conv && conv.costUsd > 0 ? ` · $${conv.costUsd.toFixed(3)}` : ''}
           </div>
         </div>
@@ -264,8 +284,8 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
             <h3> {t('panel.72fef98d19')} </h3>
             <p className="muted small"> {t('panel.5a6f0b9db2')} </p>
             {SUGGEST.map((s) => (
-              <button key={s} className="as-sug" onClick={() => send(panelLabel(locale,s))}>
-                {panelLabel(locale,s)}
+              <button key={s} className="as-sug" onClick={() => send(panelLabel(locale, s))}>
+                {panelLabel(locale, s)}
               </button>
             ))}
           </div>
@@ -274,7 +294,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
           if (v.kind === 'event')
             return (
               <div key={i} className="event">
-                {v.text}
+                {renderMessage(locale, v.uiMessage ?? legacyEvent(v.text))}
               </div>
             )
           if (v.kind === 'tool') return <ToolCard key={v.id + i} tool={v} convId={conv.id} />
@@ -334,7 +354,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
             className="btn ghost"
             title={t('panel.1ac4e29874')}
             onClick={async () => {
-              const f = await window.forge.pickFiles([{ name: 'Görseller', extensions: ['png', 'jpg', 'jpeg', 'webp'] }], true)
+              const f = await window.forge.pickFiles([{ name: t('brief.images'), extensions: ['png', 'jpg', 'jpeg', 'webp'] }], true)
               setImages((cur) => [...cur, ...f.map((p) => ({ path: p }))])
             }}
           >

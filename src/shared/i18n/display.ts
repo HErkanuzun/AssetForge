@@ -1,13 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { catalogs, translate, formatRelativeTime, type Locale } from './index'
 import { panelRows } from './panels'
+import { nodeDetailRows } from './nodeDetails'
+import { systemRows } from './systems'
+import { templateRows } from './templates'
+import { setupRows } from './setup'
 
 const panelText = new Map<string, readonly [string, string, string]>([
-  ...Object.keys(catalogs.en).map(key => {
+  ...Object.keys(catalogs.en).map((key) => {
     const k = key as keyof typeof catalogs.en
     return [catalogs.tr[k], [catalogs.en[k], catalogs['zh-CN'][k], catalogs.tr[k]]] as const
   }),
-  ...Object.values(panelRows).map(row => [row[2], row] as const)
+  ...Object.values(panelRows).map((row) => [row[2], row] as const),
+  ...Object.values(nodeDetailRows).map((row) => [row[2], row] as const),
+  ...Object.values(systemRows).map((row) => [row[2], row] as const),
+  ...Object.values(templateRows).map((row) => [row[2], row] as const),
+  ...Object.values(setupRows).map((row) => [row[2], row] as const)
 ])
 
 /** For application-owned immutable metadata only; never pass project or user text. */
@@ -16,10 +24,14 @@ export function panelLabel(locale: Locale, source: string): string {
   return row ? row[locale === 'en' ? 0 : locale === 'zh-CN' ? 1 : 2] : source
 }
 
+/** Used by source/metadata audits to distinguish deliberate technical terms from omissions. */
+export const hasPanelTranslation = (source: string): boolean => panelText.has(source)
+
 /** Only known application status values are projected. Unknown/custom values stay intact. */
 export function assetStatus(locale: Locale, value: string): string {
   if (value === 'Üretildi') return translate(locale, 'surface.generated')
   if (value === 'Brief') return translate(locale, 'surface.briefStatus')
+  if (value === 'Sırada') return translate(locale, 'status.queued')
   return value
 }
 

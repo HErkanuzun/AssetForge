@@ -1,6 +1,8 @@
-import {lastSeen,timeLeft} from '../../../shared/i18n/display'
-import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { message } from '../../../shared/i18n/message'
+import { errorMessage } from '../../../shared/i18n/errors'
+import { lastSeen, timeLeft } from '../../../shared/i18n/display'
+import { useLocale } from '../i18n'
 // Ayarlar → Web ve paylaşım: tarayıcıdan aynı arayüz, sahip hesabı, davet bağlantıları, kişiler ve roller
 import { useCallback, useEffect, useState } from 'react'
 import type { WebRole, WebStatus } from '../../../shared/types'
@@ -19,9 +21,9 @@ function Card({ title, desc, children }: { title: string; desc?: string; childre
 }
 
 export default function WebSettings() {
-  const {t, locale} = useLocale()
-  const ROLE = { owner:t('role.owner'),editor:t('role.editor'),viewer:t('role.viewer') }
-  const ROLE_HELP = {owner:t('web.roleHelp.owner'),editor:t('web.roleHelp.editor'),viewer:t('web.roleHelp.viewer')}
+  const { t, locale } = useLocale()
+  const ROLE = { owner: t('role.owner'), editor: t('role.editor'), viewer: t('role.viewer') }
+  const ROLE_HELP = { owner: t('web.roleHelp.owner'), editor: t('web.roleHelp.editor'), viewer: t('web.roleHelp.viewer') }
 
   const { settings, setSettings, toast } = useStore()
   const s = settings!
@@ -39,19 +41,19 @@ export default function WebSettings() {
     return () => window.clearInterval(t)
   }, [refresh])
 
-  const run = async (fn: () => Promise<unknown>, ok?: string) => {
+  const run = async (fn: () => Promise<unknown>, ok?: import('../../../shared/i18n/message').UiMessage) => {
     try {
       await fn()
       if (ok) toast(ok, 'ok')
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     }
     await refresh()
   }
   const patchWeb = (p: Partial<typeof cfg>) => run(async () => setSettings(await window.forge.settings.set({ web: { ...cfg, ...p } })))
   const copy = (text: string) =>
     navigator.clipboard.writeText(text).then(
-      () => toast('Panoya kopyalandı', 'ok'),
+      () => toast(message('feedback.copied'), 'ok'),
       () => toast(text, 'info')
     )
 
@@ -62,10 +64,7 @@ export default function WebSettings() {
 
   return (
     <>
-      <Card
-        title={t('panel.b35744103f')}
-        desc={t('panel.990581ffe0')}
-      >
+      <Card title={t('panel.b35744103f')} desc={t('panel.990581ffe0')}>
         <div className="row" style={{ flexWrap: 'wrap', gap: 18 }}>
           <Toggle value={cfg.enabled} onChange={(v) => patchWeb({ enabled: v })} label={t('panel.8583da6400')} />
           <Toggle value={cfg.lan} onChange={(v) => patchWeb({ lan: v })} label={t('panel.2a603a335d')} />
@@ -75,13 +74,16 @@ export default function WebSettings() {
           <Field label={t('panel.72e9a59f5a')} help={t('panel.9b35f4d869')}>
             <div className="row">
               <TextInput value={port} onChange={setPort} />
-              <AsyncButton disabled={!portOk || portNum === cfg.port} onClick={() => patchWeb({ port: portNum })}> {t('panel.08a24723d5')} </AsyncButton>
+              <AsyncButton disabled={!portOk || portNum === cfg.port} onClick={() => patchWeb({ port: portNum })}>
+                {' '}
+                {t('panel.08a24723d5')}{' '}
+              </AsyncButton>
             </div>
           </Field>
           <Field label={t('surface.status')}>
             <div className="row" style={{ flexWrap: 'wrap' }}>
               <span className={`web-led ${st?.running ? 'on' : st?.error ? 'err' : ''}`} />
-              <span className="small">{st?.running ? t('web.online', {count:st.online.length}) : st?.error ? st.error : t('panel.39ce8f3878')}</span>
+              <span className="small">{st?.running ? t('web.online', { count: st.online.length }) : st?.error ? st.error : t('panel.39ce8f3878')}</span>
             </div>
           </Field>
         </div>
@@ -93,7 +95,10 @@ export default function WebSettings() {
                 <b className="ellipsis">{u}</b>
                 <span className="muted small">{i === 0 ? t('panel.51b0a3ddce') : t('panel.48c9b994b4')}</span>
                 <span className="spacer" />
-                <button className="btn" onClick={() => copy(u)}> {t('panel.a8bcca42d9')} </button>
+                <button className="btn" onClick={() => copy(u)}>
+                  {' '}
+                  {t('panel.a8bcca42d9')}{' '}
+                </button>
               </div>
             ))}
             {!cfg.lan && <span className="dim small"> {t('panel.0b7c714d91')} </span>}
@@ -107,11 +112,10 @@ export default function WebSettings() {
         )}
         {!window.forge.isWeb && (
           <div className="row" style={{ marginTop: 10, flexWrap: 'wrap' }}>
-            <AsyncButton
-              disabled={!st?.running}
-              title={t('panel.d789b07f5e')}
-              onClick={() => run(() => window.forge.web.headless())}
-            > {t('panel.3cb14d8b6f')} </AsyncButton>
+            <AsyncButton disabled={!st?.running} title={t('panel.d789b07f5e')} onClick={() => run(() => window.forge.web.headless())}>
+              {' '}
+              {t('panel.3cb14d8b6f')}{' '}
+            </AsyncButton>
             <span className="dim small"> {t('panel.4197eafbad')} </span>
           </div>
         )}
@@ -120,7 +124,7 @@ export default function WebSettings() {
       <Card title={t('panel.33485f74d8')} desc={t('panel.b423d54552')}>
         <div className="grid2">
           <Field label={t('surface.name')}>
-            <TextInput value={owner.name} onChange={(v) => setOwner({ ...owner, name: v })} placeholder={users.find((u) => u.role === 'owner')?.name ?? 'ör. Deniz'} />
+            <TextInput value={owner.name} onChange={(v) => setOwner({ ...owner, name: v })} placeholder={users.find((u) => u.role === 'owner')?.name ?? t('feedback.exampleName')} />
           </Field>
           <Field label={t('panel.e3962ceb93')} help={t('panel.a853252458')}>
             <TextInput type="password" value={owner.password} onChange={(v) => setOwner({ ...owner, password: v })} />
@@ -192,14 +196,20 @@ export default function WebSettings() {
               await navigator.clipboard.writeText(link).catch(() => undefined)
             }, t('panel.7c03117929'))
           }
-        > {t('panel.96bc426fd7')} </AsyncButton>
+        >
+          {' '}
+          {t('panel.96bc426fd7')}{' '}
+        </AsyncButton>
         {lastLink && (
           <div className="set-note ok" style={{ marginTop: 10 }}>
             <Icon name="check" size={15} />
             <b className="ellipsis" style={{ flex: 1 }}>
               {lastLink}
             </b>
-            <button className="btn" onClick={() => copy(lastLink)}> {t('panel.a8bcca42d9')} </button>
+            <button className="btn" onClick={() => copy(lastLink)}>
+              {' '}
+              {t('panel.a8bcca42d9')}{' '}
+            </button>
           </div>
         )}
         {!!st?.invites.length && (
@@ -207,12 +217,16 @@ export default function WebSettings() {
             {st.invites.map((i) => (
               <div key={i.token} className="mcp-row row">
                 <span className="chip">{ROLE[i.role]}</span>
-                <span className="small muted">
-                  {t('web.inviteUsage', {used:i.uses,max:i.maxUses,time:timeLeft(locale,i.expiresAt)})}
-                </span>
+                <span className="small muted">{t('web.inviteUsage', { used: i.uses, max: i.maxUses, time: timeLeft(locale, i.expiresAt) })}</span>
                 <span className="spacer" />
-                <button className="btn" onClick={() => copy(i.url)}> {t('panel.a2bb5f86fa')} </button>
-                <button className="btn ghost" onClick={() => run(() => window.forge.web.revokeInvite(i.token), t('panel.d68eeec498'))}> {t('surface.cancel')} </button>
+                <button className="btn" onClick={() => copy(i.url)}>
+                  {' '}
+                  {t('panel.a2bb5f86fa')}{' '}
+                </button>
+                <button className="btn ghost" onClick={() => run(() => window.forge.web.revokeInvite(i.token), t('panel.d68eeec498'))}>
+                  {' '}
+                  {t('surface.cancel')}{' '}
+                </button>
               </div>
             ))}
           </div>
@@ -225,7 +239,7 @@ export default function WebSettings() {
           <div key={u.id} className="mcp-row row">
             <span className={`web-led ${onlineNames.has(u.name) ? 'on' : ''}`} title={onlineNames.has(u.name) ? t('panel.96c969056a') : t('panel.a6204fb9ae')} />
             <b>{u.name}</b>
-            <span className="small muted">{t('web.lastSeen', {time:lastSeen(locale,onlineNames.has(u.name)?Date.now():u.lastSeen)})}</span>
+            <span className="small muted">{t('web.lastSeen', { time: lastSeen(locale, onlineNames.has(u.name) ? Date.now() : u.lastSeen) })}</span>
             <span className="spacer" />
             {u.role === 'owner' ? (
               <span className="chip ok"> {t('panel.4661915f75')} </span>
@@ -240,7 +254,11 @@ export default function WebSettings() {
                   <option value="editor"> {t('panel.e3948c8c82')} </option>
                   <option value="viewer"> {t('panel.ec9c1cfbf8')} </option>
                 </select>
-                <button className="btn ghost" title={t('panel.065c074ce3')} onClick={() => confirm(t('web.removeConfirm', {name:u.name})) && run(() => window.forge.web.removeUser(u.id), t('web.removed', {name:u.name}))}>
+                <button
+                  className="btn ghost"
+                  title={t('panel.065c074ce3')}
+                  onClick={() => confirm(t('web.removeConfirm', { name: u.name })) && run(() => window.forge.web.removeUser(u.id), t('web.removed', { name: u.name }))}
+                >
                   <Icon name="trash" size={13} />
                 </button>
               </>
@@ -252,11 +270,14 @@ export default function WebSettings() {
       <Card title={t('panel.2e0cef85fb')}>
         <ol className="set-steps small">
           <li>
-            <b> {t('panel.b916659b94')} </b> {t('panel.88bdecdabc')} </li>
+            <b> {t('panel.b916659b94')} </b> {t('panel.88bdecdabc')}{' '}
+          </li>
           <li>
-            <b> {t('panel.2e376bb0b4')} </b> {t('panel.f758b8a9f1')} <code>http://computer-name:{cfg.port}</code> {t('panel.503999d609')} </li>
+            <b> {t('panel.2e376bb0b4')} </b> {t('panel.f758b8a9f1')} <code>http://computer-name:{cfg.port}</code> {t('panel.503999d609')}{' '}
+          </li>
           <li>
-            <b>Cloudflare Tunnel:</b> <code>cloudflared tunnel --url http://127.0.0.1:{cfg.port}</code> {t('panel.b67804e196')} </li>
+            <b>Cloudflare Tunnel:</b> <code>cloudflared tunnel --url http://127.0.0.1:{cfg.port}</code> {t('panel.b67804e196')}{' '}
+          </li>
         </ol>
         <p className="dim small"> {t('panel.195981fd2f')} </p>
       </Card>

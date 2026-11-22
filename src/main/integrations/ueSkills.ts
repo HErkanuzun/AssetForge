@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 // Unreal'daki yapay zekâya (Unreal MCP'ye bağlanan herhangi bir ajan) projeyi öğretir:
 // oyunun tasarımı ve AssetForge'un asset kuralları Unreal Agent Skill (UAsset) olarak yazılır.
 import { designMarkdown } from '../../shared/design'
@@ -89,7 +91,7 @@ function textOf(r: unknown): string {
 /** Skill'leri Unreal'a yazar (varsa günceller). Dönen: yapılanların listesi */
 export async function teachUe(p: Project): Promise<string[]> {
   const ts = await ueFindToolset('CreateSkill')
-  if (!ts) throw new Error('Unreal’da Agent Skill araç seti yok (Unreal MCP ve Toolset Registry eklentisi açık mı?)')
+  if (!ts) throw new UiError(message('error.1ded2ead6e'))
   const folder = `${p.bible.technical.ueContentRoot.replace(/\/$/, '')}/Skills/`
   const existing = textOf(await ueTool(ts, 'ListSkills', {}).catch(() => ''))
   const done: string[] = []

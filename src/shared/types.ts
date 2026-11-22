@@ -245,6 +245,9 @@ export interface GeneratedPrompt {
 }
 
 export interface QAReport {
+  uiTechnical?: import('./i18n/message').MessageDescriptor[]
+  uiSummary?: import('./i18n/message').MessageDescriptor
+  uiIssues?: import('./i18n/message').MessageDescriptor[]
   score: number
   pass: boolean
   issues: string[]
@@ -298,6 +301,8 @@ export type Artifact =
 export type NodeStatus = 'idle' | 'running' | 'done' | 'failed' | 'skipped' | 'retrying'
 
 export interface NodeRunState {
+  uiLogs?: Record<number, { at?: number; message: import('./i18n/message').MessageDescriptor }>
+  uiError?: import('./i18n/message').MessageDescriptor
   status: NodeStatus
   progress: number
   logs: string[]
@@ -309,6 +314,8 @@ export interface NodeRunState {
 export type JobStatus = 'queued' | 'running' | 'done' | 'failed' | 'canceled'
 
 export interface Job {
+  uiWarnings?: Record<number, import('./i18n/message').MessageDescriptor>
+  uiError?: import('./i18n/message').MessageDescriptor
   id: string
   pipelineId: string
   pipelineName: string
@@ -427,7 +434,7 @@ export type BriefViewItem =
   | { kind: 'user'; text: string; images?: string[]; links?: string[] }
   | { kind: 'assistant'; text: string }
   | { kind: 'question'; question: BriefQuestion; answer?: string }
-  | { kind: 'event'; text: string }
+  | { kind: 'event'; text: string; uiMessage?: import('./i18n/message').MessageDescriptor }
 
 export interface BriefSpec {
   name: string
@@ -483,7 +490,10 @@ export interface Brief {
 }
 
 export type BriefEvent =
-  { type: 'delta'; briefId: string; text: string } | { type: 'thinking'; briefId: string; on: boolean } | { type: 'brief'; brief: Brief } | { type: 'error'; briefId: string; error: string }
+  | { type: 'delta'; briefId: string; text: string }
+  | { type: 'thinking'; briefId: string; on: boolean }
+  | { type: 'brief'; brief: Brief }
+  | { type: 'error'; briefId: string; error: string; uiMessage?: import('./i18n/message').MessageDescriptor }
 
 export interface BriefInput {
   text: string
@@ -582,7 +592,7 @@ export interface AnimSystem {
   createdAt: number
   updatedAt: number
   producing?: boolean
-  lastBuild?: { at: number; ok: boolean; notes: string[]; errors: string[]; script?: string; assets?: string[] }
+  lastBuild?: { uiErrors?: Record<number, import('./i18n/message').MessageDescriptor>; at: number; ok: boolean; notes: string[]; errors: string[]; script?: string; assets?: string[] }
 }
 
 export interface ClipMotionInfo {
@@ -594,6 +604,7 @@ export interface ClipMotionInfo {
 }
 
 export interface AnimSystemClipState {
+  uiError?: import('./i18n/message').MessageDescriptor
   key: string
   assetId?: string
   status: 'none' | 'waiting' | 'queued' | 'running' | 'done' | 'failed'
@@ -602,7 +613,16 @@ export interface AnimSystemClipState {
   motion?: ClipMotionInfo
   bvhUrl?: string
   /** Son üretimin kalite kontrol sonucu (ayak kayması, titreme, hedef hız/yön) */
-  qa?: { score: number; pass: boolean; summary: string; issues: string[]; technical: string[] }
+  qa?: {
+    score: number
+    pass: boolean
+    summary: string
+    issues: string[]
+    technical: string[]
+    uiSummary?: import('./i18n/message').MessageDescriptor
+    uiIssues?: import('./i18n/message').MessageDescriptor[]
+    uiTechnical?: import('./i18n/message').MessageDescriptor[]
+  }
 }
 
 export interface KimodoSetupStep {
@@ -613,6 +633,7 @@ export interface KimodoSetupStep {
 }
 
 export interface KimodoStatus {
+  uiError?: import('./i18n/message').MessageDescriptor
   backend: 'native' | 'wsl'
   steps: KimodoSetupStep[]
   running: boolean
@@ -640,6 +661,7 @@ export interface ComfyServer {
 
 /** Sunucunun anlık durumu (Ayarlar'daki gösterge için) */
 export interface ComfyServerState {
+  uiError?: import('./i18n/message').MessageDescriptor
   id: string
   online: boolean
   /** Sürüm ve GPU */
@@ -670,6 +692,7 @@ export interface ComfyWorkflowEntry {
 
 /** Bir workflow'un bir sunucuda çalışıp çalışamayacağı */
 export interface ComfyFit {
+  uiError?: import('./i18n/message').MessageDescriptor
   serverId: string
   serverName: string
   online: boolean
@@ -735,6 +758,7 @@ export interface GradioEndpointInfo {
 
 /** AssetForge'un yerel olarak kurduğu ComfyUI */
 export interface ComfyLocalStatus {
+  uiError?: import('./i18n/message').MessageDescriptor
   steps: KimodoSetupStep[]
   /** Adresteki sunucu yanıt veriyor (AssetForge'un kurduğu ya da kullanıcının kendi ComfyUI'ı) */
   healthy: boolean
@@ -809,6 +833,7 @@ export interface McpServerConfig {
 }
 
 export interface McpServerStatus {
+  uiError?: import('./i18n/message').MessageDescriptor
   id: string
   connected: boolean
   tools: string[]
@@ -835,7 +860,7 @@ export type AgentViewItem =
       result?: string
       images?: string[]
     }
-  | { kind: 'event'; text: string }
+  | { kind: 'event'; text: string; uiMessage?: import('./i18n/message').MessageDescriptor }
 
 export interface AgentConversation {
   id: string
@@ -864,7 +889,10 @@ export interface AgentInput {
 }
 
 export type AgentEvent =
-  { type: 'delta'; convId: string; text: string } | { type: 'thinking'; convId: string; on: boolean } | { type: 'conv'; conv: AgentConversation } | { type: 'error'; convId: string; error: string }
+  | { type: 'delta'; convId: string; text: string }
+  | { type: 'thinking'; convId: string; on: boolean }
+  | { type: 'conv'; conv: AgentConversation }
+  | { type: 'error'; convId: string; error: string; uiMessage?: import('./i18n/message').MessageDescriptor }
 
 /** Hızlı bağlantı: tarayıcıda giriş / anahtar sayfası */
 export type ConnectService = 'anthropic' | 'meshy' | 'elevenlabs' | 'huggingface' | 'openrouter'
@@ -873,6 +901,7 @@ export interface ConnectEvent {
   service: ConnectService
   phase: 'waiting' | 'checking' | 'done' | 'error' | 'canceled'
   message: string
+  uiMessage?: import('./i18n/message').MessageDescriptor
   /** Hata olsa da pano izlenmeye devam ediyor */
   pending?: boolean
 }

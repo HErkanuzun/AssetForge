@@ -1,6 +1,7 @@
-import {message} from '../../../shared/i18n/message'
-import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { errorMessage } from '../../../shared/i18n/errors'
+import { message } from '../../../shared/i18n/message'
+import { useLocale } from '../i18n'
 import type { Bible, CategoryRule, TextureRes } from '../../../shared/types'
 import { AsyncButton, Field, NumberInput, Select, TextArea, TextInput, Toggle } from '../components/ui'
 import { useStore } from '../store'
@@ -32,13 +33,13 @@ export default function BiblePage() {
   const extract = async () => {
     const pdfs = await window.forge.pickFiles([{ name: 'PDF', extensions: ['pdf'] }], true)
     if (!pdfs.length) return
-    toast(message('surface.readingPdf', {count:pdfs.length}))
+    toast(message('surface.readingPdf', { count: pdfs.length }))
     try {
       const { data, usd } = await window.forge.extractBible(pdfs, b, usedCategories.join(', '))
       set({ ...data, technical: { ...b.technical, ...data.technical } })
-      toast(message('surface.bibleUpdated', {usd:usd.toFixed(3)}), 'ok')
+      toast(message('surface.bibleUpdated', { usd: usd.toFixed(3) }), 'ok')
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     }
   }
 
@@ -56,7 +57,10 @@ export default function BiblePage() {
           <p className="muted"> {t('surface.bibleHelp')} </p>
         </div>
         <div className="row">
-          <AsyncButton className="primary" onClick={extract} title={t('surface.pickPdf')}> {t('surface.fillPdf')} </AsyncButton>
+          <AsyncButton className="primary" onClick={extract} title={t('surface.pickPdf')}>
+            {' '}
+            {t('surface.fillPdf')}{' '}
+          </AsyncButton>
         </div>
       </header>
 
@@ -112,7 +116,7 @@ export default function BiblePage() {
             <TextInput value={b.technical.masterMaterial} onChange={(v) => setTech({ masterMaterial: v })} placeholder="/Game/Materials/M_Master" />
           </Field>
           {(Object.keys(b.technical.naming) as (keyof Bible['technical']['naming'])[]).map((k) => (
-            <Field key={k} label={t('surface.prefix', {name:t(`naming.${k}`)})}>
+            <Field key={k} label={t('surface.prefix', { name: t(`naming.${k}`) })}>
               <TextInput value={b.technical.naming[k]} onChange={(v) => setTech({ naming: { ...b.technical.naming, [k]: v } })} />
             </Field>
           ))}
@@ -122,7 +126,10 @@ export default function BiblePage() {
       <section className="card">
         <div className="row between">
           <h2> {t('surface.categoryRules')} </h2>
-          <button className="btn" onClick={addMissingCategories} disabled={!usedCategories.length}> {t('surface.addCategories')} </button>
+          <button className="btn" onClick={addMissingCategories} disabled={!usedCategories.length}>
+            {' '}
+            {t('surface.addCategories')}{' '}
+          </button>
         </div>
         {b.categories.length === 0 ? (
           <p className="muted"> {t('surface.noCategories')} </p>
@@ -169,7 +176,7 @@ export default function BiblePage() {
       </section>
 
       <section className="card">
-        <h2>{t('surface.paletteCount', {count:b.palette.length})}</h2>
+        <h2>{t('surface.paletteCount', { count: b.palette.length })}</h2>
         {b.palette.length === 0 ? (
           <p className="muted"> {t('surface.paletteHelp')} </p>
         ) : (
@@ -188,7 +195,7 @@ export default function BiblePage() {
       </section>
 
       <section className="card">
-        <h2>{t('surface.materialCount', {count:b.materials.length})}</h2>
+        <h2>{t('surface.materialCount', { count: b.materials.length })}</h2>
         {b.materials.length === 0 ? (
           <p className="muted"> {t('surface.materialsHelp')} </p>
         ) : (

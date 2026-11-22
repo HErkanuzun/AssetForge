@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 // Pipeline grafiği üzerinde saf yardımcılar (Electron'a bağımlı değil, test edilir).
 import type { Pipeline } from '../../shared/types'
 
@@ -20,7 +22,7 @@ export function topoSort(p: Pipeline): string[] {
       if (d === 0) queue.push(e.target)
     }
   }
-  if (order.length !== p.nodes.length) throw new Error('Pipeline döngü içeriyor (bir node kendine geri bağlanmış)')
+  if (order.length !== p.nodes.length) throw new UiError(message('error.59ed3cb458'))
   return order
 }
 

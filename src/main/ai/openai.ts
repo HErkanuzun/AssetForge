@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 // OpenAI uyumlu sohbet uçları: Ollama, LM Studio, vLLM, OpenRouter, OpenAI…
 // (Claude çağrıları Anthropic SDK ile claude.ts'te yapılır; bu dosya yalnızca diğer sağlayıcılar içindir.)
 import { z } from 'zod'
@@ -44,11 +46,11 @@ async function post(p: LlmProvider, body: unknown, signal?: AbortSignal): Promis
     res = await fetch(endpoint(p), { method: 'POST', headers: headers(p), body: JSON.stringify(body), signal })
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e
-    throw new Error(`${p.name} sunucusuna bağlanılamadı (${endpoint(p)}). Sunucu açık mı?`, { cause: e })
+    throw new UiError(message('error.db85d491e7', { p0: String(p.name), p1: String(endpoint(p)) }), { cause: e })
   }
   if (!res.ok) {
     const t = (await res.text()).slice(0, 600)
-    throw new Error(`${p.name} hatası (${res.status}): ${t}`)
+    throw new UiError(message('error.7917776e07', { p0: String(p.name), p1: String(res.status), p2: String(t) }))
   }
   return res
 }
@@ -75,7 +77,7 @@ function extractJson(text: string): unknown {
     const a = t.indexOf('{')
     const b = t.lastIndexOf('}')
     if (a >= 0 && b > a) return JSON.parse(t.slice(a, b + 1))
-    throw new Error('Model JSON döndürmedi')
+    throw new UiError(message('error.d336e93f09'))
   }
 }
 
@@ -114,7 +116,7 @@ export async function oaStructured<S extends z.ZodType>(p: LlmProvider, schema: 
       note = `${(e as Error).message}. Return ONLY the JSON object.`
     }
   }
-  throw new Error(`${p.name}: şemaya uygun yanıt alınamadı`)
+  throw new UiError(message('error.aec3fd1b5b', { p0: String(p.name) }))
 }
 
 export interface OaStreamResult {

@@ -1,11 +1,13 @@
-import {message} from '../../../shared/i18n/message'
-import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { errorMessage } from '../../../shared/i18n/errors'
+import { message, renderMessage } from '../../../shared/i18n/message'
+import { legacyEvent } from '../../../shared/i18n/events'
+import { useLocale } from '../i18n'
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { AssetSpec, Brief, BriefOption, KitItem } from '../../../shared/types'
 import { suggestPipeline } from '../../../shared/templates'
 import { Icon, ForgeMark } from '../components/icons'
-import KindArt, { KIND_THEME } from '../components/KindArt'
+import KindArt from '../components/KindArt'
 import { AssetThumb, hashSeed } from '../components/Thumb'
 import { forgeUrl, useStore } from '../store'
 
@@ -60,7 +62,7 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
       const b = await window.forge.brief.send(id, input)
       setBrief(b)
     } catch (e) {
-      toast(message('surface.directorFailed', {detail:(e as Error).message}), 'error')
+      toast(message('surface.directorFailed', { detail: errorMessage(e) }), 'error')
       window.forge.brief.get(id).then((b) => b && setBrief(b))
     } finally {
       setBusy(false)
@@ -86,7 +88,7 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
       if (e.briefId !== id) return
       if (e.type === 'delta') setStream((s) => s + e.text)
       else if (e.type === 'thinking') setThinking(e.on)
-      else if (e.type === 'error') toast(e.error, 'error')
+      else if (e.type === 'error') toast(e.uiMessage ?? e.error, 'error')
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
@@ -119,7 +121,7 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
     if (!files.length) return toast(message('brief.dropOnly'))
     Promise.all(files.map(async (f) => ({ path: await window.forge.dropFile(f), preview: URL.createObjectURL(f) }))).then(
       (list) => setImages((cur) => [...cur, ...list]),
-      (err: Error) => toast(message('brief.imageFailed', {detail:err.message}), 'error')
+      (err: Error) => toast(message('brief.imageFailed', { detail: errorMessage(err) }), 'error')
     )
   }
 
@@ -162,9 +164,9 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
       }
       for (const [pl, ids] of now) await startRun(pl, ids)
       setBrief(await window.forge.brief.patch(id, { status: 'committed', committedAssetIds: assets.map((a) => a.id) }))
-      toast(message('brief.productionStarted', {count:assets.length,waiting}), 'ok')
+      toast(message('brief.productionStarted', { count: assets.length, waiting }), 'ok')
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     } finally {
       setCommitting(false)
     }
@@ -204,11 +206,12 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
           </button>
           <div style={{ minWidth: 0, flex: 1 }}>
             <h2 className="ellipsis">{spec.name || brief.title}</h2>
-            <div className="muted small">{t('brief.questions', {count:brief.view.filter((v) => v.kind === 'question').length})}</div>
+            <div className="muted small">{t('brief.questions', { count: brief.view.filter((v) => v.kind === 'question').length })}</div>
           </div>
           {brief.costUsd > 0 && <span className="chip">${brief.costUsd.toFixed(3)}</span>}
           <button className={`btn ${drawer ? 'primary' : ''}`} onClick={() => setDrawer(!drawer)}>
-            <Icon name="library" size={15} /> {t('surface.library')} </button>
+            <Icon name="library" size={15} /> {t('surface.library')}{' '}
+          </button>
         </div>
 
         <div className="chat-log" ref={log}>
@@ -225,7 +228,7 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
             if (v.kind === 'event')
               return (
                 <div key={i} className="event">
-                  {v.text}
+                  {renderMessage(locale, v.uiMessage ?? legacyEvent(v.text))}
                 </div>
               )
             if (v.kind === 'assistant')
@@ -288,7 +291,7 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
                 {live && q.multi && (
                   <div className="row" style={{ marginTop: 10 }}>
                     <button className="btn primary" disabled={!multi.length} onClick={() => submit(multi.join(', '))}>
-                      <Icon name="check" size={15} /> {t('brief.sendChoices', {count:multi.length})}
+                      <Icon name="check" size={15} /> {t('brief.sendChoices', { count: multi.length })}
                     </button>
                     <span className="muted small">{t('brief.ownAnswer')}</span>
                   </div>
@@ -383,7 +386,10 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
                 </button>
               </div>
               <input className="input" style={{ width: '100%' }} placeholder={t('surface.search')} value={libQ} onChange={(e) => setLibQ(e.target.value)} />
-              <div className="dim small" style={{ marginTop: 6 }}> {t('surface.libraryContext')} </div>
+              <div className="dim small" style={{ marginTop: 6 }}>
+                {' '}
+                {t('surface.libraryContext')}{' '}
+              </div>
             </div>
             <div className="drawer-grid">
               {libList.slice(0, 120).map((a) => (
@@ -495,9 +501,7 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
           )}
 
           <div className="sheet-sec">
-            <h4>
-              {t('surface.kitCount', {included:included.length,total:brief.kit.length})}
-            </h4>
+            <h4>{t('surface.kitCount', { included: included.length, total: brief.kit.length })}</h4>
             {!brief.kit.length && <p className="placeholder small"> {t('surface.kitHelp')} </p>}
             {GROUPS.map((g) => {
               const items = brief.kit.filter((k) => k.group === g.id)
@@ -505,7 +509,7 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
               return (
                 <div key={g.id} className="kit-group">
                   <div className="kit-group-title">
-                    <Icon name={g.icon} size={14} /> {t(({model:'brief.models',doku:'brief.textures',ses:'brief.sounds',vfx:'brief.effects',animasyon:'brief.animations'} as const)[g.id])}
+                    <Icon name={g.icon} size={14} /> {t(({ model: 'brief.models', doku: 'brief.textures', ses: 'brief.sounds', vfx: 'brief.effects', animasyon: 'brief.animations' } as const)[g.id])}
                   </div>
                   {items.map((k) => (
                     <div key={k.key} className={`kit-item ${k.include ? '' : 'off'}`} onClick={() => brief.status !== 'committed' && toggleKit(k.key)}>
@@ -515,11 +519,7 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
                         <p>{k.purpose || k.description}</p>
                         <div className="kit-tags">
                           <span className="chip">{t(`kind.${k.kind}`)}</span>
-                          {k.dynamic && (
-                            <span className="chip accent">
-                              {t('surface.layers', {count:k.dynamic.layers,idle:k.dynamic.idleRpm,max:k.dynamic.maxRpm})}
-                            </span>
-                          )}
+                          {k.dynamic && <span className="chip accent">{t('surface.layers', { count: k.dynamic.layers, idle: k.dynamic.idleRpm, max: k.dynamic.maxRpm })}</span>}
                           {k.motion && (
                             <span className="chip pink">
                               {k.motion.seconds} {t('surface.secondsShort')} {k.motion.loop ? t('surface.loopSuffix') : ''}
@@ -539,9 +539,10 @@ export default function BriefPage({ id, firstMessage, onBack }: { id: string; fi
         <div className="sheet-foot">
           {brief.status === 'committed' ? (
             <div className="row between">
-              <span className="muted small">{t('surface.sentCount', {count:brief.committedAssetIds?.length ?? 0})}</span>
+              <span className="muted small">{t('surface.sentCount', { count: brief.committedAssetIds?.length ?? 0 })}</span>
               <button className="btn" onClick={commit} disabled={committing}>
-                <Icon name="refresh" size={14} /> {t('surface.resend')} </button>
+                <Icon name="refresh" size={14} /> {t('surface.resend')}{' '}
+              </button>
             </div>
           ) : (
             <button className="btn primary big" style={{ width: '100%' }} disabled={committing || busy || (!spec.name && !brief.kit.length)} onClick={commit}>

@@ -144,7 +144,23 @@ function persist(): void {
   // Önce geçici dosyaya yaz, sonra değiştir: yazma yarıda kalırsa eski ayarlar bozulmaz
   const tmp = file() + '.tmp'
   fs.writeFileSync(tmp, JSON.stringify(out, null, 2))
-  fs.renameSync(tmp, file())
+  // Windows scanners can briefly hold the destination open after a write.
+  // Retry the atomic replacement; never delete the previous settings file.
+  try {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        fs.renameSync(tmp, file())
+        break
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code
+        if (process.platform !== 'win32' || !['EPERM', 'EACCES', 'EBUSY'].includes(code ?? '') || attempt >= 5) throw error
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20 * (attempt + 1))
+      }
+    }
+  } catch (error) {
+    fs.rmSync(tmp, { force: true })
+    throw error
+  }
   refreshLogSecrets()
 }
 

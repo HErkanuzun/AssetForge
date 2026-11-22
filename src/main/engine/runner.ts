@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { errorEnvelope } from '../../shared/i18n/errors'
+import { message, emitMessage } from '../../shared/i18n/message'
 // Pipeline çalıştırma motoru: topolojik sıra, QA geri bildirim döngüsü, iş kuyruğu, iptal.
 import path from 'node:path'
 import { NODE_DEF_MAP } from '../../shared/nodes'
@@ -24,10 +27,10 @@ export class Runner {
 
   start(project: Project, projectDir: string, pipelineId: string, assetIds: string[]): Job[] {
     const pipeline = project.pipelines.find((p) => p.id === pipelineId)
-    if (!pipeline) throw new Error('Pipeline bulunamadı')
+    if (!pipeline) throw new UiError(message('error.0d2583f764'))
     topoSort(pipeline) // döngü kontrolü
     const assets = assetIds.map((id) => project.assets.find((a) => a.id === id)).filter((a): a is AssetSpec => !!a)
-    if (!assets.length) throw new Error('Çalıştırılacak asset seçilmedi')
+    if (!assets.length) throw new UiError(message('error.d7702d95c6'))
 
     const jobs = assets.map((asset) => {
       const id = newId('job')
@@ -93,7 +96,7 @@ export class Runner {
         const nodeId = order[i]
         if (!dirty.has(nodeId)) continue
         dirty.delete(nodeId)
-        if (abort.signal.aborted) throw new Error('İptal edildi')
+        if (abort.signal.aborted) throw new UiError(message('error.dbd417da03'))
         const node = byId.get(nodeId)!
         const def = NODE_DEF_MAP[node.type]
         const state = job.nodes[nodeId]
@@ -112,6 +115,7 @@ export class Runner {
         state.status = 'running'
         state.progress = 0
         state.error = undefined
+        state.uiError = undefined
         state.attempts++
         const dir = ensureDir(path.join(job.outDir, `${nodeId}${state.attempts > 1 ? `_try${state.attempts}` : ''}`))
         const ctx: ExecCtx = {
@@ -124,7 +128,8 @@ export class Runner {
           dir,
           feedback: feedback.get(nodeId) ?? [],
           signal: abort.signal,
-          log: (m) => {
+          log: (m, descriptor) => {
+            if (descriptor) (state.uiLogs ??= {})[state.logs.length] = { at: Date.now(), message: descriptor }
             state.logs.push(`[${new Date().toLocaleTimeString('tr-TR')}] ${m}`)
             this.push(job)
           },
@@ -137,7 +142,11 @@ export class Runner {
             job.cost.meshyCredits += c.credits ?? 0
             job.cost.audioChars += c.chars ?? 0
           },
-          warn: (m) => {
+          warn: (m, descriptor) => {
+            if (descriptor) {
+              ;(job.uiWarnings ??= {})[job.warnings.length] = descriptor
+              ;(state.uiLogs ??= {})[state.logs.length] = { message: descriptor }
+            }
             job.warnings.push(m)
             state.logs.push(`⚠ ${m}`)
             this.push(job, true)
@@ -151,8 +160,9 @@ export class Runner {
         } catch (e) {
           state.status = 'failed'
           state.error = (e as Error).message
+          state.uiError = errorEnvelope(e).uiMessage
           state.logs.push(`HATA: ${state.error}`)
-          throw new Error(`${def?.label ?? node.type}: ${state.error}`, { cause: e })
+          throw Object.assign(new Error(`${def?.label ?? node.type}: ${state.error}`, { cause: e }), { uiMessage: state.uiError })
         }
         state.outputs = result.outputs
         state.progress = 100
@@ -174,17 +184,19 @@ export class Runner {
               if (id !== nodeId) job.nodes[id].status = 'retrying'
             }
             state.status = 'retrying'
+            ;(state.uiLogs ??= {})[state.logs.length] = { message: message('log.retry', { attempt: state.attempts, max: maxRetries }) }
             state.logs.push(`↻ Yeniden deneme ${state.attempts}/${maxRetries}: prompt geri bildirimle yeniden yazılacak`)
             i = Math.min(...[...rerun].map((id) => order.indexOf(id))) - 1
             this.push(job, true)
             continue
           }
           if (String(node.params.on_fail ?? 'stop') === 'continue') {
-            ctx.warn(`Kalite kontrol geçilemedi ama hat devam ediyor (${node.id})`)
+            emitMessage(ctx.warn, message('log.7bb5f52c83', { p0: String(node.id) }))
           } else {
             state.status = 'failed'
             state.error = 'Kalite kontrol eşiği aşılamadı'
-            throw new Error(`Kalite kontrol: ${maxRetries} denemede eşik aşılamadı`)
+            state.uiError = message('error.989413d166', { p0: String(maxRetries) })
+            throw new UiError(message('error.989413d166', { p0: String(maxRetries) }))
           }
         }
         this.push(job, true)
@@ -195,6 +207,7 @@ export class Runner {
       const msg = (e as Error).message
       job.status = abort.signal.aborted ? 'canceled' : 'failed'
       job.error = msg
+      job.uiError = errorEnvelope(e).uiMessage
       for (const s of Object.values(job.nodes)) if (s.status === 'running' || s.status === 'retrying') s.status = abort.signal.aborted ? 'skipped' : 'failed'
     } finally {
       job.finishedAt = Date.now()

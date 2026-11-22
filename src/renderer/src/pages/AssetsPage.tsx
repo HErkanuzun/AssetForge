@@ -1,7 +1,9 @@
-import {message} from '../../../shared/i18n/message'
+// SPDX-License-Identifier: AGPL-3.0-only
+import { pipelineText } from '../../../shared/i18n/metadata'
+import { errorMessage } from '../../../shared/i18n/errors'
+import { message } from '../../../shared/i18n/message'
 import { assetStatus } from '../../../shared/i18n/display'
 import { useLocale } from '../i18n'
-// SPDX-License-Identifier: AGPL-3.0-only
 import { useMemo, useState } from 'react'
 import type { AssetKind, AssetSpec } from '../../../shared/types'
 import { AsyncButton, Field, NumberInput, Select, TextArea, TextInput } from '../components/ui'
@@ -26,7 +28,7 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
   const { t, locale } = useLocale()
 
   const { project, update, toast, selectedAssets, setSelectedAssets, saveNow } = useStore()
-  const kindLabels = Object.fromEntries((Object.keys(KIND_LABEL) as AssetKind[]).map(kind => [kind, t(`kind.${kind}`)])) as Record<AssetKind, string>
+  const kindLabels = Object.fromEntries((Object.keys(KIND_LABEL) as AssetKind[]).map((kind) => [kind, t(`kind.${kind}`)])) as Record<AssetKind, string>
   const p = project!
   const [q, setQ] = useState('')
   const [kind, setKind] = useState('')
@@ -90,7 +92,7 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
         .join(' · ')
       toast(message('surface.imported', { summary }), 'ok')
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     }
   }
 
@@ -107,9 +109,7 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
         <header className="page-head">
           <div>
             <h1> {t('surface.assetList')} </h1>
-            <p className="muted">
-              {t('surface.counts', {total:p.assets.length, visible:filtered.length, selected:selectedAssets.length})}
-            </p>
+            <p className="muted">{t('surface.counts', { total: p.assets.length, visible: filtered.length, selected: selectedAssets.length })}</p>
           </div>
           <div className="row">
             <AsyncButton onClick={importFile}> {t('surface.importExcel')} </AsyncButton>
@@ -125,22 +125,31 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
 
         {selectedAssets.length > 0 && (
           <div className="runbar">
-            <span>
-              {t('surface.selected', {count:selectedAssets.length})}
-            </span>
-            <Select value={runPipeline} onChange={setPipelineId} options={p.pipelines.map((pl) => ({ value: pl.id, label: pl.name + (pl.id === suggested ? t('surface.recommendedSuffix') : '') }))} />
-            <AsyncButton className="primary" onClick={run} disabled={!runPipeline}> {t('surface.generateArrow')} </AsyncButton>
-            <button className="btn ghost" onClick={() => setSelectedAssets([])}> {t('surface.clearSelection')} </button>
+            <span>{t('surface.selected', { count: selectedAssets.length })}</span>
+            <Select
+              value={runPipeline}
+              onChange={setPipelineId}
+              options={p.pipelines.map((pl) => ({ value: pl.id, label: pipelineText(locale, pl) + (pl.id === suggested ? t('surface.recommendedSuffix') : '') }))}
+            />
+            <AsyncButton className="primary" onClick={run} disabled={!runPipeline}>
+              {' '}
+              {t('surface.generateArrow')}{' '}
+            </AsyncButton>
+            <button className="btn ghost" onClick={() => setSelectedAssets([])}>
+              {' '}
+              {t('surface.clearSelection')}{' '}
+            </button>
           </div>
         )}
 
         {p.assets.length === 0 ? (
           <div className="empty-card">
             <h3> {t('surface.noAssets')} </h3>
-            <p className="muted">
-              {t('surface.importHelp')}
-            </p>
-            <AsyncButton className="primary" onClick={importFile}> {t('surface.import')} </AsyncButton>
+            <p className="muted">{t('surface.importHelp')}</p>
+            <AsyncButton className="primary" onClick={importFile}>
+              {' '}
+              {t('surface.import')}{' '}
+            </AsyncButton>
           </div>
         ) : (
           <div className="table-wrap">
@@ -251,7 +260,7 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
               ))}
             </div>
           )}
-          <div className="muted small">{t('surface.source', {source:open.source})}</div>
+          <div className="muted small">{t('surface.source', { source: open.source })}</div>
         </aside>
       )}
     </div>

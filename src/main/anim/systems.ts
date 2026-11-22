@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError, errorMessage } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 // Animasyon sistemleri: kayıt, klip → ANM asset senkronu, poz eşlemeli faz faz üretim, Unreal kurulumu.
 
 import fs from 'node:fs'
@@ -36,7 +38,7 @@ export function listSystems(dir: string, characterId?: string): AnimSystem[] {
 
 export function getSystem(dir: string, id: string): AnimSystem {
   const s = (loadProject(dir).animSystems ?? []).find((x) => x.id === id)
-  if (!s) throw new Error(`Animasyon sistemi bulunamadı: ${id}`)
+  if (!s) throw new UiError(message('error.56021ced56', { p0: String(id) }))
   return s
 }
 
@@ -79,8 +81,8 @@ function qaOf(j: Job): AnimSystemClipState['qa'] {
   for (const n of Object.values(j.nodes)) {
     const r = n.outputs?.report
     if (r?.kind === 'report') {
-      const { score, pass, summary, issues, technical } = r.report
-      return { score, pass, summary, issues, technical }
+      const { score, pass, summary, issues, technical, uiSummary, uiIssues, uiTechnical } = r.report
+      return { score, pass, summary, issues, technical, uiSummary, uiIssues, uiTechnical }
     }
   }
   return undefined
@@ -107,6 +109,7 @@ export function systemStates(dir: string, sys: AnimSystem): AnimSystemClipState[
       status,
       progress: status === 'done' ? 100 : j ? jobProgressOf(j) : 0,
       error: status === 'failed' ? j?.error : undefined,
+      uiError: status === 'failed' ? j?.uiError : undefined,
       motion: motionInfo(motion),
       bvhUrl: motion?.bvh ? 'forge://local/' + encodeURIComponent(motion.bvh) : undefined,
       qa: j ? qaOf(j) : undefined
@@ -145,7 +148,7 @@ export function syncAssets(ctx: SysCtx, sysId: string): AnimSystem {
   let out: AnimSystem | null = null
   mutate(ctx, (p) => {
     const sys = (p.animSystems ?? []).find((x) => x.id === sysId)
-    if (!sys) throw new Error('Sistem bulunamadı')
+    if (!sys) throw new UiError(message('error.c49819d19c'))
     const ch = p.assets.find((a) => a.id === sys.characterId)
     // önce id ata (spec'ler birbirine id ile bağlanır)
     for (const c of sys.clips) {
@@ -245,7 +248,7 @@ export interface ProduceOptions {
  * kilitlenen geçişler (başlangıç, duruş, pivot, aksiyon). Arka planda çalışır.
  */
 export function produceSystem(ctx: SysCtx, id: string, opts: ProduceOptions = {}): { clips: number; phases: number } {
-  if (producing.has(id)) throw new Error('Bu sistem zaten üretiliyor')
+  if (producing.has(id)) throw new UiError(message('error.771f304c25'))
   const sys = syncAssets(ctx, id)
   const states = new Map(systemStates(ctx.dir, sys).map((s) => [s.key, s]))
   const want = (c: AnimSystemClip) => (opts.keys?.length ? opts.keys.includes(c.key) : opts.force || states.get(c.key)?.status !== 'done')
@@ -307,7 +310,7 @@ export interface BuildManifest {
 export function buildManifest(dir: string, sysId: string): BuildManifest {
   const p = loadProject(dir)
   const sys = (p.animSystems ?? []).find((x) => x.id === sysId)
-  if (!sys) throw new Error('Sistem bulunamadı')
+  if (!sys) throw new UiError(message('error.c49819d19c'))
   const t = p.bible.technical
   const root = t.ueContentRoot.replace(/\/$/, '')
   const ch = p.assets.find((a) => a.id === sys.characterId)
@@ -345,7 +348,7 @@ export function buildManifest(dir: string, sysId: string): BuildManifest {
 
 export async function buildSystemInUe(ctx: SysCtx, sysId: string): Promise<NonNullable<AnimSystem['lastBuild']>> {
   const man = buildManifest(ctx.dir, sysId)
-  if (!man.clips.length) throw new Error('Kurulacak üretilmiş klip yok. Önce “Hepsini üret”.')
+  if (!man.clips.length) throw new UiError(message('error.95b9215010'))
   const b64 = Buffer.from(JSON.stringify(man), 'utf8').toString('base64')
   const script = `import base64, json\nSYSTEM = json.loads(base64.b64decode("${b64}").decode("utf-8"))\n` + fs.readFileSync(resourcePath('python', 'ue_animsys.py'), 'utf8')
   const outDir = ensureDir(path.join(ctx.dir, 'export', 'AnimSystems'))
@@ -363,8 +366,10 @@ export async function buildSystemInUe(ctx: SysCtx, sysId: string): Promise<NonNu
       build.ok = r.success && !res.errors.length
     } else {
       build.errors.push(r.result || r.output.slice(-600) || 'Unreal’dan sonuç gelmedi')
+      if (!r.result && !r.output) build.uiErrors = { 0: message('anim.buildNoResponse') }
     }
   } catch (e) {
+    build.uiErrors = { 0: message('anim.buildConnection', { detail: errorMessage(e), file }) }
     build.errors.push(`Unreal’a bağlanılamadı: ${(e as Error).message}. Betik kaydedildi; Unreal’da File → Execute Python Script ile çalıştırabilirsin: ${file}`)
   }
   mutate(ctx, (p) => {

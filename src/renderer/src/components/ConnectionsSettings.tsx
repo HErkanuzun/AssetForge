@@ -1,7 +1,8 @@
-import {message} from '../../../shared/i18n/message'
-import {panelLabel} from '../../../shared/i18n/display'
-import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { errorMessage } from '../../../shared/i18n/errors'
+import { message, renderMessage } from '../../../shared/i18n/message'
+import { panelLabel } from '../../../shared/i18n/display'
+import { useLocale } from '../i18n'
 // Ayarlar: yapay zeka sağlayıcıları ve görev atamaları (ModelSettings), MCP sunucusu ve dış araçlar (McpSettings)
 import { useEffect, useState } from 'react'
 import type { LlmProvider, LlmRoles, McpServerConfig, McpServerStatus } from '../../../shared/types'
@@ -64,7 +65,7 @@ function useSettingsPatch() {
 
 /** Yapay zeka sağlayıcıları ve görev atamaları */
 export function ModelSettings() {
-  const {t, locale} = useLocale()
+  const { t, locale } = useLocale()
 
   const { s, patch, toast } = useSettingsPatch()
   const [keys, setKeys] = useState<Record<string, string>>({})
@@ -78,9 +79,9 @@ export function ModelSettings() {
   const test = async (id: string) => {
     setTesting(id)
     try {
-      toast(message('mcp.connected', {detail:await window.forge.llm.test(id)}), 'ok')
+      toast(message('mcp.connected', { detail: await window.forge.llm.test(id) }), 'ok')
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     } finally {
       setTesting('')
     }
@@ -95,18 +96,25 @@ export function ModelSettings() {
   return (
     <section className="card">
       <h2> {t('panel.5ec0b592ec')} </h2>
-      <p className="muted small"> {t('panel.e5d507feef')} <b> {t('panel.a0a1f1e10e')} </b> {t('panel.4bd2c412ba')} <b> {t('panel.5c60ddab3a')} </b>{' '} {t('panel.9935a4f461')} <b> {t('panel.ecaaf35030')} </b> {t('panel.0adeea5aaf')} </p>
+      <p className="muted small">
+        {' '}
+        {t('panel.e5d507feef')} <b> {t('panel.a0a1f1e10e')} </b> {t('panel.4bd2c412ba')} <b> {t('panel.5c60ddab3a')} </b> {t('panel.9935a4f461')} <b> {t('panel.ecaaf35030')} </b>{' '}
+        {t('panel.0adeea5aaf')}{' '}
+      </p>
       <div className="prov">
         <b>Claude (Anthropic)</b>
         <span className="muted small"> {t('panel.2519c1391b')} </span>
         <select className="input" value={s.claudeModel} onChange={(e) => patch({ claudeModel: e.target.value })} title={t('panel.8ac1d85f31')}>
           {CLAUDE_MODELS.map((m) => (
             <option key={m.value} value={m.value}>
-              {panelLabel(locale,m.label)}
+              {panelLabel(locale, m.label)}
             </option>
           ))}
         </select>
-        <span className="chip ok" style={{ justifySelf: 'start' }}> {t('panel.c79dc9d317')} </span>
+        <span className="chip ok" style={{ justifySelf: 'start' }}>
+          {' '}
+          {t('panel.c79dc9d317')}{' '}
+        </span>
         <button className="btn" disabled={testing === 'claude'} onClick={() => test('claude')}>
           {testing === 'claude' ? <span className="spinner" /> : t('panel.532eaabd95')}
         </button>
@@ -156,7 +164,7 @@ export function ModelSettings() {
       ))}
       <div className="presets">
         {PRESETS.map((x) => (
-          <button key={panelLabel(locale,x.label)} className="btn" onClick={() => setProviders([...custom, { ...x.p, id: rid('llm') }])}>
+          <button key={panelLabel(locale, x.label)} className="btn" onClick={() => setProviders([...custom, { ...x.p, id: rid('llm') }])}>
             <Icon name="plus" size={13} /> {x.label}
           </button>
         ))}
@@ -185,14 +193,17 @@ export function ModelSettings() {
         <span> {t('panel.90c5b03541')} </span>
         <Toggle value={s.webSearch} onChange={(v) => patch({ webSearch: v })} label={t('panel.af57907550')} />
       </div>
-      <p className="dim small" style={{ marginTop: 8 }}> {t('panel.abf5cc3ffd')} </p>
+      <p className="dim small" style={{ marginTop: 8 }}>
+        {' '}
+        {t('panel.abf5cc3ffd')}{' '}
+      </p>
     </section>
   )
 }
 
 /** AssetForge MCP sunucusu (dışarı açma) ve dış MCP araç sunucuları */
 export function McpSettings() {
-  const {t, locale} = useLocale()
+  const { t, locale } = useLocale()
 
   const { s, patch, toast } = useSettingsPatch()
   const [mcp, setMcp] = useState<{ servers: McpServerStatus[]; expose: { running: boolean; url: string } } | null>(null)
@@ -225,7 +236,7 @@ export function McpSettings() {
             value={s.mcpExpose.port}
             onChange={(e) => patch({ mcpExpose: { ...s.mcpExpose, port: Number(e.target.value) || 9560 } }).then(refreshMcp)}
           />
-          <span className={`chip ${mcp?.expose.running ? 'ok' : ''}`}>{mcp?.expose.running ? t('backend.running', {url}) : t('comfy.off')}</span>
+          <span className={`chip ${mcp?.expose.running ? 'ok' : ''}`}>{mcp?.expose.running ? t('backend.running', { url }) : t('comfy.off')}</span>
           <span className="spacer" />
           <button
             className="btn ghost"
@@ -234,21 +245,28 @@ export function McpSettings() {
               patch({ mcpExpose: { ...s.mcpExpose, token: t } }).then(refreshMcp)
             }}
           >
-            <Icon name="refresh" size={13} /> {t('panel.0059a87193')} </button>
+            <Icon name="refresh" size={13} /> {t('panel.0059a87193')}{' '}
+          </button>
         </div>
         <div className="dim small"> {t('panel.2a3590f035')} </div>
         <div className="row" style={{ alignItems: 'stretch' }}>
           <div className="codebox" style={{ flex: 1 }}>
             {ccCmd}
           </div>
-          <button className="btn" onClick={() => copy(ccCmd, toast, panelLabel(locale,'Kopyalandı'))}> {t('panel.a8bcca42d9')} </button>
+          <button className="btn" onClick={() => copy(ccCmd, toast, panelLabel(locale, 'Kopyalandı'))}>
+            {' '}
+            {t('panel.a8bcca42d9')}{' '}
+          </button>
         </div>
         <div className="dim small">Claude Desktop (claude_desktop_config.json):</div>
         <div className="row" style={{ alignItems: 'stretch' }}>
           <div className="codebox" style={{ flex: 1 }}>
             {desktop}
           </div>
-          <button className="btn" onClick={() => copy(desktop, toast, panelLabel(locale,'Kopyalandı'))}> {t('panel.a8bcca42d9')} </button>
+          <button className="btn" onClick={() => copy(desktop, toast, panelLabel(locale, 'Kopyalandı'))}>
+            {' '}
+            {t('panel.a8bcca42d9')}{' '}
+          </button>
         </div>
       </section>
 
@@ -278,10 +296,10 @@ export function McpSettings() {
                 <Toggle value={x.enabled} onChange={(v) => editServer(x.id, { enabled: v })} label={t('panel.de91313104')} />
                 <Toggle value={x.autoApprove} onChange={(v) => editServer(x.id, { autoApprove: v })} label={t('panel.7414ad9940')} />
                 <span className="spacer" />
-                {st?.connected && <span className="chip ok">{t('mcp.tools', {count:st.tools.length})}</span>}
+                {st?.connected && <span className="chip ok">{t('mcp.tools', { count: st.tools.length })}</span>}
                 {st?.error && (
-                  <span className="chip pink ellipsis" style={{ maxWidth: 280 }} title={st.error}>
-                    {st.error}
+                  <span className="chip pink ellipsis" style={{ maxWidth: 280 }} title={renderMessage(locale, st.uiError ?? st.error!)}>
+                    {renderMessage(locale, st.uiError ?? st.error!)}
                   </span>
                 )}
                 <button
@@ -292,8 +310,8 @@ export function McpSettings() {
                     const r = await window.forge.mcp.test(x.id)
                     setTesting('')
                     await refreshMcp()
-                    if (r.connected) toast(message('mcp.testResult', {name:x.name,count:r.tools.length,list:r.tools.slice(0,6).join(', ')}), 'ok')
-                    else toast(`${x.name}: ${r.error}`, 'error')
+                    if (r.connected) toast(message('mcp.testResult', { name: x.name, count: r.tools.length, list: r.tools.slice(0, 6).join(', ') }), 'ok')
+                    else toast(message('feedback.namedDetail', { name: x.name, detail: r.uiError ?? r.error ?? '' }), 'error')
                   }}
                 >
                   {testing === x.id ? <span className="spinner" /> : t('panel.2422c0dd94')}

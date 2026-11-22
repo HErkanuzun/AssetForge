@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+
+import { UiError } from '../../shared/i18n/errors'
+import { message, emitMessage } from '../../shared/i18n/message'
 // Hat içindeki "Ajan Görevi" düğümü: seçilen LLM, seçilen araçlarla (MCP, terminal) bir görevi
 // kendi başına yapar ve dosyaları düğümün klasörüne bırakır. Üç motor: API (Claude / OpenAI uyumlu),
 // Claude Code CLI, Codex CLI.
@@ -97,7 +100,7 @@ export function codexMcpArgs(servers: McpServerConfig[]): string[] {
 function localTools(o: TaskAgentOptions): AgentTool[] {
   const inside = (p: string) => {
     const f = path.resolve(o.outDir, p)
-    if (!f.toLowerCase().startsWith(path.resolve(o.outDir).toLowerCase())) throw new Error('Yalnızca çıktı klasörüne yazılabilir')
+    if (!f.toLowerCase().startsWith(path.resolve(o.outDir).toLowerCase())) throw new UiError(message('error.3f8837c336'))
     return f
   }
   const obj = (input: unknown) => (input && typeof input === 'object' ? { ok: true as const, data: input as Record<string, string> } : { ok: false as const, error: 'object bekleniyor' })
@@ -192,13 +195,13 @@ async function callTool(tools: AgentTool[], o: TaskAgentOptions, name: string, i
 async function apiAgent(o: TaskAgentOptions): Promise<string> {
   const providers = allProviders()
   const p: LlmProvider | undefined = o.providerId ? providers.find((x) => x.id === o.providerId) : (providers.find((x) => x.id === getSettings().llmRoles.assistant) ?? providers[0])
-  if (!p) throw new Error('Seçilen LLM sağlayıcısı bulunamadı (Ayarlar → Yapay zekâ)')
+  if (!p) throw new UiError(message('error.0857601679'))
   const errors: string[] = []
   const mcp = o.mcp === 'none' ? [] : await externalTools(o.outDir, { onlyIds: mcpSelection(o.mcp).map((s) => s.id), headless: true, errors })
-  for (const e of errors) o.log(`⚠ MCP bağlanamadı — ${e}`)
-  if (o.mcp && o.mcp !== 'none' && !mcp.length) throw new Error(`MCP sunucusuna bağlanılamadı: ${errors.join('; ') || o.mcp}`)
+  for (const e of errors) emitMessage(o.log, message('log.db4c7ab78b', { p0: String(e) }))
+  if (o.mcp && o.mcp !== 'none' && !mcp.length) throw new UiError(message('error.23c9bcd94a', { p0: String(errors.join('; ') || o.mcp) }))
   const tools = [...localTools(o), ...mcp]
-  o.log(`${p.name} (${p.model || getSettings().claudeModel}) · ${tools.length} araç`)
+  emitMessage(o.log, message('log.d0ef5f4634', { p0: String(p.name), p1: String(p.model || getSettings().claudeModel), p2: String(tools.length) }))
   return p.kind === 'anthropic' ? anthropicAgent(p, tools, o) : openaiAgent(p, tools, o)
 }
 
@@ -249,9 +252,9 @@ async function anthropicAgent(p: LlmProvider, tools: AgentTool[], o: TaskAgentOp
       results.push({ type: 'tool_result', tool_use_id: b.id, content: blocks, is_error: r.isError || undefined })
     }
     history.push({ role: 'user', content: results })
-    if (o.signal.aborted) throw new Error('İptal edildi')
+    if (o.signal.aborted) throw new UiError(message('error.dbd417da03'))
   }
-  o.log(`Tur sınırına (${o.maxRounds}) ulaşıldı`)
+  emitMessage(o.log, message('log.f699cfe4da', { p0: String(o.maxRounds) }))
   return last
 }
 
@@ -291,9 +294,9 @@ async function openaiAgent(p: LlmProvider, tools: AgentTool[], o: TaskAgentOptio
         }
     }
     if (imgParts.length) history.push({ role: 'user', content: [{ type: 'text', text: 'Images returned by the tools above:' }, ...imgParts] })
-    if (o.signal.aborted) throw new Error('İptal edildi')
+    if (o.signal.aborted) throw new UiError(message('error.dbd417da03'))
   }
-  o.log(`Tur sınırına (${o.maxRounds}) ulaşıldı`)
+  emitMessage(o.log, message('log.f699cfe4da', { p0: String(o.maxRounds) }))
   return last
 }
 
@@ -375,9 +378,9 @@ async function claudeCodeAgent(o: TaskAgentOptions): Promise<string> {
     '--allowedTools',
     ...allowed
   ]
-  o.log(`Claude Code · MCP: ${servers.map((s) => s.name).join(', ') || 'yok'}${o.shell ? ' · terminal açık' : ''}`)
+  emitMessage(o.log, message('log.7d1bc247d3', { p0: String(servers.map((s) => s.name).join(', ') || '—'), p1: o.shell ? message('feedback.shellEnabled') : '' }))
   const r = await runCli(exe, args, o)
-  if (r.code !== 0) throw new Error(`Claude Code hata kodu ${r.code}: ${r.out.slice(-600)}`)
+  if (r.code !== 0) throw new UiError(message('error.61e6f775b5', { p0: String(r.code), p1: String(r.out.slice(-600)) }))
   return r.out.trim().slice(-4000)
 }
 
@@ -401,10 +404,10 @@ async function codexAgent(o: TaskAgentOptions): Promise<string> {
     ...codexMcpArgs(servers),
     '-'
   ]
-  o.log(`Codex · MCP: ${servers.map((s) => s.name).join(', ') || 'yok'}`)
+  emitMessage(o.log, message('log.a19f9759d3', { p0: String(servers.map((s) => s.name).join(', ') || '—') }))
   // Codex sistem talimatı almaz; görevin başına ekle
   const r = await runCli(exe, args, { ...o, task: `${o.system}\n\n${o.task}` })
-  if (r.code !== 0) throw new Error(`Codex hata kodu ${r.code}: ${r.out.slice(-600)}`)
+  if (r.code !== 0) throw new UiError(message('error.a60e255375', { p0: String(r.code), p1: String(r.out.slice(-600)) }))
   return fs.existsSync(lastFile) ? fs.readFileSync(lastFile, 'utf8').trim() : r.out.trim().slice(-4000)
 }
 

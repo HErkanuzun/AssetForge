@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../shared/i18n/errors'
+import { message, type MessageDescriptor } from '../shared/i18n/message'
+import { errorEnvelope } from '../shared/i18n/errors'
 import { translate } from '../shared/i18n'
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, net, protocol, shell, Tray } from 'electron'
 import fs from 'node:fs'
@@ -187,7 +190,7 @@ function handle<T extends unknown[], R>(channel: string, fn: (...args: T) => R |
     try {
       return { ok: true, value: await fn(...(args as T)) }
     } catch (e) {
-      return { ok: false, error: (e as Error).message }
+      return { ok: false, ...errorEnvelope(e) }
     }
   })
 }
@@ -261,7 +264,7 @@ function registerIpc(): void {
   handle('test:comfy', (id?: string, draft?: { url?: string; token?: string }) => testServer(id || managedServer().id, draft))
   // Yerel ComfyUI: kurulum, başlat/durdur, tarayıcıda düğüm editörünü aç
   handle('comfy:status', () => comfyLocalStatus())
-  handle('comfy:step', (step: string) => comfyLocalStep(step, (line) => emit('comfy:log', line)))
+  handle('comfy:step', (step: string) => comfyLocalStep(step, (line, descriptor) => emit('comfy:log', descriptor ?? line)))
   handle('comfy:logs', () => comfyLocalLogs())
   handle('comfy:open', (id?: string) => openExternal(normalizeComfyUrl((id && findServer(id)?.url) || managedServer().url)))
   // Birden çok sunucu ve workflow kitaplığı
@@ -276,7 +279,7 @@ function registerIpc(): void {
   handle('comfy:wf:fit', (id: string) => fitWorkflow(id))
   handle('comfy:wf:show', (id: string) => shell.showItemInFolder(workflowFilePath(id)))
   // Özel arka uçlar (git deposundan) ve Gradio uygulamaları
-  const backendLog = (id: string) => (line: string) => emit('backends:log', { id, line })
+  const backendLog = (id: string) => (line: string, uiMessage?: MessageDescriptor) => emit('backends:log', { id, line, uiMessage })
   handle('backends:status', () => backendStatuses())
   handle('backends:add', (url: string) => addBackend(url, backendLog('_add')))
   handle('backends:recipe', (id: string, json: string) => updateRecipe(id, json))
@@ -299,7 +302,7 @@ function registerIpc(): void {
   handle('brief:send', (id: string, input: BriefInput) => sendBrief(dir(), loadProject(dir()), id, input, (ev) => emit('brief:event', ev)))
   handle('brief:patch', (id: string, patch: Partial<Pick<Brief, 'title' | 'kit' | 'status' | 'committedAssetIds'>>) => {
     const b = loadBrief(dir(), id)
-    if (!b) throw new Error('Brief bulunamadı')
+    if (!b) throw new UiError(message('error.088deaf40c'))
     Object.assign(b, patch, { updatedAt: Date.now() })
     saveBrief(dir(), b)
     return { ...b, history: [] }
@@ -307,14 +310,14 @@ function registerIpc(): void {
   handle('brief:delete', (id: string) => deleteBrief(dir(), id))
   handle('brief:toAssets', (id: string) => {
     const b = loadBrief(dir(), id)
-    if (!b) throw new Error('Brief bulunamadı')
+    if (!b) throw new UiError(message('error.088deaf40c'))
     return briefToAssets(b, loadProject(dir()).assets, suggestPipeline)
   })
   handle('library:thumbs', () => libraryThumbnails(dir()))
 
   // Kimodo (NVIDIA hareket üretimi)
   handle('kimodo:status', () => kimodoStatus())
-  handle('kimodo:step', (step: string) => kimodoStep(step, (line) => emit('kimodo:log', line)))
+  handle('kimodo:step', (step: string) => kimodoStep(step, (line, descriptor) => emit('kimodo:log', descriptor ?? line)))
   handle('kimodo:logs', () => kimodoLogs())
   handle('kimodo:suggest', async (text: string, character: string) => {
     const { data, usd } = await suggestMotion(loadProject(dir()).bible, text, character)
@@ -366,7 +369,7 @@ function registerIpc(): void {
   // Sağlayıcılar ve MCP
   handle('llm:test', async (providerId: string) => {
     const p = allProviders().find((x) => x.id === providerId)
-    if (!p) throw new Error('Sağlayıcı bulunamadı')
+    if (!p) throw new UiError(message('error.989087d99f'))
     if (p.kind === 'openai') return oaTest(p)
     if (p.builtin) return testClaude()
     const r = await clientFor(p).messages.create({ model: p.model, max_tokens: 20, messages: [{ role: 'user', content: 'Sadece "hazır" yaz.' }] })
@@ -426,7 +429,7 @@ function registerIpc(): void {
   })
   // Pencereyi kapat, sunucu bildirim alanında çalışmaya devam etsin
   handle('web:headless', () => {
-    if (!webRunning()) throw new Error('Önce web sunucusunu açın')
+    if (!webRunning()) throw new UiError(message('error.603cefc2ee'))
     ensureTray()
     setTimeout(() => win?.close(), 100)
   })

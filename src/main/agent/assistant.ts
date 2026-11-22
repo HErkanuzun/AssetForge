@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError, errorEnvelope, errorMessage } from '../../shared/i18n/errors'
+import { message, renderMessage } from '../../shared/i18n/message'
 // Yapımcı: projenin tamamını araçlarla yöneten sohbet asistanı (Claude ya da OpenAI uyumlu herhangi bir model).
 import type Anthropic from '@anthropic-ai/sdk'
 import fs from 'node:fs'
@@ -211,10 +213,10 @@ async function execTool(dir: string, c: AgentConversation, tools: AgentTool[], c
 
 export async function sendAgent(dir: string, convId: string, input: AgentInput, deps: Deps): Promise<AgentConversation> {
   const c = loadConv(dir, convId)
-  if (!c) throw new Error('Sohbet bulunamadı')
-  if (running.has(convId)) throw new Error('Asistan hâlâ çalışıyor')
+  if (!c) throw new UiError(message('error.c427563d3c'))
+  if (running.has(convId)) throw new UiError(message('error.f1e81db02b'))
   const provider = allProviders().find((p) => p.id === c.providerId)
-  if (!provider) throw new Error('Bu sohbetin sağlayıcısı silinmiş; yeni sohbet açın')
+  if (!provider) throw new UiError(message('error.a86199ebb6'))
   const ac = new AbortController()
   running.set(convId, ac)
 
@@ -243,8 +245,8 @@ export async function sendAgent(dir: string, convId: string, input: AgentInput, 
     else await openaiLoop(dir, c, provider, tools, `${sys}\n\n${projectCtx}`, userText, images, deps, ac.signal)
   } catch (e) {
     const msg = (e as Error).name === 'AbortError' || ac.signal.aborted ? 'Durduruldu.' : (e as Error).message
-    c.view.push({ kind: 'event', text: msg })
-    if (msg !== 'Durduruldu.') deps.emit({ type: 'error', convId, error: msg })
+    c.view.push({ kind: 'event', text: msg, uiMessage: msg === 'Durduruldu.' ? message('error.99888e426c') : typeof errorMessage(e) === 'string' ? undefined : errorEnvelope(e).uiMessage })
+    if (msg !== 'Durduruldu.') deps.emit({ type: 'error', convId, ...errorEnvelope(e) })
   } finally {
     running.delete(convId)
     c.updatedAt = Date.now()
@@ -351,11 +353,11 @@ async function anthropicLoop(
 
     if (msg.stop_reason === 'pause_turn') continue
     if (msg.stop_reason === 'refusal') {
-      c.view.push({ kind: 'event', text: 'Model bu isteği yanıtlamadı.' })
+      c.view.push({ kind: 'event', text: renderMessage('tr', message('event.refused')), uiMessage: message('event.refused') })
       return
     }
     if (msg.stop_reason === 'max_tokens') {
-      c.view.push({ kind: 'event', text: 'Yanıt uzunluk sınırında kesildi; "devam" yazabilirsin.' })
+      c.view.push({ kind: 'event', text: renderMessage('tr', message('event.length')), uiMessage: message('event.length') })
       return
     }
     if (msg.stop_reason !== 'tool_use') return
@@ -373,9 +375,9 @@ async function anthropicLoop(
     }
     history.push({ role: 'user', content: results })
     save(dir, c)
-    if (signal.aborted) throw Object.assign(new Error('Durduruldu.'), { name: 'AbortError' })
+    if (signal.aborted) throw Object.assign(new UiError(message('error.99888e426c')), { name: 'AbortError' })
   }
-  c.view.push({ kind: 'event', text: `Tur sınırına (${MAX_ROUNDS}) ulaşıldı; devam etmek için yaz.` })
+  c.view.push({ kind: 'event', text: renderMessage('tr', message('event.rounds', { count: MAX_ROUNDS })), uiMessage: message('event.rounds', { count: MAX_ROUNDS }) })
 }
 
 async function openaiLoop(dir: string, c: AgentConversation, p: LlmProvider, tools: AgentTool[], sys: string, userText: string, images: string[], deps: Deps, signal: AbortSignal): Promise<void> {
@@ -406,7 +408,7 @@ async function openaiLoop(dir: string, c: AgentConversation, p: LlmProvider, too
     save(dir, c)
     deps.emit({ type: 'conv', conv: strip(c) })
     if (!r.toolCalls.length) {
-      if (r.finish === 'length') c.view.push({ kind: 'event', text: 'Yanıt uzunluk sınırında kesildi; "devam" yazabilirsin.' })
+      if (r.finish === 'length') c.view.push({ kind: 'event', text: renderMessage('tr', message('event.length')), uiMessage: message('event.length') })
       return
     }
     const imgParts: OaPart[] = []
@@ -429,7 +431,7 @@ async function openaiLoop(dir: string, c: AgentConversation, p: LlmProvider, too
     // OpenAI biçiminde araç mesajları yalnızca metin alır → görselleri ayrı kullanıcı mesajıyla ekle
     if (imgParts.length) history.push({ role: 'user', content: [{ type: 'text', text: 'Images returned by the tools above:' }, ...imgParts] })
     save(dir, c)
-    if (signal.aborted) throw Object.assign(new Error('Durduruldu.'), { name: 'AbortError' })
+    if (signal.aborted) throw Object.assign(new UiError(message('error.99888e426c')), { name: 'AbortError' })
   }
-  c.view.push({ kind: 'event', text: `Tur sınırına (${MAX_ROUNDS}) ulaşıldı; devam etmek için yaz.` })
+  c.view.push({ kind: 'event', text: renderMessage('tr', message('event.rounds', { count: MAX_ROUNDS })), uiMessage: message('event.rounds', { count: MAX_ROUNDS }) })
 }

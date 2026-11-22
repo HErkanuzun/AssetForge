@@ -1,5 +1,7 @@
-import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { errorMessage } from '../../../shared/i18n/errors'
+import { useLocale } from '../i18n'
+import { message, renderMessage, type UiMessage } from '../../../shared/i18n/message'
 // Kimodo BVH önizleyici: kemiklere bağlı kapsül "manken" + zemin + yörünge kamera
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
@@ -8,14 +10,14 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { Icon } from './icons'
 
 export default function BvhViewer({ url }: { url: string }) {
-  const {t:msg} = useLocale()
+  const { t: msg, locale } = useLocale()
 
   const host = useRef<HTMLDivElement>(null)
   const ctl = useRef<{ action?: THREE.AnimationAction; duration: number }>({ duration: 0 })
   const [playing, setPlaying] = useState(true)
   const [t, setT] = useState(0)
   const [dur, setDur] = useState(0)
-  const [err, setErr] = useState('')
+  const [err, setErr] = useState<UiMessage>('')
 
   useEffect(() => {
     const el = host.current!
@@ -52,7 +54,7 @@ export default function BvhViewer({ url }: { url: string }) {
     const clock = new THREE.Clock()
 
     fetch(url)
-      .then((r) => (r.ok ? r.text() : Promise.reject(new Error('BVH okunamadı (' + r.status + ')'))))
+      .then((r) => (r.ok ? r.text() : Promise.reject(Object.assign(new Error('BVH'), { status: r.status }))))
       .then((text) => {
         if (disposed) return
         const res = new BVHLoader().parse(text)
@@ -104,7 +106,7 @@ export default function BvhViewer({ url }: { url: string }) {
         setDur(res.clip.duration)
         setErr('')
       })
-      .catch((e: Error) => setErr(e.message))
+      .catch((e: Error & { status?: number }) => setErr(e.status ? message('viewer.bvhFailed', { status: e.status }) : errorMessage(e)))
 
     const resize = () => {
       const w = el.clientWidth
@@ -161,7 +163,7 @@ export default function BvhViewer({ url }: { url: string }) {
 
   return (
     <div className="stage" ref={host}>
-      {err && <div className="stage-empty">{err}</div>}
+      {err && <div className="stage-empty">{renderMessage(locale, err)}</div>}
       <div className="stage-bar">
         <button className="btn ghost" onClick={toggle} style={{ height: 28, padding: '0 8px' }}>
           <Icon name={playing ? 'pause' : 'play'} size={15} />
@@ -180,7 +182,8 @@ export default function BvhViewer({ url }: { url: string }) {
           }}
         />
         <span className="mono dim">
-          {t.toFixed(2)} / {dur.toFixed(2)} {msg('surface.secondsShort')} </span>
+          {t.toFixed(2)} / {dur.toFixed(2)} {msg('surface.secondsShort')}{' '}
+        </span>
       </div>
     </div>
   )

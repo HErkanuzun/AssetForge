@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+
+import { UiError, errorEnvelope, errorMessage } from '../../shared/i18n/errors'
+import { message, renderMessage } from '../../shared/i18n/message'
 // Brief Chat (Atölye): üretim öncesi Claude ile form gibi akan sohbet.
 // Claude soruları tıklanabilir seçeneklerle sorar (ask_question), brief kartını canlı doldurur (update_brief),
 // ana asset'in oyun dünyasında ihtiyaç duyduğu her şeyi bir üretim kitine çevirir (set_kit) ve
@@ -251,8 +254,8 @@ const running = new Set<string>()
  */
 export async function sendBrief(dir: string, project: Project, briefId: string, input: BriefInput, emit: (e: BriefEvent) => void): Promise<Brief> {
   const b = loadBrief(dir, briefId)
-  if (!b) throw new Error('Brief bulunamadı')
-  if (running.has(briefId)) throw new Error('Bu brief zaten yanıt bekliyor')
+  if (!b) throw new UiError(message('error.088deaf40c'))
+  if (running.has(briefId)) throw new UiError(message('error.97785b3cc5'))
   running.add(briefId)
   const history = b.history as Msg[]
   const validIds = new Set(project.assets.map((a) => a.id))
@@ -298,7 +301,7 @@ export async function sendBrief(dir: string, project: Project, briefId: string, 
       b.pending = undefined
       b.pendingResults = undefined
     } else {
-      if (!text && !extra.length) throw new Error('Boş mesaj')
+      if (!text && !extra.length) throw new UiError(message('error.b28e968b88'))
       content = [...(text ? [{ type: 'text' as const, text }] : []), ...extra]
       b.view.push({ kind: 'user', text, images, links })
     }
@@ -350,11 +353,11 @@ export async function sendBrief(dir: string, project: Project, briefId: string, 
       if (said || live.trim()) b.view.push({ kind: 'assistant', text: said || live.trim() })
 
       if (msg.stop_reason === 'refusal') {
-        b.view.push({ kind: 'event', text: 'Claude bu isteği yanıtlamadı.' })
+        b.view.push({ kind: 'event', text: renderMessage('tr', message('event.claudeRefused')), uiMessage: message('event.claudeRefused') })
         break
       }
       if (msg.stop_reason === 'max_tokens') {
-        b.view.push({ kind: 'event', text: 'Yanıt uzunluk sınırında kesildi; devam etmek için yazın.' })
+        b.view.push({ kind: 'event', text: renderMessage('tr', message('event.briefLength')), uiMessage: message('event.briefLength') })
         break
       }
       if (msg.stop_reason !== 'tool_use') break
@@ -392,7 +395,7 @@ export async function sendBrief(dir: string, project: Project, briefId: string, 
             continue
           }
           applyKit(b, r.data, validIds)
-          b.view.push({ kind: 'event', text: `Üretim kiti güncellendi: ${b.kit.length} kalem` })
+          b.view.push({ kind: 'event', text: renderMessage('tr', message('event.kitUpdated', { count: b.kit.length })), uiMessage: message('event.kitUpdated', { count: b.kit.length }) })
           results.push({ type: 'tool_result', tool_use_id: blk.id, content: `ok, ${b.kit.length} items` })
         } else if (blk.name === 'finalize_brief') {
           const r = FinalizeSchema.safeParse(raw)
@@ -402,7 +405,7 @@ export async function sendBrief(dir: string, project: Project, briefId: string, 
           }
           b.status = b.status === 'committed' ? 'committed' : 'ready'
           b.summary = r.data.summary
-          b.view.push({ kind: 'event', text: 'Brief hazır — kiti gözden geçirip üretime gönderebilirsin.' })
+          b.view.push({ kind: 'event', text: renderMessage('tr', message('event.briefReady')), uiMessage: message('event.briefReady') })
           results.push({ type: 'tool_result', tool_use_id: blk.id, content: 'ok — the user now reviews the kit' })
         } else {
           fail('unknown tool')
@@ -427,11 +430,11 @@ export async function sendBrief(dir: string, project: Project, briefId: string, 
     return out
   } catch (e) {
     const err = (e as Error).message
-    b.view.push({ kind: 'event', text: `Hata: ${err}` })
+    b.view.push({ kind: 'event', text: `Hata: ${err}`, uiMessage: message('event.error', { detail: errorMessage(e) }) })
     // Başarısız turu geçmişten geri al ki tekrar denenebilsin
     while (history.length && history[history.length - 1].role === 'user') history.pop()
     saveBrief(dir, b)
-    emit({ type: 'error', briefId, error: err })
+    emit({ type: 'error', briefId, ...errorEnvelope(e) })
     throw e
   } finally {
     running.delete(briefId)

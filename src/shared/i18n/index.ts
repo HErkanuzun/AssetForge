@@ -2,6 +2,7 @@
 import { extraEn, extraZh, extraTr } from './extra'
 import { pagesEn, pagesZh, pagesTr } from './pages'
 import { panelsEn, panelsZh, panelsTr } from './panels'
+import { feedbackEn, feedbackZh, feedbackTr } from './feedback'
 export const LOCALES = ['en', 'zh-CN', 'tr'] as const
 export type Locale = (typeof LOCALES)[number]
 export const LANGUAGE_NAMES: Record<Locale, string> = { en: 'English', 'zh-CN': '简体中文', tr: 'Türkçe' }
@@ -22,6 +23,7 @@ export function resolveLocale(saved: unknown, system: string): Locale {
 }
 
 const en = {
+  ...feedbackEn,
   ...extraEn,
   ...pagesEn,
   ...panelsEn,
@@ -43,6 +45,7 @@ const en = {
   'app.bible': 'Project Bible',
   'app.settings': 'Settings',
   'app.assets': 'assets',
+  'app.asset': 'asset',
   'app.brief': 'Workshop · Brief',
   'app.readOnly': 'View only',
   'app.readOnlyHelp': 'The project owner assigned you the viewer role: changes cannot be saved and production cannot be started.',
@@ -68,6 +71,7 @@ const en = {
 export type MessageKey = keyof typeof en
 type Catalog = Record<MessageKey, string>
 const zh: Catalog = {
+  ...feedbackZh,
   ...extraZh,
   ...pagesZh,
   ...panelsZh,
@@ -89,6 +93,7 @@ const zh: Catalog = {
   'app.bible': '项目设定集',
   'app.settings': '设置',
   'app.assets': '项资源',
+  'app.asset': '项资源',
   'app.brief': '工作台 · 创作需求',
   'app.readOnly': '只读模式',
   'app.readOnlyHelp': '项目所有者为你分配了查看者角色：无法保存更改或启动生产。',
@@ -111,6 +116,7 @@ const zh: Catalog = {
   'status.idle': '等待中'
 }
 const tr: Catalog = {
+  ...feedbackTr,
   ...extraTr,
   ...pagesTr,
   ...panelsTr,
@@ -132,6 +138,7 @@ const tr: Catalog = {
   'app.bible': 'Proje Kitabı',
   'app.settings': 'Ayarlar',
   'app.assets': 'asset',
+  'app.asset': 'asset',
   'app.brief': 'Atölye · Brief',
   'app.readOnly': 'Yalnızca görüntüleme',
   'app.readOnlyHelp': 'Proje sahibi size izleyici rolü verdi: değişiklikler kaydedilmez, üretim başlatılamaz',

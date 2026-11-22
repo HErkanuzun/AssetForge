@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+
+import { UiError } from '../../shared/i18n/errors'
+import { message, emitMessage } from '../../shared/i18n/message'
 // ComfyUI sunucusunda her türlü workflow'u çalıştırır: görsel, 3D model, ses, animasyon.
 // Workflow API formatındadır (ComfyUI → Workflow → Export (API)). AssetForge'un değerleri şöyle girer:
 //  1) Düğüm başlıkları: AF:prompt, AF:negative, AF:seed, AF:seconds, AF:image, AF:model, AF:audio
@@ -105,15 +108,15 @@ export function prepareWorkflow(source: string, v: ComfyValues): { workflow: Com
   try {
     parsed = JSON.parse(text)
   } catch (e) {
-    throw new Error(`Workflow JSON okunamadı: ${(e as Error).message}`, { cause: e })
+    throw new UiError(message('error.36a824f6e2', { p0: String((e as Error).message) }), { cause: e })
   }
   const obj = parsed as Record<string, unknown>
   if (obj && Array.isArray(obj.nodes) && Array.isArray(obj.links)) {
-    throw new Error('Bu dosya ComfyUI’ın arayüz formatında. ComfyUI’da Workflow → Export (API) ile kaydedip onu seçin.')
+    throw new UiError(message('error.5b027d01f3'))
   }
   const wf = obj as ComfyWorkflow
   const ids = Object.keys(wf).filter((id) => wf[id] && typeof wf[id] === 'object' && typeof wf[id].class_type === 'string')
-  if (!ids.length) throw new Error('Workflow’da düğüm yok (API formatında mı?)')
+  if (!ids.length) throw new UiError(message('error.997b23c8f1'))
 
   const put = (id: string, role: Role, how: string) => {
     const value = v[role]
@@ -346,22 +349,22 @@ async function request(url: string, init: RequestInit & { signal?: AbortSignal }
     return await fetch(url, init)
   } catch (e) {
     if (init.signal?.aborted) throw e
-    throw new Error(`ComfyUI'a ulaşılamadı (${new URL(url).origin}) — ${what}. ComfyUI açık mı?`, { cause: e })
+    throw new UiError(message('error.3219e80276', { p0: String(new URL(url).origin), p1: String(what) }), { cause: e })
   }
 }
 
 /** Sunucu sürümü ve GPU: Ayarlar'daki "Bağlantıyı test et" için */
 export async function comfyInfo(url: string, token?: string, timeoutMs = 8000): Promise<string> {
   const r = await request(`${base(url)}/system_stats`, { headers: authHeaders(token), signal: AbortSignal.timeout(timeoutMs) }, 'sistem bilgisi')
-  if (r.status === 401 || r.status === 403) throw new Error(`ComfyUI erişimi reddetti (${r.status}) — token doğru mu?`)
-  if (!r.ok) throw new Error(`ComfyUI yanıtı ${r.status}`)
+  if (r.status === 401 || r.status === 403) throw new UiError(message('error.e607900829', { p0: String(r.status) }))
+  if (!r.ok) throw new UiError(message('error.a72a539b3c', { p0: String(r.status) }))
   let j: { system?: { comfyui_version?: string }; devices?: { name?: string; vram_total?: number }[] }
   try {
     j = (await r.json()) as typeof j
   } catch (e) {
-    throw new Error('Bu adresteki sunucu ComfyUI değil', { cause: e })
+    throw new UiError(message('error.11e5bf4ed7'), { cause: e })
   }
-  if (!j || typeof j !== 'object' || !('system' in j || 'devices' in j)) throw new Error('Bu adresteki sunucu ComfyUI değil')
+  if (!j || typeof j !== 'object' || !('system' in j || 'devices' in j)) throw new UiError(message('error.11e5bf4ed7'))
   const d = j.devices?.[0]
   const gpu = d?.name ? ` · ${d.name.replace(/^cuda:\d+\s*/, '').replace(/\s*:\s*cudaMallocAsync$/, '')}${d.vram_total ? ` ${Math.round(d.vram_total / 2 ** 30)} GB` : ''}` : ''
   return `ComfyUI ${j.system?.comfyui_version ?? '?'}${gpu}`
@@ -370,7 +373,7 @@ export async function comfyInfo(url: string, token?: string, timeoutMs = 8000): 
 /** Kuyruktaki iş sayısı (çalışan + bekleyen) */
 export async function comfyQueue(url: string, token?: string): Promise<number> {
   const r = await request(`${base(url)}/queue`, { headers: authHeaders(token), signal: AbortSignal.timeout(5000) }, 'kuyruk')
-  if (!r.ok) throw new Error(`ComfyUI yanıtı ${r.status}`)
+  if (!r.ok) throw new UiError(message('error.a72a539b3c', { p0: String(r.status) }))
   const q = (await r.json()) as { queue_running?: unknown[]; queue_pending?: unknown[] }
   return (q.queue_running?.length ?? 0) + (q.queue_pending?.length ?? 0)
 }
@@ -378,7 +381,7 @@ export async function comfyQueue(url: string, token?: string): Promise<number> {
 /** Sunucudaki düğüm türleri ve seçenekleri (model listeleri dahil); büyük yanıt, çağıran önbelleğe alır */
 export async function comfyObjectInfo(url: string, token?: string): Promise<ObjectInfo> {
   const r = await request(`${base(url)}/object_info`, { headers: authHeaders(token), signal: AbortSignal.timeout(20000) }, 'düğüm listesi')
-  if (!r.ok) throw new Error(`ComfyUI yanıtı ${r.status}`)
+  if (!r.ok) throw new UiError(message('error.a72a539b3c', { p0: String(r.status) }))
   return (await r.json()) as ObjectInfo
 }
 
@@ -389,7 +392,7 @@ async function upload(url: string, file: string, subfolder: string, signal?: Abo
   form.append('subfolder', subfolder)
   form.append('overwrite', 'true')
   const r = await request(`${base(url)}/upload/image`, { method: 'POST', body: form, headers: authHeaders(token), signal }, 'dosya yükleme')
-  if (!r.ok) throw new Error(`ComfyUI dosyayı kabul etmedi (${r.status}): ${(await r.text()).slice(0, 200)}`)
+  if (!r.ok) throw new UiError(message('error.ab5d628a7b', { p0: String(r.status), p1: String((await r.text()).slice(0, 200)) }))
   const j = (await r.json()) as { name: string; subfolder?: string }
   return j.subfolder ? `${j.subfolder}/${j.name}` : j.name
 }
@@ -443,7 +446,7 @@ export interface ComfyResult {
 
 export async function comfyRun(o: ComfyRunOptions): Promise<ComfyResult> {
   const root = base(o.url)
-  if (!fs.existsSync(o.workflowPath)) throw new Error(`ComfyUI workflow bulunamadı: ${o.workflowPath}`)
+  if (!fs.existsSync(o.workflowPath)) throw new UiError(message('error.84bcd5db15', { p0: String(o.workflowPath) }))
   const values: ComfyValues = { ...o.values }
   for (const [role, sub] of [
     ['image', ''],
@@ -453,7 +456,7 @@ export async function comfyRun(o: ComfyRunOptions): Promise<ComfyResult> {
     const file = o.uploads?.[role]
     if (!file) continue
     values[role] = await upload(root, file, sub, o.signal, o.token)
-    o.log(`ComfyUI'a yüklendi: ${values[role]}`)
+    emitMessage(o.log, message('log.986c30103a', { p0: String(values[role]) }))
   }
 
   const { workflow, applied, unused } = prepareWorkflow(fs.readFileSync(o.workflowPath, 'utf8'), values)
@@ -506,9 +509,9 @@ export async function comfyRun(o: ComfyRunOptions): Promise<ComfyResult> {
       },
       'workflow gönderme'
     )
-    if (!res.ok) throw new Error(`ComfyUI workflow'u reddetti: ${describeRejection(await res.text())}`)
+    if (!res.ok) throw new UiError(message('error.350abacb7d', { p0: String(describeRejection(await res.text())) }))
     promptId = ((await res.json()) as { prompt_id: string }).prompt_id
-    o.log(`ComfyUI işi: ${promptId}`)
+    emitMessage(o.log, message('log.4ca2035f83', { p0: String(promptId) }))
 
     const deadline = Date.now() + (o.timeoutMin && o.timeoutMin > 0 ? o.timeoutMin : 30) * 60_000
     let entry: HistoryEntry | undefined
@@ -524,12 +527,12 @@ export async function comfyRun(o: ComfyRunOptions): Promise<ComfyResult> {
       if (entry?.status?.status_str === 'error' || (wsError && entry)) {
         const err = entry.status?.messages?.find((m) => m[0] === 'execution_error')?.[1] as { node_type?: string; exception_message?: string } | undefined
         const msg = err ? `${err.node_type ?? ''}: ${err.exception_message ?? ''}`.trim() : wsError
-        throw new Error(`ComfyUI workflow hata verdi${msg ? ` — ${msg.slice(0, 400)}` : ' (ComfyUI konsoluna bakın)'}`)
+        throw new UiError(message('error.9350b456a0', { p0: msg ? ` — ${msg.slice(0, 400)}` : message('feedback.comfyConsoleHint') }))
       }
       if (entry && (entry.status?.completed || entry.status?.status_str === 'success' || (!entry.status && Object.keys(entry.outputs ?? {}).length))) break
       if (Date.now() > deadline) {
         await cancel(root, promptId, o.token)
-        throw new Error(`ComfyUI zaman aşımı (${o.timeoutMin || 30} dk)`)
+        throw new UiError(message('error.d6534994ee', { p0: String(o.timeoutMin || 30) }))
       }
     }
 
@@ -545,7 +548,7 @@ export async function comfyRun(o: ComfyRunOptions): Promise<ComfyResult> {
       }
       const q = new URLSearchParams({ filename: f.filename, subfolder: f.subfolder, type: f.type })
       const r = await request(`${root}/view?${q}`, { headers: authHeaders(o.token), signal: o.signal }, 'çıktı indirme')
-      if (!r.ok) throw new Error(`ComfyUI çıktısı indirilemedi: ${f.filename} (${r.status})`)
+      if (!r.ok) throw new UiError(message('error.7a2a97c3e1', { p0: String(f.filename), p1: String(r.status) }))
       const n = files[f.kind].length + 1
       const ext = path.extname(f.filename).toLowerCase() || '.png'
       const dest = path.join(o.outDir, `${o.baseName}${counts[f.kind] > 1 ? `_${n}` : ''}${ext}`)

@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError, errorEnvelope } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 // Dış MCP sunucuları (Blender MCP, Unreal MCP, dosya sistemi, arama…) → Yapımcı asistanına araç olarak eklenir.
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { getDefaultEnvironment, StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
@@ -17,7 +19,7 @@ interface Conn {
 }
 
 const conns = new Map<string, Conn>()
-const errors = new Map<string, string>()
+const errors = new Map<string, ReturnType<typeof errorEnvelope>>()
 const pending = new Map<string, Promise<Conn>>()
 
 /** "a b 'c d'" → ['a','b','c d'] */
@@ -46,7 +48,7 @@ async function open(cfg: McpServerConfig): Promise<Conn> {
     cfg.transport === 'stdio'
       ? new StdioClientTransport({ command: cfg.command, args: splitArgs(cfg.args), env: { ...getDefaultEnvironment(), ...kv(cfg.env, '=') }, stderr: 'pipe' })
       : new StreamableHTTPClientTransport(new URL(cfg.url), { requestInit: { headers: kv(cfg.headers, ':') } })
-  const timer = new Promise<never>((_, rej) => setTimeout(() => rej(new Error('Bağlantı zaman aşımı (30 sn)')), 30000))
+  const timer = new Promise<never>((_, rej) => setTimeout(() => rej(new UiError(message('error.a24ce9eae2'))), 30000))
   await Promise.race([client.connect(transport), timer])
   const { tools } = await Promise.race([client.listTools(), timer])
   return { key: keyOf(cfg), client, tools: tools.map((t) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema as Record<string, unknown> })) }
@@ -66,7 +68,7 @@ async function ensure(cfg: McpServerConfig): Promise<Conn> {
       return c
     })
     .catch((e: Error) => {
-      errors.set(cfg.id, e.message)
+      errors.set(cfg.id, errorEnvelope(e))
       throw e
     })
     .finally(() => pending.delete(cfg.id))
@@ -143,19 +145,19 @@ export async function externalTools(dir: string, opts: { onlyIds?: string[]; hea
 export async function mcpStatus(): Promise<McpServerStatus[]> {
   return getSettings().mcpServers.map((s) => {
     const c = conns.get(s.id)
-    return { id: s.id, connected: !!c, tools: c?.tools.map((t) => t.name) ?? [], error: errors.get(s.id) }
+    return { id: s.id, connected: !!c, tools: c?.tools.map((t) => t.name) ?? [], error: errors.get(s.id)?.error, uiError: errors.get(s.id)?.uiMessage }
   })
 }
 
 /** Bağlanıp araç listesini döndürür (Ayarlar → Test) */
 export async function mcpTest(id: string): Promise<McpServerStatus> {
   const cfg = getSettings().mcpServers.find((s) => s.id === id)
-  if (!cfg) throw new Error('Sunucu bulunamadı')
+  if (!cfg) throw new UiError(message('error.21cc9665d3'))
   await close(id)
   try {
     const c = await ensure(cfg)
     return { id, connected: true, tools: c.tools.map((t) => t.name) }
   } catch (e) {
-    return { id, connected: false, tools: [], error: (e as Error).message }
+    return { id, connected: false, tools: [], ...errorEnvelope(e), uiError: errorEnvelope(e).uiMessage }
   }
 }

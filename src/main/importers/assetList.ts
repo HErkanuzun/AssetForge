@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 // Excel (.xlsx) / CSV asset listesi içe aktarıcı.
 // Her sayfada "ID" / "Kod" başlıklı satırı bulur, sütunları Türkçe/İngilizce eş anlamlılarla eşler.
 import fs from 'node:fs'
@@ -52,7 +54,7 @@ async function readTables(file: string): Promise<Table[]> {
     const text = (await fs.promises.readFile(file, 'utf8')).replace(/^﻿/, '')
     return [{ name: path.basename(file, ext), rows: parseDelimited(text, ext === '.tsv' ? '\t' : undefined) }]
   }
-  if (ext === '.xls') throw new Error('Eski .xls biçimi desteklenmiyor. Dosyayı Excel’de .xlsx olarak kaydedip tekrar dene.')
+  if (ext === '.xls') throw new UiError(message('error.ede393bd6f'))
   return readXlsx(await fs.promises.readFile(file))
 }
 

@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message, emitMessage } from '../../shared/i18n/message'
 // Genel HTTP isteği: standart API'si olmayan projeler (kendi 3D/ses/hareket sunucunuz, Replicate benzeri işler).
 // İstek şablonla kurulur, sonuç yanıttaki bir yoldan (ör. "data.0.url") ya da yanıtın kendisinden alınır.
 // İş kimliği dönen uçlar için durum sorgulama (poll) desteklenir.
@@ -117,9 +119,9 @@ async function call(url: string, init: RequestInit, what: string): Promise<Respo
     res = await fetch(url, init)
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e
-    throw new Error(`HTTP ${what}: sunucuya bağlanılamadı (${new URL(url).origin})`, { cause: e })
+    throw new UiError(message('error.0edb8a41c7', { p0: String(what), p1: String(new URL(url).origin) }), { cause: e })
   }
-  if (!res.ok) throw new Error(`HTTP ${what} hatası (${res.status}): ${(await res.text()).slice(0, 400)}`)
+  if (!res.ok) throw new UiError(message('error.8679632661', { p0: String(what), p1: String(res.status), p2: String((await res.text()).slice(0, 400)) }))
   return res
 }
 
@@ -132,7 +134,7 @@ const list = (s: string | undefined, d: string) =>
 export async function httpRun(o: HttpRunOptions): Promise<string[]> {
   const v = o.values
   const url = fillTemplate(o.url, v, 'url').trim()
-  if (!/^https?:\/\//i.test(url)) throw new Error(`HTTP adresi geçersiz: ${url || '(boş)'}`)
+  if (!/^https?:\/\//i.test(url)) throw new UiError(message('error.b6cff0b4c4', { p0: String(url || '(boş)') }))
   const headers: Record<string, string> = { ...parseHeaders(o.headers, v), ...(o.token ? { Authorization: `Bearer ${o.token}` } : {}) }
   let body: string | FormData | undefined
   if (o.method !== 'GET' && o.bodyType === 'json' && o.body.trim()) {
@@ -140,7 +142,7 @@ export async function httpRun(o: HttpRunOptions): Promise<string[]> {
     try {
       JSON.parse(text)
     } catch (e) {
-      throw new Error(`İstek gövdesi geçerli JSON değil (yer tutucular doldurulduktan sonra): ${(e as Error).message}`, { cause: e })
+      throw new UiError(message('error.573d0d715d', { p0: String((e as Error).message) }), { cause: e })
     }
     body = text
     headers['Content-Type'] ??= 'application/json'
@@ -154,7 +156,7 @@ export async function httpRun(o: HttpRunOptions): Promise<string[]> {
       const ref = /^@(image|model|audio)$/.exec(val)?.[1] as keyof HttpRunOptions['files'] | undefined
       if (ref) {
         const f = o.files[ref]
-        if (!f) throw new Error(`Çok parçalı gövde ${ref} dosyası istiyor ama düğüme ${ref} bağlı değil`)
+        if (!f) throw new UiError(message('error.dbcdf368ef', { p0: String(ref), p1: String(ref) }))
         form.append(key, new Blob([fs.readFileSync(f)]), path.basename(f))
       } else form.append(key, fillTemplate(val, v, 'text'))
     }
@@ -168,8 +170,8 @@ export async function httpRun(o: HttpRunOptions): Promise<string[]> {
   if (o.idPath?.trim() && o.pollUrl?.trim()) {
     const first = await res.json()
     const id = getPath(first, o.idPath)
-    if (id === undefined || id === null || typeof id === 'object') throw new Error(`Yanıtta iş kimliği yok (${o.idPath}): ${JSON.stringify(first).slice(0, 300)}`)
-    o.log(`İş kimliği: ${String(id)}`)
+    if (id === undefined || id === null || typeof id === 'object') throw new UiError(message('error.57969c4343', { p0: String(o.idPath), p1: String(JSON.stringify(first).slice(0, 300)) }))
+    emitMessage(o.log, message('log.7db3d197e7', { p0: String(String(id)) }))
     const pollUrl = fillTemplate(o.pollUrl, { ...v, ID: String(id) }, 'url')
     const done = list(o.doneValues, 'succeeded,success,successful,completed,complete,done,finished')
     const failed = list(o.failValues, 'failed,failure,error,errored,canceled,cancelled,expired')
@@ -181,9 +183,9 @@ export async function httpRun(o: HttpRunOptions): Promise<string[]> {
       res = await call(pollUrl, { headers: pollHeaders, signal: o.signal }, 'durum sorgusu')
       const j = await res.clone().json()
       const st = String(getPath(j, o.statusPath || 'status') ?? '').toLowerCase()
-      if (failed.includes(st)) throw new Error(`İş başarısız (${st}): ${JSON.stringify(j).slice(0, 300)}`)
+      if (failed.includes(st)) throw new UiError(message('error.0025ea5e12', { p0: String(st), p1: String(JSON.stringify(j).slice(0, 300)) }))
       if (done.includes(st)) break
-      if (Date.now() > deadline) throw new Error(`HTTP işi zaman aşımı (${o.timeoutMin || 30} dk), son durum: ${st || '?'}`)
+      if (Date.now() > deadline) throw new UiError(message('error.eda976c0e7', { p0: String(o.timeoutMin || 30), p1: String(st || '?') }))
     }
     finalUrl = pollUrl
   }
@@ -194,7 +196,7 @@ export async function httpRun(o: HttpRunOptions): Promise<string[]> {
   // Sonuç yolu yoksa yanıt gövdesi dosyanın kendisidir
   if (!o.resultPath.trim()) {
     const ct = res.headers.get('content-type')
-    if (ct?.includes('application/json')) throw new Error('Yanıt JSON; “Sonuç yolu” alanına dosyanın bulunduğu yolu yazın (ör. data.0.url)')
+    if (ct?.includes('application/json')) throw new UiError(message('error.2a0661c5e4'))
     const dest = out(0, 1, extFor(o.kind, ct, finalUrl))
     fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()))
     return [dest]
@@ -203,7 +205,7 @@ export async function httpRun(o: HttpRunOptions): Promise<string[]> {
   const j = await res.json()
   const found = getPath(j, o.resultPath)
   const items = (Array.isArray(found) ? found : [found]).map((x) => (x && typeof x === 'object' && 'url' in x ? (x as { url: unknown }).url : x)).filter((x) => typeof x === 'string' && x)
-  if (!items.length) throw new Error(`Yanıtta “${o.resultPath}” yolunda dosya yok: ${JSON.stringify(j).slice(0, 300)}`)
+  if (!items.length) throw new UiError(message('error.92017392a8', { p0: String(o.resultPath), p1: String(JSON.stringify(j).slice(0, 300)) }))
   const files: string[] = []
   for (const [i, raw] of (items as string[]).entries()) {
     if (raw.startsWith('data:')) {
@@ -224,7 +226,7 @@ export async function httpRun(o: HttpRunOptions): Promise<string[]> {
       const dest = out(i, items.length, KIND_EXT[o.kind])
       fs.writeFileSync(dest, Buffer.from(raw, 'base64'))
       files.push(dest)
-    } else throw new Error(`Sonuç tanınmadı (adres, data: ya da base64 değil): ${raw.slice(0, 120)}`)
+    } else throw new UiError(message('error.ce77ead35d', { p0: String(raw.slice(0, 120)) }))
   }
   return files
 }

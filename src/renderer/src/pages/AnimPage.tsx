@@ -1,6 +1,8 @@
-import {message} from '../../../shared/i18n/message'
-import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { errorMessage, errorEnvelope } from '../../../shared/i18n/errors'
+import { assetStatus, panelLabel } from '../../../shared/i18n/display'
+import { message, renderMessage, type UiMessage } from '../../../shared/i18n/message'
+import { useLocale } from '../i18n'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AnimSegment, AssetSpec, KimodoStatus } from '../../../shared/types'
 import { useNav } from '../App'
@@ -49,13 +51,13 @@ function draftFrom(a: AssetSpec): Draft {
 }
 
 function KimodoPanel() {
-  const {t} = useLocale()
+  const { t, locale } = useLocale()
 
   const { settings, toast } = useStore()
   const nav = useNav()
   const [st, setSt] = useState<KimodoStatus | null>(null)
   const [busyStep, setBusyStep] = useState('')
-  const [lines, setLines] = useState<string[]>([])
+  const [lines, setLines] = useState<UiMessage[]>([])
 
   const refresh = useCallback(
     () =>
@@ -65,7 +67,8 @@ function KimodoPanel() {
           steps: [],
           running: false,
           healthy: false,
-          error: e.message
+          error: e.message,
+          uiError: errorEnvelope(e).uiMessage
         })
       ),
     []
@@ -85,9 +88,9 @@ function KimodoPanel() {
     setLines((x) => [...x, `▶ ${id}`])
     try {
       await window.forge.kimodo.step(id)
-      toast(`Kimodo: ${id} tamam`, 'ok')
+      toast(message('anim.stepDone', { id }), 'ok')
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     } finally {
       setBusyStep('')
       refresh()
@@ -113,14 +116,20 @@ function KimodoPanel() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <b>{st?.healthy ? t('panel.f524acbd22') : st?.running ? t('panel.aa1a41ea85') : t('panel.798c8e2663')}</b>
             <div className="muted small ellipsis">
-              {st?.healthy ? `${st.model ?? 'Kimodo'} · ${st.device ?? ''}${st.busy ? t('panel.de9d9695cb') : ''}` : (st?.error ?? 'Metinden hareket üretimi (yerel GPU)')}
+              {st?.healthy
+                ? `${st.model ?? 'Kimodo'} · ${st.device ?? ''}${st.busy ? t('panel.de9d9695cb') : ''}`
+                : renderMessage(locale, st?.uiError ?? st?.error ?? panelLabel(locale, 'Metinden hareket üretimi (yerel GPU)'))}
             </div>
           </div>
           {st?.healthy || st?.running ? (
-            <button className="btn" disabled={!!busyStep} onClick={() => step('stop')}> {t('panel.5769a8f8ae')} </button>
+            <button className="btn" disabled={!!busyStep} onClick={() => step('stop')}>
+              {' '}
+              {t('panel.5769a8f8ae')}{' '}
+            </button>
           ) : (
             <button className="btn primary" disabled={!!busyStep || (st?.steps.some((s) => s.id !== 'start' && !s.done) ?? true)} onClick={() => step('start')}>
-              <Icon name="play" size={13} /> {t('panel.24fa59605d')} </button>
+              <Icon name="play" size={13} /> {t('panel.24fa59605d')}{' '}
+            </button>
           )}
         </div>
         <div className="steps">
@@ -128,11 +137,14 @@ function KimodoPanel() {
             <div key={s.id} className={`step ${s.done ? 'done' : ''}`}>
               <span className="dot">{s.done ? <Icon name="check" size={11} strokeWidth={3} /> : i + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div>{s.label}</div>
-                {s.hint && <div className="dim small">{s.hint}</div>}
+                <div>{panelLabel(locale, s.label)}</div>
+                {s.hint && <div className="dim small">{panelLabel(locale, s.hint)}</div>}
               </div>
               {s.id === 'token' && !settings?.hasKeys.huggingface ? (
-                <button className="btn" onClick={() => nav.go('settings')}> {t('panel.748f306924')} </button>
+                <button className="btn" onClick={() => nav.go('settings')}>
+                  {' '}
+                  {t('panel.748f306924')}{' '}
+                </button>
               ) : (
                 <button className={`btn ${next?.id === s.id ? 'primary' : ''}`} disabled={!!busyStep} onClick={() => step(s.id)} style={{ height: 28 }}>
                   {busyStep === s.id ? <span className="spinner" /> : s.done ? t('panel.5da57b457b') : t('backend.install')}
@@ -142,18 +154,22 @@ function KimodoPanel() {
           ))}
         </div>
         {st?.backend === 'wsl' && st.virtualization === false && (
-          <p className="small" style={{ color: 'var(--warn)', marginTop: 10 }}> {t('panel.662b30d776')} </p>
+          <p className="small" style={{ color: 'var(--warn)', marginTop: 10 }}>
+            {' '}
+            {t('panel.662b30d776')}{' '}
+          </p>
         )}
-        <div className="console">{lines.length ? lines.join('\n') : t('panel.88490cdac7')}</div>
+        <div className="console">{lines.length ? lines.map((line) => renderMessage(locale, line)).join('\n') : t('panel.88490cdac7')}</div>
         <button className="btn ghost" style={{ marginTop: 6 }} onClick={async () => setLines((await window.forge.kimodo.logs()).split(/\r?\n/).slice(-200))}>
-          <Icon name="terminal" size={14} /> {t('panel.334a93a950')} </button>
+          <Icon name="terminal" size={14} /> {t('panel.334a93a950')}{' '}
+        </button>
       </div>
     </section>
   )
 }
 
 export default function AnimPage() {
-  const {t} = useLocale()
+  const { t, locale } = useLocale()
 
   const { project, jobs, update, toast, startRun } = useStore()
   const nav = useNav()
@@ -205,7 +221,7 @@ export default function AnimPage() {
         rootMotion: r.loop ? 'inplace' : cur.rootMotion
       }))
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     } finally {
       setSuggesting(false)
     }
@@ -255,9 +271,9 @@ export default function AnimPage() {
     const charBusy = jobs.some((j) => j.assetId === char.id && (j.status === 'running' || j.status === 'queued'))
     try {
       await startRun(PIPELINE, [id], charBusy ? char.id : undefined)
-      toast(charBusy ? t('panel.1527c39f36') : t('panel.b86ded88ab'), 'ok')
+      toast(charBusy ? message('panel.1527c39f36') : message('panel.b86ded88ab'), 'ok')
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     }
   }
 
@@ -274,7 +290,8 @@ export default function AnimPage() {
           <h2> {t('panel.da562bc382')} </h2>
           <p className="muted"> {t('panel.4b0cb5ace5')} </p>
           <button className="btn primary" onClick={() => nav.go('home')}>
-            <Icon name="spark" size={15} /> {t('panel.7b265e9963')} </button>
+            <Icon name="spark" size={15} /> {t('panel.7b265e9963')}{' '}
+          </button>
         </div>
       </div>
     )
@@ -286,7 +303,8 @@ export default function AnimPage() {
           <Icon name="grid" size={13} /> {t('panel.2bf49aac2e')} <span className="n">{(p.animSystems ?? []).length}</span>
         </button>
         <button className={mode === 'clips' ? 'on' : ''} onClick={() => setMode('clips')}>
-          <Icon name="anim" size={13} /> {t('panel.7ebf74f2e5')} </button>
+          <Icon name="anim" size={13} /> {t('panel.7ebf74f2e5')}{' '}
+        </button>
       </div>
       <span className="dim small">{mode === 'systems' ? t('panel.df7b7b73c5') : t('panel.415feb46dc')}</span>
     </div>
@@ -320,12 +338,14 @@ export default function AnimPage() {
                     {c.name}
                   </b>
                   <span className="muted small">
-                    {p.assets.filter((a) => a.kind === 'animation' && a.parentId === c.id).length} klip · {c.status || 'bekliyor'}
+                    {p.assets.filter((a) => a.kind === 'animation' && a.parentId === c.id).length} {t('anim.clips')} · {c.status ? assetStatus(locale, c.status) : t('surface.waiting')}
                   </span>
                 </div>
               </div>
             ))}
-            <div className="section-title" style={{ margin: '18px 4px 8px', fontSize: 12.5 }}> {t('panel.80e7cdb5ca')} <span className="spacer" />
+            <div className="section-title" style={{ margin: '18px 4px 8px', fontSize: 12.5 }}>
+              {' '}
+              {t('panel.80e7cdb5ca')} <span className="spacer" />
               <button className="btn ghost" style={{ height: 26, padding: '0 6px' }} onClick={() => setD(EMPTY)} title={t('panel.d053be492a')}>
                 <Icon name="plus" size={14} />
               </button>
@@ -342,15 +362,17 @@ export default function AnimPage() {
                       {(c.extra['Süre'] ?? '')
                         .split(',')
                         .filter(Boolean)
-                        .reduce((s, x) => s + Number(x), 0) || '?'}{' '} {t('surface.secondsShort')} </span>
+                        .reduce((s, x) => s + Number(x), 0) || '?'}{' '}
+                      {t('surface.secondsShort')}{' '}
+                    </span>
                     <span>
                       {j
                         ? {
-                            queued: 'sırada',
+                            queued: t('status.queued'),
                             running: `%${jobProgress(j)}`,
-                            done: 'hazır',
-                            failed: 'hata',
-                            canceled: 'iptal'
+                            done: t('status.done'),
+                            failed: t('status.failed'),
+                            canceled: t('status.canceled')
                           }[j.status]
                         : t('panel.3f3e0c4810')}
                     </span>
@@ -359,7 +381,10 @@ export default function AnimPage() {
               )
             })}
             {!clips.length && (
-              <p className="dim small" style={{ padding: '0 4px' }}> {t('panel.92312a8405')} </p>
+              <p className="dim small" style={{ padding: '0 4px' }}>
+                {' '}
+                {t('panel.92312a8405')}{' '}
+              </p>
             )}
           </div>
         </section>
@@ -386,7 +411,7 @@ export default function AnimPage() {
                   value={d.rootMotion}
                   onChange={(v) => setD({ ...d, rootMotion: v })}
                   options={[
-                    { value: 'root', label: 'Root motion' },
+                    { value: 'root', label: t('anim.rootMotion') },
                     { value: 'inplace', label: t('panel.3212d4915d') },
                     { value: 'raw', label: t('panel.887faf457a') }
                   ]}
@@ -395,14 +420,10 @@ export default function AnimPage() {
               <Toggle value={d.loop} onChange={(v) => setD({ ...d, loop: v })} label={t('panel.7df9aed372')} />
             </div>
             <div className="composer" style={{ maxWidth: 'none' }}>
-              <textarea
-                rows={2}
-                placeholder={t('panel.22b593fd9a')}
-                value={d.idea}
-                onChange={(e) => setD({ ...d, idea: e.target.value })}
-              />
+              <textarea rows={2} placeholder={t('panel.22b593fd9a')} value={d.idea} onChange={(e) => setD({ ...d, idea: e.target.value })} />
               <button className="btn" disabled={suggesting || !d.idea.trim()} onClick={suggest} title={t('panel.9f45efb790')}>
-                {suggesting ? <span className="spinner" /> : <Icon name="wand" size={15} />} {t('panel.a099c9ba3e')} </button>
+                {suggesting ? <span className="spinner" /> : <Icon name="wand" size={15} />} {t('panel.a099c9ba3e')}{' '}
+              </button>
             </div>
             {d.segments.length > 0 && (
               <>
@@ -410,7 +431,8 @@ export default function AnimPage() {
                   {d.segments.map((s, i) => (
                     <div key={i} className="seg-block" style={{ flex: s.seconds }} title={s.text}>
                       <b>
-                        {i + 1} · {s.seconds} {t('surface.secondsShort')} </b>
+                        {i + 1} · {s.seconds} {t('surface.secondsShort')}{' '}
+                      </b>
                       <span className="ellipsis" style={{ display: 'block' }}>
                         {s.text}
                       </span>
@@ -457,13 +479,15 @@ export default function AnimPage() {
                       })
                     }
                   >
-                    <Icon name="plus" size={13} /> {t('panel.caf50f35a3')} </button>
+                    <Icon name="plus" size={13} /> {t('panel.caf50f35a3')}{' '}
+                  </button>
                 </div>
               </>
             )}
             <div className="row" style={{ marginTop: 12 }}>
               <span className="muted small">
-                {d.segments.length ? `${d.segments.length} segment · ${total.toFixed(1)} sn` : t('panel.37e38914f7')} · {char?.name} {t('panel.90c7785118')} </span>
+                {d.segments.length ? t('anim.segments', { count: d.segments.length, seconds: total.toFixed(1) }) : t('panel.37e38914f7')} · {char?.name} {t('panel.90c7785118')}{' '}
+              </span>
               <span className="spacer" />
               {curJob && (curJob.status === 'running' || curJob.status === 'queued') ? (
                 <span className="chip accent">
@@ -477,7 +501,7 @@ export default function AnimPage() {
             </div>
             {curJob?.status === 'failed' && (
               <p className="small" style={{ color: 'var(--err)', marginTop: 8 }}>
-                {curJob.error}
+                {renderMessage(locale, curJob.uiError ?? curJob.error!)}
               </p>
             )}
           </div>

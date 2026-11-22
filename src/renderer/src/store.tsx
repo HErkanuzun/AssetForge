@@ -1,5 +1,7 @@
-import {message, type UiMessage} from '../../shared/i18n/message'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { pipelineTitle } from '../../shared/i18n/metadata'
+import { errorMessage } from '../../shared/i18n/errors'
+import { message, type UiMessage } from '../../shared/i18n/message'
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Job, Project, SettingsPublic, WebMe } from '../../shared/types'
 
@@ -108,7 +110,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       window.clearTimeout(saveTimer.current)
       pending.current = true
       saveTimer.current = window.setTimeout(() => {
-        persist(next).catch((e: Error) => toast(message('store.saveFailed', {detail:e.message}), 'error'))
+        persist(next).catch((e: Error) => toast(message('store.saveFailed', { detail: errorMessage(e) }), 'error'))
       }, 500)
     },
     [toast, persist]
@@ -159,13 +161,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .then(() => {
         if (initialSequence !== localeSequence) window.forge.settings.get().then(setSettings, () => undefined)
       })
-      .catch((e: Error) => toast(e.message, 'error'))
+      .catch((e: Error) => toast(errorMessage(e), 'error'))
     // Asistan, MCP istemcisi ya da başka bir kişi projeyi değiştirdi
     const offProject = window.forge.onProjectChanged((p) => {
       if (pending.current && latest.current && !readOnlyRef.current) {
         // Kaydedilmemiş yerel düzenleme var: hemen kaydet; sunucu iki tarafı birleştirip döndürür
         window.clearTimeout(saveTimer.current)
-        persist(latest.current).catch((e: Error) => toast(message('store.saveFailed', {detail:e.message}), 'error'))
+        persist(latest.current).catch((e: Error) => toast(message('store.saveFailed', { detail: errorMessage(e) }), 'error'))
         return
       }
       externalSeq.current++
@@ -177,22 +179,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       lastStatus.current.set(job.id, job.status)
       if (job.status === 'done' && prev !== 'done') {
         update((p) => ({ ...p, assets: p.assets.map((a) => (a.id === job.assetId ? { ...a, status: 'Üretildi' } : a)) }))
-        toast(message('store.ready', {name:job.assetName,pipeline:job.pipelineName}), 'ok')
+        toast(message('store.ready', { name: job.assetName, pipeline: pipelineTitle(job.pipelineId, job.pipelineName) }), 'ok')
         window.forge.library.thumbs().then(setThumbs, () => undefined)
         const waiting = deferred.current.get(job.assetId)
         if (waiting) {
           deferred.current.delete(job.assetId)
           countDeferred()
-          for (const w of waiting) window.forge.run.start(w.pipelineId, w.assetIds).catch((e: Error) => toast(message('store.deferredFailed', {detail:e.message}), 'error'))
+          for (const w of waiting) window.forge.run.start(w.pipelineId, w.assetIds).catch((e: Error) => toast(message('store.deferredFailed', { detail: errorMessage(e) }), 'error'))
         }
       }
       if ((job.status === 'failed' || job.status === 'canceled') && prev !== job.status && deferred.current.has(job.assetId)) {
         const n = deferred.current.get(job.assetId)!.reduce((m, x) => m + x.assetIds.length, 0)
         deferred.current.delete(job.assetId)
         countDeferred()
-        toast(message('store.animationsCanceled', {name:job.assetName,count:n}), 'error')
+        toast(message('store.animationsCanceled', { name: job.assetName, count: n }), 'error')
       }
-      if (job.status === 'failed' && prev !== 'failed') toast(job.error ? message('store.jobFailed', {name:job.assetName,detail:job.error}) : message('store.jobFailedWithoutDetail', {name:job.assetName}), 'error')
+      if (job.status === 'failed' && prev !== 'failed') {
+        toast(message('store.jobFailedWithoutDetail', { name: job.assetName }), 'error')
+        if (job.uiError ?? job.error) toast(job.uiError ?? job.error!, 'error')
+      }
       setJobs((list) => (list.some((j) => j.id === job.id) ? list.map((j) => (j.id === job.id ? job : j)) : [job, ...list]))
     })
     return () => {

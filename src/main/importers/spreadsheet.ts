@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 // Asset listesi için küçük, yalnızca okuyan tablo okuyucular (bağımlılık: yalnızca fflate).
 // .xlsx: sayfa adları, paylaşılan/satır içi/zengin metin, sayılar, mantıksal değerler,
 // formül sonuçları (önbellekteki değer) ve tarih biçimli hücreler. CSV/TSV: RFC 4180.
@@ -151,14 +153,14 @@ export function readXlsx(data: Uint8Array): Sheet[] {
     filter: (f) => {
       if (!/^(xl\/(workbook\.xml|sharedStrings\.xml|styles\.xml|_rels\/workbook\.xml\.rels|worksheets\/[^/]+\.xml))$/.test(f.name)) return false
       total += f.originalSize
-      if (total > MAX_UNZIPPED) throw new Error('Excel dosyası açıldığında çok büyük (200 MB üstü)')
+      if (total > MAX_UNZIPPED) throw new UiError(message('error.6316742e4f'))
       return true
     }
   })
   const text = (name: string) => (files[name] ? strFromU8(files[name]) : undefined)
 
   const workbook = text('xl/workbook.xml')
-  if (!workbook) throw new Error('Geçerli bir .xlsx dosyası değil (xl/workbook.xml yok)')
+  if (!workbook) throw new UiError(message('error.1a6a64c25f'))
   const date1904 = /date1904="(1|true)"/.test(workbook)
 
   const rels = new Map<string, string>()

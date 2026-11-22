@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 // Unreal Editor köprüsü: Python Remote Execution, yoksa Unreal MCP sunucusu.
 // UE tarafında: Python Editor Script Plugin açık + Project Settings → Python → "Enable Remote Execution".
 // Protokol: UDP multicast (239.0.0.1:6766) ile keşif, ardından UE bizim açtığımız TCP sunucusuna bağlanır.
@@ -90,7 +92,7 @@ export interface UeExecResult {
 export async function execInUe(code: string, target?: string, timeoutMs = 10 * 60 * 1000): Promise<UeExecResult> {
   const nodes = await discoverUe()
   const ue = target ? nodes.find((n) => n.nodeId === target) : nodes[0]
-  if (!ue) throw new Error('Açık bir Unreal Editor bulunamadı (Python Remote Execution açık mı?)')
+  if (!ue) throw new UiError(message('error.9b62ddecad'))
 
   const server = net.createServer()
   await new Promise<void>((r) => server.listen(0, BIND, () => r()))
@@ -99,7 +101,7 @@ export async function execInUe(code: string, target?: string, timeoutMs = 10 * 6
 
   try {
     const conn = await new Promise<net.Socket>((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error('Unreal komut bağlantısı açmadı')), 8000)
+      const t = setTimeout(() => reject(new UiError(message('error.52b53b30c4'))), 8000)
       server.once('connection', (c) => {
         clearTimeout(t)
         resolve(c)
@@ -109,7 +111,7 @@ export async function execInUe(code: string, target?: string, timeoutMs = 10 * 6
 
     const result = await new Promise<UeExecResult>((resolve, reject) => {
       let buf = ''
-      const t = setTimeout(() => reject(new Error('Unreal komutu zaman aşımına uğradı')), timeoutMs)
+      const t = setTimeout(() => reject(new UiError(message('error.9808b7bb7d'))), timeoutMs)
       conn.on('data', (d) => {
         buf += d.toString('utf8')
         try {
@@ -161,12 +163,12 @@ let mcpConn: McpConn | null = null
 
 async function ueMcp(): Promise<McpConn> {
   const url = getSettings().ueMcpUrl
-  if (!url) throw new Error('Unreal MCP adresi ayarlı değil (Ayarlar → Unreal Engine)')
+  if (!url) throw new UiError(message('error.95e1b4bfa1'))
   if (mcpConn && mcpConn.url === url) return mcpConn
   await mcpConn?.client.close().catch(() => undefined)
   mcpConn = null
   const client = new Client({ name: 'assetforge', version: '0.5.0' })
-  const timer = new Promise<never>((_, rej) => setTimeout(() => rej(new Error('Unreal MCP sunucusu yanıt vermedi')), 5000))
+  const timer = new Promise<never>((_, rej) => setTimeout(() => rej(new UiError(message('error.a7125efc70'))), 5000))
   await Promise.race([client.connect(new StreamableHTTPClientTransport(new URL(url))), timer])
   mcpConn = { url, client }
   return mcpConn
@@ -236,7 +238,7 @@ async function mcpPythonTool(c: McpConn): Promise<NonNullable<McpConn['python']>
     if (f) return (c.python = { toolset: d.name, ...f })
   }
   c.python = null
-  throw new Error('Unreal MCP sunucusunda Python çalıştıran bir araç yok (ör. ExecutePython)')
+  throw new UiError(message('error.b903dc635d'))
 }
 
 /** Adı verilen aracı (ör. CreateVehiclePhysicsAsset) içeren araç setini bulur; yoksa null */
@@ -267,7 +269,7 @@ export async function runInUe(code: string, timeoutMs = 10 * 60 * 1000): Promise
   try {
     return { ...(await execInUeMcp(code, timeoutMs)), via: 'mcp' }
   } catch (e) {
-    throw new Error(`Açık bir Unreal Editor bulunamadı: Remote Execution yanıt vermedi, MCP: ${(e as Error).message}`, { cause: e })
+    throw new UiError(message('error.efab7543d3', { p0: String((e as Error).message) }), { cause: e })
   }
 }
 

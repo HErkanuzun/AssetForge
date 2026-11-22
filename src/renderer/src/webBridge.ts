@@ -1,4 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { message } from '../../shared/i18n/message'
+import { UiError } from '../../shared/i18n/errors'
+import { restoreError } from '../../shared/i18n/errors'
+import type { MessageDescriptor } from '../../shared/i18n/message'
 // Tarayıcıdan açıldığında window.forge: işlemler /api/call üzerinden, olaylar /api/events akışından gelir.
 // Bu bilgisayarın pencerelerini açan işlemler (dosya seçici, Gezgin) tarayıcı karşılıklarıyla değiştirilir.
 import type { ForgeApi } from '../../preload/api'
@@ -9,7 +13,7 @@ const clientId = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b
 
 function toLogin(): never {
   location.href = '/login'
-  throw new Error('Oturum kapandı; yeniden giriş yapın')
+  throw new UiError(message('web.noSession'))
 }
 
 async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -21,8 +25,8 @@ async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
     body: JSON.stringify({ args, undef })
   })
   if (r.status === 401) toLogin()
-  const j = (await r.json()) as { ok: true; value: T } | { ok: false; error: string }
-  if (!j.ok) throw new Error(j.error)
+  const j = (await r.json()) as { ok: true; value: T } | { ok: false; error: string; uiMessage?: MessageDescriptor }
+  if (!j.ok) throw restoreError(j)
   return j.value
 }
 
@@ -51,8 +55,8 @@ function connectEvents(): void {
 export async function uploadFile(f: File): Promise<string> {
   const r = await fetch(`/api/upload?name=${encodeURIComponent(f.name)}`, { method: 'POST', headers: { 'x-forge': '1' }, body: f })
   if (r.status === 401) toLogin()
-  const j = (await r.json()) as { ok: true; value: string } | { ok: false; error: string }
-  if (!j.ok) throw new Error(j.error)
+  const j = (await r.json()) as { ok: true; value: string } | { ok: false; error: string; uiMessage?: MessageDescriptor }
+  if (!j.ok) throw restoreError(j)
   return j.value
 }
 
@@ -71,7 +75,7 @@ function pickFiles(filters: { name: string; extensions: string[] }[], multi = fa
 }
 
 const fileUrl = (p: string) => '/files/' + encodeURIComponent(p)
-const hostOnly = (what: string) => () => Promise.reject(new Error(`${what} yalnızca AssetForge’un çalıştığı bilgisayarda yapılabilir`))
+const hostOnly = () => () => Promise.reject(new UiError(message('web.hostOnly')))
 
 export function installWebBridge(): void {
   if ('forge' in window && window.forge) return
@@ -105,11 +109,11 @@ export function installWebBridge(): void {
     a.click()
     return 'AssetForge-tanilama.txt'
   }
-  api.diag.openLogs = hostOnly('Günlük klasörünü açmak')
-  api.project.pickDir = hostOnly('Proje klasörünü değiştirmek')
-  api.comfy.open = hostOnly('ComfyUI düğüm editörünü açmak')
-  api.comfy.wf.show = hostOnly('Workflow dosyasını Gezgin’de göstermek')
-  api.web.headless = hostOnly('Pencereyi kapatmak')
+  api.diag.openLogs = hostOnly()
+  api.project.pickDir = hostOnly()
+  api.comfy.open = hostOnly()
+  api.comfy.wf.show = hostOnly()
+  api.web.headless = hostOnly()
   window.forge = api
 }
 

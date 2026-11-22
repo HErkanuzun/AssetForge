@@ -1,6 +1,7 @@
-import { panelLabel } from '../../../shared/i18n/display'
-import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { panelLabel } from '../../../shared/i18n/display'
+import { message, renderMessage } from '../../../shared/i18n/message'
+import { useLocale } from '../i18n'
 // Ayarlar → Hızlı bağlantı: tek tıkla servisin giriş/anahtar sayfasını açar, anahtar kendiliğinden kaydedilir
 import { useEffect, useState } from 'react'
 import type { ConnectEvent, ConnectService } from '../../../shared/types'
@@ -29,7 +30,7 @@ const TILES: Tile[] = [
 ]
 
 export default function QuickConnect() {
-  const {t, locale} = useLocale()
+  const { t, locale } = useLocale()
 
   const { settings, setSettings, toast } = useStore()
   const s = settings!
@@ -41,7 +42,7 @@ export default function QuickConnect() {
         setEv(e)
         if (e.phase === 'done') {
           setSettings(await window.forge.settings.get())
-          toast(e.message, 'ok')
+          toast(e.uiMessage ?? e.message, 'ok')
         }
       }),
     [setSettings, toast]
@@ -50,7 +51,7 @@ export default function QuickConnect() {
   const connected = (id: ConnectService) => (id === 'openrouter' ? s.llmProviders.some((p) => p.baseUrl.includes('openrouter.ai') && p.hasKey) : s.hasKeys[id])
 
   const start = async (id: ConnectService) => {
-    setEv({ service: id, phase: 'waiting', message: t('panel.609eee0365') })
+    setEv({ service: id, phase: 'waiting', message: '', uiMessage: message('panel.609eee0365') })
     try {
       await window.forge.connect.start(id)
     } catch (e) {
@@ -79,19 +80,20 @@ export default function QuickConnect() {
               <div className="dim small">{panelLabel(locale, tile.steps)}</div>
               {mine && mine.phase !== 'done' && mine.phase !== 'canceled' && (
                 <div className={`qc-status small ${mine.phase === 'error' ? 'err' : ''}`}>
-                  {active && <span className="spinner" />} {mine.message}
+                  {active && <span className="spinner" />} {renderMessage(locale, mine.uiMessage ?? mine.message)}
                 </div>
               )}
               <div className="row" style={{ marginTop: 'auto' }}>
                 {active ? (
                   <>
-                    <button
-                      className="btn"
-                      disabled={mine?.phase === 'checking'}
-                      title={t('panel.dcb935e308')}
-                      onClick={() => window.forge.connect.tryClipboard()}
-                    > {t('panel.ab1ca629df')} </button>
-                    <button className="btn ghost" onClick={() => window.forge.connect.cancel()}> {t('surface.cancel')} </button>
+                    <button className="btn" disabled={mine?.phase === 'checking'} title={t('panel.dcb935e308')} onClick={() => window.forge.connect.tryClipboard()}>
+                      {' '}
+                      {t('panel.ab1ca629df')}{' '}
+                    </button>
+                    <button className="btn ghost" onClick={() => window.forge.connect.cancel()}>
+                      {' '}
+                      {t('surface.cancel')}{' '}
+                    </button>
                   </>
                 ) : (
                   <button className={`btn ${on ? '' : 'primary'}`} disabled={!!busy} onClick={() => start(tile.id)}>

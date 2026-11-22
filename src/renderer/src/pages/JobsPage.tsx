@@ -1,5 +1,7 @@
-import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { pipelineTitle } from '../../../shared/i18n/metadata'
+import { renderMessage } from '../../../shared/i18n/message'
+import { useLocale } from '../i18n'
 import { useState } from 'react'
 import type { Artifact, Job } from '../../../shared/types'
 import { StatusPill } from '../components/ui'
@@ -69,12 +71,12 @@ function ArtifactView({ a }: { a: Artifact }) {
       return (
         <div className={`artifact report ${a.report.pass ? 'pass' : 'fail'}`}>
           <div>
-            <b>{a.report.score}/10</b> — {a.report.summary}
+            <b>{a.report.score}/10</b> — {renderMessage(locale, a.report.uiSummary ?? a.report.summary)}
           </div>
           {a.report.issues.length > 0 && (
             <ul>
               {a.report.issues.map((i, k) => (
-                <li key={k}>{i}</li>
+                <li key={k}>{renderMessage(locale, a.report.uiIssues?.[k] ?? i)}</li>
               ))}
             </ul>
           )}
@@ -95,25 +97,29 @@ function JobDetail({ job }: { job: Job }) {
         <div>
           <h2>{job.assetName}</h2>
           <div className="muted small">
-            {job.pipelineName} · {new Date(job.createdAt).toLocaleString(locale)}
+            {renderMessage(locale, pipelineTitle(job.pipelineId, job.pipelineName))} · {new Date(job.createdAt).toLocaleString(locale)}
             {job.finishedAt ? ` · ${Math.round((job.finishedAt - job.createdAt) / 1000)} ${t('surface.secondsShort')}` : ''}
           </div>
         </div>
         <div className="row">
           <StatusPill status={job.status} />
           {(job.status === 'running' || job.status === 'queued') && (
-            <button className="btn danger" onClick={() => window.forge.run.cancel(job.id)}> {t('surface.cancel')} </button>
+            <button className="btn danger" onClick={() => window.forge.run.cancel(job.id)}>
+              {' '}
+              {t('surface.cancel')}{' '}
+            </button>
           )}
-          <button className="btn" onClick={() => window.forge.openPath(job.outDir)}> {t('surface.outputFolder')} </button>
+          <button className="btn" onClick={() => window.forge.openPath(job.outDir)}>
+            {' '}
+            {t('surface.outputFolder')}{' '}
+          </button>
         </div>
       </div>
-      <div className="cost">
-        {t('surface.jobCost', {usd:job.cost.claudeUsd.toFixed(3),credits:job.cost.meshyCredits,chars:job.cost.audioChars})}
-      </div>
-      {job.error && <div className="error-box">{job.error}</div>}
+      <div className="cost">{t('surface.jobCost', { usd: job.cost.claudeUsd.toFixed(3), credits: job.cost.meshyCredits, chars: job.cost.audioChars })}</div>
+      {job.error && <div className="error-box">{renderMessage(locale, job.uiError ?? job.error)}</div>}
       {job.warnings.map((w, i) => (
         <div key={i} className="warn-box">
-          {w}
+          {renderMessage(locale, job.uiWarnings?.[i] ?? w)}
         </div>
       ))}
       {order.map((id) => {
@@ -125,7 +131,7 @@ function JobDetail({ job }: { job: Job }) {
             <summary>
               <StatusPill status={s.status} />
               <b>{id}</b>
-              {s.attempts > 1 && <span className="muted small">{t('surface.attempt', {count:s.attempts})}</span>}
+              {s.attempts > 1 && <span className="muted small">{t('surface.attempt', { count: s.attempts })}</span>}
               {s.status === 'running' && (
                 <span className="progress inline">
                   <span style={{ width: `${s.progress}%` }} />
@@ -138,7 +144,7 @@ function JobDetail({ job }: { job: Job }) {
             {s.logs.length > 0 && (
               <div className="logs small">
                 {s.logs.map((l, i) => (
-                  <div key={i}>{l}</div>
+                  <div key={i}>{s.uiLogs?.[i] ? `${s.uiLogs[i].at ? `[${new Date(s.uiLogs[i].at!).toLocaleTimeString(locale)}] ` : ''}${renderMessage(locale, s.uiLogs[i].message)}` : l}</div>
                 ))}
               </div>
             )}
@@ -166,9 +172,7 @@ export default function JobsPage() {
             ⟳
           </button>
         </div>
-        <div className="muted small">
-          {t('surface.totalCost', {usd:totals.usd.toFixed(2),credits:totals.credits})}
-        </div>
+        <div className="muted small">{t('surface.totalCost', { usd: totals.usd.toFixed(2), credits: totals.credits })}</div>
         {jobs.length === 0 && <p className="muted"> {t('surface.noJobs')} </p>}
         {jobs.map((j) => {
           const nodes = Object.values(j.nodes)
@@ -180,7 +184,7 @@ export default function JobsPage() {
                 <StatusPill status={j.status} />
               </div>
               <div className="muted small ellipsis">
-                {j.pipelineName} · {t('surface.steps', {done,total:nodes.length})}
+                {renderMessage(locale, pipelineTitle(j.pipelineId, j.pipelineName))} · {t('surface.steps', { done, total: nodes.length })}
               </div>
             </button>
           )

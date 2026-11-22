@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 // Oyun tasarımı yazarı: çekirdek fikir, oyun / hikâye döngüleri (akış şeması), hikâye ve arayüz ekranları.
 // API (Ayarlar'daki LLM) ya da aboneliğinle Claude Code / Codex CLI ile çalışır.
 import fs from 'node:fs'
@@ -166,7 +168,7 @@ async function generateJson<S extends z.ZodType>(schema: S, prompt: string, o: D
       lastError = (e as Error).message.slice(0, 1500)
     }
   }
-  throw new Error(`Tasarım ajanı geçerli JSON üretemedi: ${lastError}`)
+  throw new UiError(message('error.252fcccc06', { p0: String(lastError) }))
 }
 
 /** Bir tasarım bölümünü üretir / geliştirir; yalnızca o bölümü içeren kısmi tasarım döner */

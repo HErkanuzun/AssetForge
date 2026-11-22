@@ -1,5 +1,8 @@
-import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { errorMessage, errorEnvelope } from '../../../shared/i18n/errors'
+import { panelLabel } from '../../../shared/i18n/display'
+import { message, renderMessage, type UiMessage } from '../../../shared/i18n/message'
+import { useLocale } from '../i18n'
 // Ayarlar → Yerel araçlar → ComfyUI: bu bilgisayara kurulum, başlat/durdur ve düğüm editörünü açma
 import { useCallback, useEffect, useState } from 'react'
 import type { ComfyLocalStatus } from '../../../shared/types'
@@ -7,18 +10,27 @@ import { useStore } from '../store'
 import { Icon } from './icons'
 
 export default function ComfyLocal() {
-  const {t} = useLocale()
+  const { t, locale } = useLocale()
 
   const { toast } = useStore()
   const [st, setSt] = useState<ComfyLocalStatus | null>(null)
   const [busy, setBusy] = useState('')
-  const [lines, setLines] = useState<string[]>([])
+  const [lines, setLines] = useState<UiMessage[]>([])
 
   const refresh = useCallback(
     () =>
-      window.forge.comfy
-        .status()
-        .then(setSt, (e: Error) => setSt((prev) => ({ steps: prev?.steps ?? [], healthy: false, running: false, home: prev?.home ?? '', url: prev?.url ?? '', remote: false, error: e.message }))),
+      window.forge.comfy.status().then(setSt, (e: Error) =>
+        setSt((prev) => ({
+          steps: prev?.steps ?? [],
+          healthy: false,
+          running: false,
+          home: prev?.home ?? '',
+          url: prev?.url ?? '',
+          remote: false,
+          error: e.message,
+          uiError: errorEnvelope(e).uiMessage
+        }))
+      ),
     []
   )
   useEffect(() => {
@@ -36,9 +48,9 @@ export default function ComfyLocal() {
     setLines((x) => [...x, `▶ ${id}`])
     try {
       await window.forge.comfy.step(id)
-      toast(`ComfyUI: ${id} tamam`, 'ok')
+      toast(message('setup.stepDone', { service: 'ComfyUI', id }), 'ok')
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     } finally {
       setBusy('')
       refresh()
@@ -54,18 +66,25 @@ export default function ComfyLocal() {
         <span className={`led ${led}`} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <b>{st?.healthy ? t('panel.ddfa4c630d') : st?.running ? t('panel.658bc0d097') : t('panel.f5ae2a887b')}</b>
-          <div className="muted small ellipsis">{st?.healthy ? st.info : (st?.error ?? (st?.remote ? `Uzak sunucu: ${st.url}` : `Bu bilgisayarda: ${st?.home ?? '…'}`))}</div>
+          <div className="muted small ellipsis">
+            {st?.healthy ? st.info : renderMessage(locale, st?.uiError ?? st?.error ?? (st?.remote ? t('setup.remote', { url: st.url }) : t('setup.local', { path: st?.home ?? '…' })))}
+          </div>
         </div>
         {st?.healthy && (
           <button className="btn" onClick={() => window.forge.comfy.open()} title={t('panel.d292c9cc8d')}>
-            <Icon name="link" size={13} /> {t('panel.a191a73c56')} </button>
+            <Icon name="link" size={13} /> {t('panel.a191a73c56')}{' '}
+          </button>
         )}
         {!st?.remote &&
           (st?.healthy || st?.running ? (
-            <button className="btn" disabled={!!busy} onClick={() => step('stop')}> {t('panel.5769a8f8ae')} </button>
+            <button className="btn" disabled={!!busy} onClick={() => step('stop')}>
+              {' '}
+              {t('panel.5769a8f8ae')}{' '}
+            </button>
           ) : (
             <button className="btn primary" disabled={!!busy || !installed} onClick={() => step('start')}>
-              {busy === 'start' ? <span className="spinner" /> : <Icon name="play" size={13} />} {t('panel.24fa59605d')} </button>
+              {busy === 'start' ? <span className="spinner" /> : <Icon name="play" size={13} />} {t('panel.24fa59605d')}{' '}
+            </button>
           ))}
       </div>
       {!st?.remote && (
@@ -74,22 +93,23 @@ export default function ComfyLocal() {
             <div key={s.id} className={`step ${s.done ? 'done' : ''}`}>
               <span className="dot">{s.done ? <Icon name="check" size={11} strokeWidth={3} /> : i + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div>{s.label}</div>
-                {s.hint && <div className="dim small">{s.hint}</div>}
+                <div>{panelLabel(locale, s.label)}</div>
+                {s.hint && <div className="dim small">{panelLabel(locale, s.hint)}</div>}
               </div>
               {s.id !== 'start' && (
                 <button className={`btn ${next?.id === s.id ? 'primary' : ''}`} disabled={!!busy} onClick={() => step(s.id)} style={{ height: 28 }}>
-                  {busy === s.id ? <span className="spinner" /> : s.done ? 'Tekrar' : 'Kur'}
+                  {busy === s.id ? <span className="spinner" /> : s.done ? t('setup.repeat') : t('setup.install')}
                 </button>
               )}
             </div>
           ))}
         </div>
       )}
-      {(lines.length > 0 || busy) && <div className="console">{lines.join('\n')}</div>}
+      {(lines.length > 0 || busy) && <div className="console">{lines.map((line) => renderMessage(locale, line)).join('\n')}</div>}
       {!st?.remote && (
         <button className="btn ghost" style={{ marginTop: 6 }} onClick={async () => setLines((await window.forge.comfy.logs()).split(/\r?\n/).slice(-200))}>
-          <Icon name="terminal" size={14} /> {t('panel.0b754b0278')} </button>
+          <Icon name="terminal" size={14} /> {t('panel.0b754b0278')}{' '}
+        </button>
       )}
     </div>
   )

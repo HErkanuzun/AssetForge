@@ -227,6 +227,9 @@ describe('web sunucusu (HTTP)', () => {
         expect(html).toContain(translate(locale, 'web.loginHelp'))
         expect(html).not.toContain('Giriş yap')
         expect(loginResponse.headers.get('content-security-policy')).toContain("default-src 'none'")
+        const denied = await fetch(`${base}/login`, { method: 'POST', redirect: 'manual', body: new URLSearchParams({ name: 'Sahip', password: 'wrong-localization-fixture' }) })
+        expect(denied.status).toBe(401)
+        expect(await denied.text()).toContain(translate(locale, 'web.invalidLogin'))
         const invite = createInvite('viewer')
         const inviteHtml = await (await fetch(`${base}/join/${invite.token}`)).text()
         expect(inviteHtml).toContain(translate(locale, 'web.viewerRole'))
@@ -306,5 +309,21 @@ describe('web sunucusu (HTTP)', () => {
     expect(await (await fetch(`${base}/api/diag`, { headers: { Cookie: ownerCookie } })).text()).toBe('tanı')
     await fetch(`${base}/logout`, { headers: { Cookie: viewerCookie }, redirect: 'manual' })
     expect((await callApi(viewerCookie, 'project:load', [])).status).toBe(401)
+  })
+
+  it('localizes rate-limit feedback in both target languages', async () => {
+    const previous = getSettings().locale
+    try {
+      // Exhaust this fixture server's IP budget; no real accounts or network services.
+      for (let i = 0; i < 11; i++) await fetch(`${base}/login`, { method: 'POST', body: new URLSearchParams({ name: 'fixture-missing', password: 'fixture-wrong' }) })
+      for (const locale of ['en', 'zh-CN'] as const) {
+        setSettings({ locale })
+        const response = await fetch(`${base}/login`, { method: 'POST', body: new URLSearchParams({ name: 'fixture-missing', password: 'fixture-wrong' }) })
+        expect(response.status).toBe(429)
+        expect(await response.text()).toContain(translate(locale, 'web.rateLimit'))
+      }
+    } finally {
+      setSettings({ locale: previous })
+    }
   })
 })

@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 // AssetForge araç kaydı — hem uygulama içi Yapımcı asistanı hem de dışarıya açılan MCP sunucusu bu araçları kullanır.
 import fs from 'node:fs'
 import path from 'node:path'
@@ -310,7 +312,7 @@ export function builtinTools(): AgentTool[] {
             out = cur
             return
           }
-          if (!d.name || !d.kind) throw new Error('Yeni asset için name ve kind gerekli')
+          if (!d.name || !d.kind) throw new UiError(message('error.6c2c49d4f0'))
           created = true
           out = {
             id: d.id || nextId(p, d.kind),
@@ -497,7 +499,7 @@ export function builtinTools(): AgentTool[] {
         let id = ''
         const p = mutate(ctx, (pr) => {
           const ch = pr.assets.find((a) => a.id === d.characterId)
-          if (!ch) throw new Error(`Karakter bulunamadı: ${d.characterId}`)
+          if (!ch) throw new UiError(message('error.2651fcc3c8', { p0: String(d.characterId) }))
           id = nextId(pr, 'animation')
           pr.assets.push({
             id,
@@ -573,7 +575,7 @@ export function builtinTools(): AgentTool[] {
       run: async (ctx, d) => {
         const p = loadProject(ctx.dir)
         const ch = p.assets.find((a) => a.id === d.characterId)
-        if (!ch) throw new Error(`Karakter bulunamadı: ${d.characterId}`)
+        if (!ch) throw new UiError(message('error.2651fcc3c8', { p0: String(d.characterId) }))
         let sys = saveSystem(ctx, newAnimSystem(d.kind, ch.id, d.name || `${ch.name} · ${animSystemInfo(d.kind).title}`, d.style || 'A person'))
         let note = ''
         if (d.request) {

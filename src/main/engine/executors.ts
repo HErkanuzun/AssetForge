@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+
+import { UiError, errorMessage } from '../../shared/i18n/errors'
+import { message, type MessageDescriptor, emitMessage } from '../../shared/i18n/message'
 // Her node tipinin çalıştırıcısı.
 import fs from 'node:fs'
 import path from 'node:path'
@@ -41,10 +44,10 @@ export interface ExecCtx {
   dir: string
   feedback: string[]
   signal: AbortSignal
-  log: (m: string) => void
+  log: (m: string, descriptor?: MessageDescriptor) => void
   progress: (p: number) => void
   cost: (c: { usd?: number; credits?: number; chars?: number }) => void
-  warn: (m: string) => void
+  warn: (m: string, descriptor?: MessageDescriptor) => void
 }
 
 export interface ExecResult {
@@ -62,8 +65,8 @@ const bool = (v: ParamValue | undefined, d = false) => (v === undefined ? d : v 
 
 function need<K extends Artifact['kind']>(inputs: Inputs, port: string, kind: K): Extract<Artifact, { kind: K }> {
   const a = inputs[port]
-  if (!a) throw new Error(`"${port}" girişi bağlı değil veya boş`)
-  if (a.kind !== kind) throw new Error(`"${port}" girişi ${kind} bekliyor, ${a.kind} geldi`)
+  if (!a) throw new UiError(message('error.8a72ea71be', { p0: String(port) }))
+  if (a.kind !== kind) throw new UiError(message('error.a35845ff21', { p0: String(port), p1: String(kind), p2: String(a.kind) }))
   return a as Extract<Artifact, { kind: K }>
 }
 
@@ -83,8 +86,8 @@ function triBudget(ctx: ExecCtx, explicit: number): number {
 
 function localPath(ctx: ExecCtx, v: ParamValue | undefined): string {
   const file = str(v).trim().replace(/^"|"$/g, '').replaceAll('{id}', ctx.asset.id)
-  if (!file) throw new Error('Dosya yolu boş')
-  if (!fs.existsSync(file)) throw new Error(`Dosya bulunamadı: ${file}`)
+  if (!file) throw new UiError(message('error.fd560d637d'))
+  if (!fs.existsSync(file)) throw new UiError(message('error.8ff271651a', { p0: String(file) }))
   return file
 }
 
@@ -95,14 +98,17 @@ function poseFor(param: string, prompt?: GeneratedPrompt): string | undefined {
 
 async function meshyRun(ctx: ExecCtx, resource: MeshyResource, body: Record<string, unknown>, from: number, to: number): Promise<MeshyTask> {
   const id = await createTask(resource, body, ctx.signal)
-  ctx.log(`Meshy ${resource} görevi: ${id}`)
+  emitMessage(ctx.log, message('log.4f3d48837c', { p0: String(resource), p1: String(id) }))
   let lastNote = ''
   const task = await waitTask(
     resource,
     id,
-    (p, note) => {
+    (p, note, descriptor) => {
       ctx.progress(from + ((to - from) * p) / 100)
-      if (note !== lastNote) ctx.log(`Meshy: ${note}`)
+      if (note !== lastNote) {
+        if (descriptor) emitMessage(ctx.log, message('feedback.namedDetail', { name: 'Meshy', detail: descriptor }))
+        else ctx.log(`Meshy: ${note}`)
+      }
       lastNote = note
     },
     ctx.signal
@@ -115,7 +121,7 @@ function modelSource(m: Extract<Artifact, { kind: 'model' }>): Record<string, un
   if (m.meshyTaskId) return { input_task_id: m.meshyTaskId }
   const file = m.glb ?? m.file
   const size = fs.statSync(file).size
-  if (size > 95 * 1024 * 1024) throw new Error('Model 100 MB üstünde; Meshy data URI sınırı aşılıyor')
+  if (size > 95 * 1024 * 1024) throw new UiError(message('error.5d4e9cd4a7'))
   return { model_url: fileToDataUri(file) }
 }
 
@@ -129,7 +135,7 @@ async function modelArtifact(ctx: ExecCtx, task: MeshyTask, resource: MeshyResou
   const base = assetBaseName(ctx.asset)
   const d = await downloadModelTask(task, ctx.dir, base, ctx.signal)
   const file = d.glb ?? d.fbx
-  if (!file) throw new Error('Meshy görevi model dosyası döndürmedi')
+  if (!file) throw new UiError(message('error.a20b827a78'))
   return { kind: 'model', file, glb: d.glb, meshyTaskId: task.id, meshyResource: resource, thumbnail: d.thumbnail, textures: d.textures, textured }
 }
 
@@ -154,10 +160,10 @@ async function mediaOutputs(ctx: ExecCtx, f: Record<'image' | 'model' | 'audio' 
     if (bvh) {
       const b = parseBvh(fs.readFileSync(bvh, 'utf8'))
       seconds = Math.round(b.frames * b.frameTime * 100) / 100
-      ctx.log(`BVH: ${b.frames} kare, ${seconds} sn`)
+      emitMessage(ctx.log, message('log.9abf90b0dc', { p0: String(b.frames), p1: String(seconds) }))
     }
     if (!fbx && bvh) {
-      if (!s.blenderPath) throw new Error('BVH’yi Unreal’a aktarmak için FBX’e çevirmek gerekiyor; Ayarlar → Yerel araçlar’dan Blender yolunu girin')
+      if (!s.blenderPath) throw new UiError(message('error.cfefdd8aff'))
       const a = await runBlenderAnim({ blenderPath: s.blenderPath, bvh, out: path.join(ctx.dir, `${clip}.fbx`), rootMotion, log: ctx.log, signal: ctx.signal })
       fbx = a.file
       seconds = a.duration
@@ -182,7 +188,7 @@ function openaiProvider(id: string): LlmProvider {
 /** Workflow'u kitaplıktan bulur, uygun ComfyUI sunucusunu seçer ve işi orada çalıştırır */
 async function runComfy(ctx: ExecCtx, p: Params, opts: Omit<ComfyRunOptions, 'url' | 'token' | 'apiKey' | 'workflowPath' | 'log' | 'warn' | 'signal'>) {
   const wf = resolveWorkflow(str(p.workflow))
-  ctx.log(`Workflow: ${wf.name}`)
+  emitMessage(ctx.log, message('log.4c356a9a93', { p0: String(wf.name) }))
   return withComfyServer({ choice: str(p.server), workflowServer: wf.serverId, workflowPath: wf.path, log: ctx.log, warn: ctx.warn, signal: ctx.signal }, (srv) =>
     comfyRun({ ...opts, url: srv.url, token: srv.token, apiKey: getSecret('comfy'), workflowPath: wf.path, log: ctx.log, warn: ctx.warn, signal: ctx.signal })
   )
@@ -198,9 +204,14 @@ function comfySeed(ctx: ExecCtx, p: Params): number {
 
 function writeReport(ctx: ExecCtx, report: QAReport): void {
   fs.writeFileSync(path.join(ctx.dir, `qa_report_${Date.now()}.json`), JSON.stringify(report, null, 2))
-  ctx.log(`Puan ${report.score}/10 → ${report.pass ? 'GEÇTİ' : 'KALDI'}: ${report.summary}`)
-  for (const t of report.technical ?? []) ctx.log(`  · ${t}`)
-  for (const i of report.issues) ctx.log(`  • ${i}`)
+  emitMessage(ctx.log, message('log.615a273e8b', { p0: String(report.score), p1: message(report.pass ? 'feedback.passed' : 'feedback.failed'), p2: report.uiSummary ?? report.summary }))
+  if (report.uiTechnical?.length) for (const value of report.uiTechnical) emitMessage(ctx.log, value)
+  else for (const t of report.technical ?? []) ctx.log(`  · ${t}`)
+  for (const [index, issue] of report.issues.entries()) {
+    const value = report.uiIssues?.[index]
+    if (value) emitMessage(ctx.log, value)
+    else ctx.log(`  • ${issue}`)
+  }
 }
 
 /** Animasyon: BVH'den ayak kayması, zemine girme, titreme + sistem klibinin hedef hız/yön/dönüşü */
@@ -212,7 +223,7 @@ function reviewAnimation(ctx: ExecCtx, subject: Extract<Artifact, { kind: 'anima
     spec = null
   }
   if (!subject.bvh || !fs.existsSync(subject.bvh)) {
-    ctx.log('Animasyonun BVH dosyası yok (yalnızca FBX); hareket ölçülemedi, kontrol atlandı')
+    emitMessage(ctx.log, message('log.d03b6efc08'))
     return { outputs: { subject }, qa: { pass: true, feedback: '' } }
   }
   const measured = subject.motion?.measured
@@ -239,6 +250,9 @@ function reviewAnimation(ctx: ExecCtx, subject: Extract<Artifact, { kind: 'anima
     score: qa.score,
     pass: qa.pass,
     issues: qa.issues,
+    uiTechnical: qa.uiTechnical,
+    uiIssues: qa.uiIssues,
+    uiSummary: qa.uiIssues?.[0] ?? message('qa.motionPassed'),
     strengths: qa.issues.length ? [] : ['Ayaklar yerde sabit, hareket akıcı'],
     prompt_fix: qa.promptFix,
     summary: qa.issues.length ? qa.issues[0] : 'Hareket teknik kontrolleri geçti',
@@ -252,7 +266,9 @@ function reviewAnimation(ctx: ExecCtx, subject: Extract<Artifact, { kind: 'anima
 function reviewAudio(ctx: ExecCtx, subject: Extract<Artifact, { kind: 'audio' | 'audioset' }>, minScore: number): ExecResult {
   const files = subject.kind === 'audio' ? subject.files : subject.layers.map((l) => l.file)
   const technical: string[] = []
+  const uiTechnical: MessageDescriptor[] = []
   const issues: string[] = []
+  const uiIssues: MessageDescriptor[] = []
   const fixes = new Set<string>()
   const scores: number[] = []
   let skipped = 0
@@ -265,10 +281,13 @@ function reviewAudio(ctx: ExecCtx, subject: Extract<Artifact, { kind: 'audio' | 
     const r = judgeAudio(path.basename(f), measureAudio(pcm), subject.target)
     scores.push(r.score)
     technical.push(...r.technical)
+    uiTechnical.push(...(r.uiTechnical ?? []))
     issues.push(...r.issues)
+    uiIssues.push(...(r.uiIssues ?? []))
     for (const x of r.fixes) fixes.add(x)
   }
   if (skipped) technical.push(`${skipped} dosya WAV değil (ör. MP3); ölçülmedi. Ayarlar → Proje'den PCM biçimini seçersen hepsi incelenir.`)
+  if (skipped) uiTechnical.push(message('qa.skippedAudio', { count: skipped }))
   // Varyasyonlu SFX'te en iyi dosya, motor katmanlarında en kötü katman belirleyicidir (hepsi kullanılır)
   const score = scores.length ? (subject.kind === 'audioset' ? Math.min(...scores) : Math.max(...scores)) : 10
   const pass = score >= minScore
@@ -276,6 +295,9 @@ function reviewAudio(ctx: ExecCtx, subject: Extract<Artifact, { kind: 'audio' | 
     score,
     pass,
     issues,
+    uiIssues,
+    uiTechnical,
+    uiSummary: !scores.length ? message('qa.noWav') : (uiIssues[0] ?? message('qa.audioPassed')),
     strengths: issues.length ? [] : ['Seviye, süre ve dikişler temiz'],
     prompt_fix: [...fixes].join(', '),
     summary: !scores.length ? 'Ölçülebilir WAV dosyası yok' : issues.length ? issues[0] : 'Ses teknik kontrolleri geçti',
@@ -291,14 +313,14 @@ const executors: Record<string, Executor> = {
   'model.file': async (ctx, p) => {
     const file = localPath(ctx, p.file)
     const ext = path.extname(file).toLowerCase()
-    if (!['.glb', '.gltf', '.fbx', '.obj'].includes(ext)) throw new Error(`Desteklenmeyen model formatı: ${ext}`)
-    ctx.log(`Yerel model: ${file}`)
+    if (!['.glb', '.gltf', '.fbx', '.obj'].includes(ext)) throw new UiError(message('error.79dc95487b', { p0: String(ext) }))
+    emitMessage(ctx.log, message('log.f9ee5ca3d3', { p0: String(file) }))
     return { outputs: { model: { kind: 'model', file, glb: ext === '.glb' ? file : undefined, rigged: bool(p.rigged), textured: true } } }
   },
 
   'image.file': async (ctx, p) => {
     const file = localPath(ctx, p.file)
-    ctx.log(`Yerel görsel: ${file}`)
+    emitMessage(ctx.log, message('log.d45225d7b8', { p0: String(file) }))
     return { outputs: { image: { kind: 'image', files: [file] } } }
   },
 
@@ -311,10 +333,10 @@ const executors: Record<string, Executor> = {
       feedback: ctx.feedback
     })
     ctx.cost({ usd })
-    ctx.log(`Prompt (${data.prompt.length} kr): ${data.prompt}`)
-    if (data.texture_prompt) ctx.log(`Doku promptu: ${data.texture_prompt}`)
-    if (data.negative_prompt) ctx.log(`Negatif: ${data.negative_prompt}`)
-    ctx.log(`Gerekçe: ${data.rationale}`)
+    emitMessage(ctx.log, message('log.3a60a7883a', { p0: String(data.prompt.length), p1: String(data.prompt) }))
+    if (data.texture_prompt) emitMessage(ctx.log, message('log.26adb1caff', { p0: String(data.texture_prompt) }))
+    if (data.negative_prompt) emitMessage(ctx.log, message('log.65ab307830', { p0: String(data.negative_prompt) }))
+    emitMessage(ctx.log, message('log.7fb6f89580', { p0: String(data.rationale) }))
     fs.writeFileSync(path.join(ctx.dir, 'prompt.json'), JSON.stringify(data, null, 2))
     return { outputs: { prompt: { kind: 'prompt', prompt: data } } }
   },
@@ -337,7 +359,7 @@ const executors: Record<string, Executor> = {
       95
     )
     const urls = task.image_urls ?? []
-    if (!urls.length) throw new Error('Meshy görsel döndürmedi')
+    if (!urls.length) throw new UiError(message('error.22cebce736'))
     const base = assetBaseName(ctx.asset)
     const files: string[] = []
     for (const [i, u] of urls.entries()) files.push(await downloadTo(u, path.join(ctx.dir, `${base}_ref_${i + 1}.png`), ctx.signal))
@@ -352,7 +374,7 @@ const executors: Record<string, Executor> = {
       baseName: assetBaseName(ctx.asset),
       progress: ctx.progress
     })
-    if (!r.files.image.length) throw new Error('ComfyUI görsel döndürmedi (workflow’da Save Image düğümü var mı?)')
+    if (!r.files.image.length) throw new UiError(message('error.aa926c762a'))
     return { outputs: { image: { kind: 'image', files: r.files.image } } }
   },
 
@@ -361,13 +383,13 @@ const executors: Record<string, Executor> = {
     const text = pr?.prompt || str(p.text).trim() || undefined
     const backend = str(p.backend).trim()
     const url = backend ? await ensureBackend(backend, ctx.log, ctx.signal) : normalizeComfyUrl(str(p.url))
-    if (!url) throw new Error('Gradio Uygulaması: bir özel arka uç seçin ya da uygulamanın adresini girin')
+    if (!url) throw new UiError(message('error.b8d2b9d4be'))
     let overrides: Record<string, unknown> | undefined
     if (str(p.values).trim()) {
       try {
         overrides = JSON.parse(str(p.values)) as Record<string, unknown>
       } catch (e) {
-        throw new Error(`“Sabit değerler” geçerli JSON değil: ${(e as Error).message}`, { cause: e })
+        throw new UiError(message('error.0c04977498', { p0: errorMessage(e) }), { cause: e })
       }
     }
     const img = inputs.image
@@ -401,7 +423,7 @@ const executors: Record<string, Executor> = {
     const mesh = f.model.find((x) => x.endsWith('.glb')) ?? f.model[0]
     if (mesh) outputs.model = { kind: 'model', file: mesh, glb: mesh.endsWith('.glb') ? mesh : undefined, thumbnail: f.image[0] }
     if (f.audio.length) outputs.audio = { kind: 'audio', files: f.audio, target: seconds ? { seconds, loop: pr?.loop } : undefined }
-    if (!Object.keys(outputs).length) throw new Error(`Gradio uygulaması görsel, model ya da ses döndürmedi${r.text.length ? ` (metin: ${r.text[0].slice(0, 120)})` : ''}`)
+    if (!Object.keys(outputs).length) throw new UiError(message('error.07b5f74175', { p0: r.text.length ? message('feedback.textDetail', { text: r.text[0].slice(0, 120) }) : '' }))
     return { outputs }
   },
 
@@ -425,15 +447,20 @@ const executors: Record<string, Executor> = {
       progress: (v) => ctx.progress(Math.min(90, v * 0.9)),
       timeoutMin: num(p.timeout, 30)
     })
-    if (r.skipped.length) ctx.log(`Tanınmayan çıktılar atlandı: ${r.skipped.join(', ')}`)
+    if (r.skipped.length) emitMessage(ctx.log, message('log.d3ba8ac054', { p0: String(r.skipped.join(', ')) }))
     const f = r.files
     const outputs = await mediaOutputs(ctx, f, { seconds, loop: pr?.loop })
-    if (!Object.keys(outputs).length) throw new Error('ComfyUI çıktı vermedi. Workflow’da Save Image / Save Audio / Save 3D gibi bir kaydetme düğümü olmalı.')
-    ctx.log(
-      `Çıktılar: ${Object.entries(f)
-        .filter(([, v]) => v.length)
-        .map(([k, v]) => `${k} ×${v.length}`)
-        .join(', ')}`
+    if (!Object.keys(outputs).length) throw new UiError(message('error.7844c279f8'))
+    emitMessage(
+      ctx.log,
+      message('log.04eb6305ec', {
+        p0: String(
+          Object.entries(f)
+            .filter(([, v]) => v.length)
+            .map(([k, v]) => `${k} ×${v.length}`)
+            .join(', ')
+        )
+      })
     )
     ctx.progress(100)
     return { outputs }
@@ -444,7 +471,7 @@ const executors: Record<string, Executor> = {
     const provider = openaiProvider(str(p.provider))
     const src = inputs.image?.kind === 'image' ? inputs.image.files[0] : undefined
     const model = str(p.model).trim() || 'gpt-image-1'
-    ctx.log(`${provider.name} · ${model}${src ? ' · görselden düzenleme' : ''}`)
+    emitMessage(ctx.log, message('log.4ca65d63ea', { p0: String(provider.name), p1: String(model), p2: src ? message('feedback.imageEdit') : '' }))
     ctx.progress(10)
     const files = await openaiImage({
       provider,
@@ -465,7 +492,7 @@ const executors: Record<string, Executor> = {
   'audio.speech': async (ctx, p, inputs) => {
     const pr = promptOf(inputs)
     const text = (pr?.prompt || str(p.text)).trim()
-    if (!text) throw new Error('Seslendirilecek metin yok: Prompt Motoru’nu (Ses Satırı hedefi) bağlayın ya da “Metin” alanını doldurun')
+    if (!text) throw new UiError(message('error.1392539d67'))
     const provider = openaiProvider(str(p.provider))
     const format = str(p.format) || 'wav'
     const model = str(p.model).trim() || 'gpt-4o-mini-tts'
@@ -498,7 +525,7 @@ const executors: Record<string, Executor> = {
     const seconds = pr?.duration_seconds || undefined
     const authId = str(p.auth)
     const authProvider = authId ? allProviders().find((x) => x.id === authId) : undefined
-    if (authId && !authProvider) ctx.warn(`Kimlik sağlayıcısı bulunamadı (${authId}); anahtarsız gönderiliyor`)
+    if (authId && !authProvider) emitMessage(ctx.warn, message('log.f2afa67cb6', { p0: String(authId) }))
     const files = await httpRun({
       method: str(p.method) === 'GET' ? 'GET' : 'POST',
       url: str(p.url),
@@ -530,7 +557,7 @@ const executors: Record<string, Executor> = {
       log: ctx.log,
       signal: ctx.signal
     })
-    ctx.log(`İndirildi: ${files.map((f) => path.basename(f)).join(', ')}`)
+    emitMessage(ctx.log, message('log.0a5191eaed', { p0: String(files.map((f) => path.basename(f)).join(', ')) }))
     const byKind: Record<HttpKind, string[]> = { image: [], model: [], audio: [], anim: [] }
     byKind[kind] = files
     const outputs = await mediaOutputs(ctx, byKind, { seconds, loop: pr?.loop })
@@ -543,7 +570,7 @@ const executors: Record<string, Executor> = {
     const expect = str(p.expect, 'model')
     const pr = promptOf(inputs)
     const task = str(p.task).trim().replaceAll('{asset}', ctx.asset.name)
-    if (!task && !pr) throw new Error('Görev boş: düğümün "Görev" alanına ne yapacağını yaz ya da bir Prompt bağla')
+    if (!task && !pr) throw new UiError(message('error.101077fa07'))
 
     // Girdi dosyaları: ajan okuyabilsin diye yolları ve klasörleri ver
     const inFiles: string[] = []
@@ -606,8 +633,8 @@ const executors: Record<string, Executor> = {
       },
       signal: ctx.signal
     })
-    if (summary) ctx.log(`Ajan: ${truncateWords(summary, 120)}`)
-    if (usd) ctx.log(`Maliyet: $${usd.toFixed(3)}`)
+    if (summary) emitMessage(ctx.log, message('log.60daf7b71f', { p0: String(truncateWords(summary, 120)) }))
+    if (usd) emitMessage(ctx.log, message('log.f26b23d27b', { p0: String(usd.toFixed(3)) }))
 
     const made = walk(ctx.dir).filter((f) => !before.has(f))
     const byKind = (k: string) => made.filter((f) => kindOfFile(f) === k).sort()
@@ -622,12 +649,12 @@ const executors: Record<string, Executor> = {
     }
     if (images.length) outputs.image = { kind: 'image', files: images }
     if (audios.length) outputs.audio = { kind: 'audio', files: audios }
-    ctx.log(`Üretilen dosyalar: ${made.map((f) => path.basename(f)).join(', ') || 'yok'}`)
+    emitMessage(ctx.log, message('log.8361bc1e8e', { p0: String(made.map((f) => path.basename(f)).join(', ') || '—') }))
     if (expect !== 'any' && !outputs[expect]) {
       const name = ({ model: '3D model (.glb/.fbx)', image: 'görsel', audio: 'ses' } as Record<string, string>)[expect] ?? expect
-      throw new Error(`Ajan beklenen ${name} dosyasını çıktı klasörüne kaydetmedi. Son mesajı: ${truncateWords(summary || '(yok)', 60)}`)
+      throw new UiError(message('error.1f2e324c6f', { p0: String(name), p1: String(truncateWords(summary || '(yok)', 60)) }))
     }
-    if (!Object.keys(outputs).length) throw new Error('Ajan hiç dosya üretmedi')
+    if (!Object.keys(outputs).length) throw new UiError(message('error.681e3b4d7a'))
     ctx.progress(100)
     return { outputs }
   },
@@ -643,11 +670,18 @@ const executors: Record<string, Executor> = {
 
     const finish = (res: Record<string, unknown>, dir: string): ExecResult => {
       const checks = Object.values((res.checks as Record<string, string>) ?? {})
-      for (const w of (res.warnings as string[]) ?? []) ctx.warn(`Montaj: ${w}`)
+      for (const w of (res.warnings as string[]) ?? []) emitMessage(ctx.warn, message('log.6e0556f0f7', { p0: String(w) }))
       const dims = (res.dims as number[]) ?? [0, 0, 0]
       const parts = (res.parts as { name: string }[]) ?? []
-      ctx.log(
-        `Montaj: ${parts.length} parça (${parts.map((x) => x.name).join(', ') || '—'}), ${(res.sockets as unknown[])?.length ?? 0} soket, ${(res.damage as unknown[])?.length ?? 0} ezilme bölgesi, ${(res.clips as unknown[])?.length ?? 0} klip`
+      emitMessage(
+        ctx.log,
+        message('log.3d8b062509', {
+          p0: String(parts.length),
+          p1: String(parts.map((x) => x.name).join(', ') || '—'),
+          p2: String((res.sockets as unknown[])?.length ?? 0),
+          p3: String((res.damage as unknown[])?.length ?? 0),
+          p4: String((res.clips as unknown[])?.length ?? 0)
+        })
       )
       ctx.progress(100)
       return {
@@ -684,7 +718,7 @@ const executors: Record<string, Executor> = {
       try {
         plan = JSON.parse(manual)
       } catch (e) {
-        throw new Error(`Elle plan geçerli JSON değil: ${(e as Error).message}`, { cause: e })
+        throw new UiError(message('error.e3ac55d0a0', { p0: errorMessage(e) }), { cause: e })
       }
       const dir = path.join(ctx.dir, 'build')
       return finish(await blender('build', dir, { plan }), dir)
@@ -737,15 +771,15 @@ const executors: Record<string, Executor> = {
         cost: (c) => ctx.cost({ usd: c }),
         signal: ctx.signal
       })
-      if (summary) ctx.log(`Ajan: ${truncateWords(summary, 80)}`)
+      if (summary) emitMessage(ctx.log, message('log.60daf7b71f', { p0: String(truncateWords(summary, 80)) }))
       const file = path.join(buildDir, 'assembly.json')
-      if (!fs.existsSync(file)) throw new Error('Ajan montajı tamamlamadı (assembly.json yok)')
+      if (!fs.existsSync(file)) throw new UiError(message('error.a90ca598f1'))
       return finish(JSON.parse(fs.readFileSync(file, 'utf8')), buildDir)
     }
 
     const providerId = str(p.provider)
     const provider = providerId ? allProviders().find((x) => x.id === providerId) : undefined
-    if (providerId && !provider) throw new Error('Seçilen LLM sağlayıcısı bulunamadı (Ayarlar → Yapay zekâ)')
+    if (providerId && !provider) throw new UiError(message('error.0857601679'))
     const kitRoles = loadProject(ctx.projectDir)
       .assets.filter((a) => a.parentId === ctx.asset.id && a.role)
       .map((a) => a.role!)
@@ -769,13 +803,13 @@ const executors: Record<string, Executor> = {
     let plan: LlmPlan = await ask()
     if (plan.front !== front) {
       // Ön başka yöne bakıyormuş: görünüşleri doğru yönle yeniden çıkar, koordinatları yeniden okut
-      ctx.log(`Modelin önü ${plan.front} yönünde; görünüşler yeniden çıkarılıyor`)
+      emitMessage(ctx.log, message('log.051e101d90', { p0: String(plan.front) }))
       front = plan.front
       analysis = await blender('analyze', path.join(ctx.dir, 'analyze_2'), { front })
       plan = await ask()
       plan.front = front as LlmPlan['front']
     }
-    ctx.log(`Plan: ${plan.notes}`)
+    emitMessage(ctx.log, message('log.ed7adae3ce', { p0: String(plan.notes) }))
     ctx.progress(30)
 
     const rounds = Math.max(0, Math.min(5, num(p.rounds, 2)))
@@ -792,14 +826,14 @@ const executors: Record<string, Executor> = {
       usd += rv.usd
       ctx.cost({ usd: rv.usd })
       if (rv.data.ok) {
-        ctx.log(`Kontrol ${round + 1}: onaylandı`)
+        emitMessage(ctx.log, message('log.6801f41562', { p0: String(round + 1) }))
         break
       }
-      ctx.log(`Kontrol ${round + 1}: ${rv.data.problems.join(' · ')}`)
+      emitMessage(ctx.log, message('log.bae8644926', { p0: String(round + 1), p1: String(rv.data.problems.join(' · ')) }))
       feedback.push(...rv.data.problems)
       plan = { ...rv.data.plan, front: plan.front }
     }
-    if (usd) ctx.log(`Maliyet: $${usd.toFixed(3)}`)
+    if (usd) emitMessage(ctx.log, message('log.f26b23d27b', { p0: String(usd.toFixed(3)) }))
     return finish(res, dir)
   },
 
@@ -919,7 +953,7 @@ const executors: Record<string, Executor> = {
     const base = assetBaseName(ctx.asset)
     const fbx = r.rigged_character_fbx_url ? await downloadTo(r.rigged_character_fbx_url, path.join(ctx.dir, `${base}_rigged.fbx`), ctx.signal) : undefined
     const glb = r.rigged_character_glb_url ? await downloadTo(r.rigged_character_glb_url, path.join(ctx.dir, `${base}_rigged.glb`), ctx.signal) : undefined
-    if (!fbx && !glb) throw new Error('Meshy rig sonucu dosya döndürmedi')
+    if (!fbx && !glb) throw new UiError(message('error.f83848e372'))
     const animations: Record<string, string> = {}
     for (const [k, url] of Object.entries(r.basic_animations ?? {})) {
       if (url && k.endsWith('_fbx_url')) {
@@ -927,7 +961,7 @@ const executors: Record<string, Executor> = {
         animations[label] = await downloadTo(url, path.join(ctx.dir, `${base}_${label}.fbx`), ctx.signal)
       }
     }
-    ctx.log(`Rig tamam; animasyonlar: ${Object.keys(animations).join(', ') || 'yok'}`)
+    emitMessage(ctx.log, message('log.e38c0c0682', { p0: String(Object.keys(animations).join(', ') || '—') }))
     return { outputs: { model: { ...m, kind: 'model', file: fbx ?? glb!, glb, meshyTaskId: task.id, meshyResource: 'rigging', rigged: true, animations } } }
   },
 
@@ -948,7 +982,7 @@ const executors: Record<string, Executor> = {
       signal: ctx.signal
     })
     const s = res.stats
-    ctx.log(`Üçgen ${s.tris} (orijinal ${s.originalTris}) · ölçü ${s.dims.join('×')} m · UV ${s.hasUV ? 'var' : 'YOK'}`)
+    emitMessage(ctx.log, message('log.fd3795af66', { p0: String(s.tris), p1: String(s.originalTris), p2: String(s.dims.join('×')), p3: message(s.hasUV ? 'feedback.present' : 'feedback.missing') }))
     return {
       outputs: {
         model: { ...m, kind: 'model', file: res.file, glb: res.file.endsWith('.glb') ? res.file : undefined, meshyTaskId: undefined, previews: res.previews, stats: s }
@@ -958,9 +992,11 @@ const executors: Record<string, Executor> = {
 
   'qa.review': async (ctx, p, inputs) => {
     const subject = inputs.subject
-    if (!subject) throw new Error('İncelenecek girdi yok')
+    if (!subject) throw new UiError(message('error.5a9c612e2d'))
     const minScore = num(p.min_score, 7)
     const technical: string[] = []
+    const uiTechnical: MessageDescriptor[] = []
+    const uiIssues: MessageDescriptor[] = []
     const hardFails: string[] = []
     let images: string[] = []
 
@@ -976,8 +1012,16 @@ const executors: Record<string, Executor> = {
         technical.push(`UVs present: ${s.hasUV}`)
         technical.push(`Bounding box (m): ${s.dims.join(' x ')} — brief size: ${ctx.asset.size || 'n/a'}`)
         technical.push(`Mesh objects: ${s.objects}, materials: ${s.materials}, rigged: ${s.rigged}`)
+        uiTechnical.push(
+          message('qa.modelTriangles', { count: s.tris, budget }),
+          message('qa.modelUv', { value: message(s.hasUV ? 'feedback.present' : 'feedback.missing') }),
+          message('qa.modelBounds', { dimensions: s.dims.join(' x '), size: ctx.asset.size || '—' }),
+          message('qa.modelObjects', { objects: s.objects, materials: s.materials, rigged: message(s.rigged ? 'feedback.present' : 'feedback.missing') })
+        )
         if (s.tris > budget * 1.5) hardFails.push(`Üçgen sayısı bütçenin çok üstünde (${s.tris} > ${budget})`)
+        if (s.tris > budget * 1.5) uiIssues.push(message('qa.overBudget', { count: s.tris, budget }))
         if (!s.hasUV) hardFails.push('UV yok')
+        if (!s.hasUV) uiIssues.push(message('qa.noUv'))
       }
     }
 
@@ -991,10 +1035,13 @@ const executors: Record<string, Executor> = {
     })
     ctx.cost({ usd })
     const pass = data.score >= minScore && hardFails.length === 0
-    const report: QAReport = { ...data, issues: [...hardFails, ...data.issues], pass, technical }
+    const report: QAReport = { ...data, issues: [...hardFails, ...data.issues], uiIssues, pass, technical, uiTechnical }
     fs.writeFileSync(path.join(ctx.dir, `qa_report_${Date.now()}.json`), JSON.stringify(report, null, 2))
-    ctx.log(`Puan ${data.score}/10 (eşik ${minScore}) → ${pass ? 'GEÇTİ' : 'KALDI'}: ${data.summary}`)
-    for (const i of report.issues) ctx.log(`  • ${i}`)
+    emitMessage(ctx.log, message('log.5aec1e5749', { p0: String(data.score), p1: String(minScore), p2: message(pass ? 'feedback.passed' : 'feedback.failed'), p3: String(data.summary) }))
+    for (const [index, issue] of report.issues.entries()) {
+      if (uiIssues[index]) emitMessage(ctx.log, uiIssues[index])
+      else ctx.log(`  • ${issue}`)
+    }
     const feedback = [data.prompt_fix, ...hardFails].filter(Boolean).join(' ')
     return { outputs: { subject, report: { kind: 'report', report } }, qa: { pass, feedback } }
   },
@@ -1023,7 +1070,7 @@ const executors: Record<string, Executor> = {
       files.push(f)
       ctx.cost({ chars: pr.prompt.length })
       ctx.progress(((i + 1) / n) * 100)
-      ctx.log(`Ses ${i + 1}/${n}: ${path.basename(f)}`)
+      emitMessage(ctx.log, message('log.4cd6dad11c', { p0: String(i + 1), p1: String(n), p2: String(path.basename(f)) }))
     }
     return { outputs: { audio: { kind: 'audio', files, target: { seconds: durParam > 0 ? durParam : pr.duration_seconds, loop: loopParam === 'auto' ? pr.loop : loopParam === 'yes' } } } }
   },
@@ -1058,7 +1105,7 @@ const executors: Record<string, Executor> = {
       layers.push({ file, baseRpm: rpm, label: i === 0 ? 'Rölanti' : i === n - 1 ? 'Kırmızı çizgi' : `${rpm} rpm` })
       ctx.cost({ chars: text.length })
       ctx.progress(((i + 1) / n) * 100)
-      ctx.log(`Katman ${i + 1}/${n}: ${rpm} rpm → ${path.basename(file)}`)
+      emitMessage(ctx.log, message('log.109df901eb', { p0: String(i + 1), p1: String(n), p2: String(rpm), p3: String(path.basename(file)) }))
     }
     const dynamic = { type: 'engine' as const, layers: n, idleRpm: idle, maxRpm: Math.round(max), engine: timbre }
     return { outputs: { audio: { kind: 'audioset', layers, dynamic, target: { seconds: Math.min(30, Math.max(2, num(p.seconds, 6))), loop: true } } } }
@@ -1088,14 +1135,14 @@ const executors: Record<string, Executor> = {
     if (retry && texts.length) {
       const fix = ctx.feedback[retry - 1]
       texts = texts.map((t) => `${t.replace(/[.,\s]+$/, '')}, ${fix}.`)
-      ctx.log(`Kalite kontrol düzeltmesi prompta eklendi: ${fix}`)
+      emitMessage(ctx.log, message('log.2749d46ea9', { p0: String(fix) }))
     }
     if (!texts.length) {
       const { data, usd } = await generatePrompt({ bible: ctx.bible, asset: ctx.asset, targetId: 'kimodo_motion', extra: str(p.extra), feedback: ctx.feedback })
       ctx.cost({ usd })
       texts = [data.prompt]
       secs = [Math.min(10, Math.max(2, data.duration_seconds || 4))]
-      ctx.log(`Hareket promptu: ${data.prompt} (${secs[0]} sn) — ${data.rationale}`)
+      emitMessage(ctx.log, message('log.a1394efbd7', { p0: String(data.prompt), p1: String(secs[0]), p2: String(data.rationale) }))
     }
     if (!secs.length) secs = [4]
     const durations = texts.map((_, i) => secs[Math.min(i, secs.length - 1)])
@@ -1104,45 +1151,52 @@ const executors: Record<string, Executor> = {
     try {
       spec = ctx.asset.extra['KimodoSpec'] ? (JSON.parse(ctx.asset.extra['KimodoSpec']) as KimodoSpec) : null
     } catch {
-      ctx.warn('KimodoSpec okunamadı; düz üretim yapılıyor')
+      emitMessage(ctx.warn, message('log.58fdf5fcba'))
     }
     const seedP = num(p.seed, -1)
     const fixedSeed = spec?.seed !== undefined && spec.seed >= 0 ? spec.seed : seedP
     // Sabit seed aynı hareketi tekrar üretir: yeniden denemede kaydır
     const seed = fixedSeed >= 0 && retry ? fixedSeed + retry * 7919 : fixedSeed
-    if (fixedSeed >= 0 && retry) ctx.log(`Yeniden deneme: seed ${fixedSeed} → ${seed}`)
+    if (fixedSeed >= 0 && retry) emitMessage(ctx.log, message('log.3c8a0f16b6', { p0: String(fixedSeed), p1: String(seed) }))
     const req: KimodoRequest = { texts, durations, seed: seed >= 0 ? seed : undefined, steps: num(p.steps, 100) }
     if (spec) {
       const from = loadMotion(ctx.projectDir, spec.fromAssetId)?.poses?.last
       const to = loadMotion(ctx.projectDir, spec.toAssetId)?.poses?.first
-      if (spec.fromAssetId && !from) ctx.warn('Başlangıç pozu kaynağı henüz üretilmemiş; poz eşleme atlandı')
-      if (spec.toAssetId && !to) ctx.warn('Bitiş pozu kaynağı henüz üretilmemiş; poz eşleme atlandı')
+      if (spec.fromAssetId && !from) emitMessage(ctx.warn, message('log.1f7c682807'))
+      if (spec.toAssetId && !to) emitMessage(ctx.warn, message('log.713d781184'))
       const g = buildKimodoRequest(spec, texts, durations, { from, to })
       Object.assign(req, { durations: g.durations, loop: g.loop, loop_min: g.loop_min, loop_max: g.loop_max, loop_keep_turn: g.loop_keep_turn, constraints: g.constraints })
       const kinds = g.constraints.map((c) => String(c.type))
-      ctx.log(
-        `Sistem klibi (${spec.role}${spec.loop ? ', döngü' : ''}): hedef ${spec.speed}${spec.speedEnd !== undefined && spec.speedEnd !== spec.speed ? '→' + spec.speedEnd : ''} m/sn, yön ${spec.moveDir}°, dönüş ${spec.turn}° · kısıtlar: ${kinds.join(', ') || 'yok'}`
+      emitMessage(
+        ctx.log,
+        message('log.c847a02057', {
+          p0: String(spec.role),
+          p1: spec.loop ? message('feedback.loopSuffix') : '',
+          p2: String(spec.speed),
+          p3: String(spec.speedEnd !== undefined && spec.speedEnd !== spec.speed ? '→' + spec.speedEnd : ''),
+          p4: String(spec.moveDir),
+          p5: String(spec.turn),
+          p6: String(kinds.join(', ') || '—')
+        })
       )
     }
-    ctx.log(`Kimodo: ${texts.length} segment, ${req.durations.reduce((a, b) => a + b, 0).toFixed(1)} sn üretim`)
+    emitMessage(ctx.log, message('log.4c92e67ef2', { p0: String(texts.length), p1: String(req.durations.reduce((a, b) => a + b, 0).toFixed(1)) }))
     ctx.progress(5)
     let res
     try {
       res = await kimodoGenerate(req, ctx.signal)
     } catch (e) {
       if (!req.constraints?.length || ctx.signal.aborted) throw e
-      ctx.warn(`Kısıtlı üretim başarısız (${(e as Error).message}); kısıtsız tekrar deneniyor`)
+      emitMessage(ctx.warn, message('log.583ada8c5b', { p0: errorMessage(e) }))
       res = await kimodoGenerate({ ...req, constraints: [] }, ctx.signal)
     }
-    ctx.log(`Kimodo üretti: ${res.frames[0]} kare @ ${res.fps} fps (${res.seconds} sn sürdü)`)
+    emitMessage(ctx.log, message('log.50aa684b54', { p0: String(res.frames[0]), p1: String(res.fps), p2: String(res.seconds) }))
     const motion = (res.motion?.[0] ?? null) as StoredMotion | null
     if (motion) {
       const m = motion.measured
-      ctx.log(
-        `Ölçüm: ${m.seconds.toFixed(2)} sn, hız ${m.speed.toFixed(2)} m/sn, yön ${m.direction}°, dönüş ${m.turn}°` +
-          (motion.loop ? ` · döngü ${motion.loop.start}→${motion.loop.end}. kare (fark ${motion.loop.cost})` : '') +
-          ` · basışlar L ${motion.markers.L.length} / R ${motion.markers.R.length}`
-      )
+      emitMessage(ctx.log, message('motion.measurement', { seconds: m.seconds.toFixed(2), speed: m.speed.toFixed(2), direction: m.direction, turn: m.turn }))
+      if (motion.loop) emitMessage(ctx.log, message('motion.loopMeasurement', { start: motion.loop.start, end: motion.loop.end, cost: motion.loop.cost }))
+      emitMessage(ctx.log, message('motion.contacts', { left: motion.markers.L.length, right: motion.markers.R.length }))
     }
     ctx.progress(70)
     const clip = `AS_SOMA_${assetBaseName(ctx.asset)}`
@@ -1150,7 +1204,7 @@ const executors: Record<string, Executor> = {
     fs.writeFileSync(bvh, res.bvh[0])
     const rootMotion = ctx.asset.extra['RootMotion'] || str(p.root_motion, 'root')
     const a = await runBlenderAnim({ blenderPath: getSettings().blenderPath, bvh, out: path.join(ctx.dir, `${clip}.fbx`), rootMotion, log: ctx.log, signal: ctx.signal })
-    ctx.log(`FBX animasyon: ${a.frames} kare, ${a.duration.toFixed(2)} sn`)
+    emitMessage(ctx.log, message('log.6610ffb475', { p0: String(a.frames), p1: String(a.duration.toFixed(2)) }))
     const loop = spec ? spec.loop : ctx.asset.extra['Döngü'] === 'evet'
     if (motion) saveMotion(ctx.projectDir, ctx.asset.id, { ...motion, bvh, fbx: a.file, clip, at: Date.now() })
     return { outputs: { anim: { kind: 'animation', clip, bvh, fbx: a.file, seconds: a.duration, rootMotion, loop, motion: motionInfo(motion) } } }
@@ -1158,7 +1212,7 @@ const executors: Record<string, Executor> = {
 
   'export.ue': async (ctx, p, inputs) => {
     const subject = inputs.subject
-    if (!subject) throw new Error('Export edilecek girdi yok')
+    if (!subject) throw new UiError(message('error.6b2f765878'))
     const t = ctx.bible.technical
     const cat = ctx.asset.category || 'Misc'
     const root = t.ueContentRoot.replace(/\/$/, '')
@@ -1175,10 +1229,10 @@ const executors: Record<string, Executor> = {
     if (subject.kind === 'model' && subject.assembly && fs.existsSync(subject.assembly)) {
       // Montajlı model: araç / hareketli obje olarak kur (mesh + ezilme + klipler + kit sesleri + fizik + Blueprint)
       const dest = `${contentPath}/${base}`
-      ctx.log(`Export klasörü: ${exportDir}`)
+      emitMessage(ctx.log, message('log.dde0d0d25e', { p0: String(exportDir) }))
       if (!bool(p.auto_import, true)) {
         fs.copyFileSync(subject.assembly, path.join(exportDir, 'assembly.json'))
-        ctx.warn('Montajlı model yalnızca otomatik import ile kurulabilir (açık Unreal Editor gerekir)')
+        emitMessage(ctx.warn, message('log.935d0aa769'))
         return { outputs: {} }
       }
       try {
@@ -1187,7 +1241,7 @@ const executors: Record<string, Executor> = {
         ctx.log(r.blueprint ? `Unreal'da hazır: ${r.blueprint}` : `Unreal'a aktarıldı → ${dest}`)
       } catch (e) {
         if (ctx.signal.aborted) throw e
-        ctx.warn(`Unreal kurulumu tamamlanamadı: ${(e as Error).message}`)
+        emitMessage(ctx.warn, message('log.8821ec347f', { p0: errorMessage(e) }))
       }
       return { outputs: {} }
     }
@@ -1214,7 +1268,7 @@ const executors: Record<string, Executor> = {
     } else if (subject.kind === 'audioset') {
       const layers = subject.layers.map((l, i) => ({ file: copy(l.file, `SW_${base}_L${i}`), name: `SW_${base}_L${i}`, base_rpm: l.baseRpm }))
       items.push({ type: 'dynamic_sound', name: `MS_${base}`, dest: contentPath, file: '', layers, inputs: { idle: subject.dynamic.idleRpm, max: subject.dynamic.maxRpm } })
-      ctx.log(`Dinamik ses: ${layers.length} katman → MS_${base} (girişler: RPM, Throttle)`)
+      emitMessage(ctx.log, message('log.1177a13668', { p0: String(layers.length), p1: String(base) }))
     } else if (subject.kind === 'animation') {
       const fbx = copy(subject.fbx, subject.clip)
       const targets: { mesh: string; base: string }[] = []
@@ -1246,7 +1300,7 @@ const executors: Record<string, Executor> = {
         items.push({ file: copy(f, name), dest: contentPath, name, type: 'sound' })
       })
     } else {
-      throw new Error(`Export desteklenmiyor: ${subject.kind}`)
+      throw new UiError(message('error.1c33580c08', { p0: String(subject.kind) }))
     }
 
     // Unreal import betiği: hem otomatik çalıştırılır hem elle çalıştırmak için saklanır
@@ -1255,15 +1309,15 @@ const executors: Record<string, Executor> = {
     const script = `import base64, json\nMANIFEST = json.loads(base64.b64decode("${b64}").decode("utf-8"))\n` + fs.readFileSync(resourcePath('python', 'ue_import.py'), 'utf8')
     const scriptFile = path.join(exportDir, `ue_import_${ctx.job.id}.py`)
     fs.writeFileSync(scriptFile, script)
-    ctx.log(`Export klasörü: ${exportDir}`)
+    emitMessage(ctx.log, message('log.dde0d0d25e', { p0: String(exportDir) }))
 
     if (bool(p.auto_import, true)) {
       try {
         const r = await runInUe(script)
         const line = r.output.split('\n').find((l) => l.startsWith('FORGE_RESULT '))
-        if (!r.success) ctx.warn(`Unreal import hatası: ${r.result || r.output.slice(-400)}`)
+        if (!r.success) emitMessage(ctx.warn, message('log.7b2ae02785', { p0: String(r.result || r.output.slice(-400)) }))
         else {
-          ctx.log(`Unreal'a import edildi → ${contentPath}`)
+          emitMessage(ctx.log, message('log.4654ce290d', { p0: String(contentPath) }))
           try {
             const res = JSON.parse(line ? line.slice(13) : '[]') as { name: string; errors: string[]; notes?: string[] }[]
             for (const e of res) {
@@ -1275,7 +1329,7 @@ const executors: Record<string, Executor> = {
           }
         }
       } catch (e) {
-        ctx.warn(`Unreal'a otomatik import yapılamadı (${(e as Error).message}). Elle: Unreal → File → Execute Python Script → ${scriptFile}`)
+        emitMessage(ctx.warn, message('log.c1a4bf34f4', { p0: errorMessage(e), p1: String(scriptFile) }))
       }
     }
     return { outputs: {} }
@@ -1284,6 +1338,6 @@ const executors: Record<string, Executor> = {
 
 export function getExecutor(type: string): Executor {
   const ex = executors[type]
-  if (!ex) throw new Error(`Bilinmeyen node tipi: ${type}`)
+  if (!ex) throw new UiError(message('error.f87eba91a5', { p0: String(type) }))
   return ex
 }

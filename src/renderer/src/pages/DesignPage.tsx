@@ -1,6 +1,9 @@
-import {panelLabel} from '../../../shared/i18n/display'
-import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
+import { errorMessage } from '../../../shared/i18n/errors'
+import { message } from '../../../shared/i18n/message'
+import { panelLabel } from '../../../shared/i18n/display'
+import { flowLabels } from '../components/flowLabels'
+import { useLocale } from '../i18n'
 // Oyun Tasarımı: çekirdek fikir, oyun / hikâye döngüleri (akış şeması), hikâye, arayüz ekranları ve Unreal bağlantısı.
 import {
   addEdge,
@@ -77,7 +80,7 @@ function writePref(key: string, v: string): void {
 }
 
 export default function DesignPage() {
-  const {t,locale} = useLocale()
+  const { t, locale } = useLocale()
 
   const { project, update, toast } = useStore()
   const p = project!
@@ -94,12 +97,14 @@ export default function DesignPage() {
       <header className="page-head">
         <div>
           <h1> {t('panel.cebd0074d5')} </h1>
-          <p className="muted">{p.bible.projectName || p.name} {t('panel.6a12c35545')} </p>
+          <p className="muted">
+            {p.bible.projectName || p.name} {t('panel.6a12c35545')}{' '}
+          </p>
         </div>
         <div className="seg">
           {TABS.map((t) => (
             <button key={t.id} className={tab === t.id ? 'on' : ''} onClick={() => go(t.id)}>
-              {panelLabel(locale,t.label)}
+              {panelLabel(locale, t.label)}
               {t.id === 'loops' && d.loops.length > 0 && <span className="n">{d.loops.length}</span>}
               {t.id === 'screens' && d.screens.length > 0 && <span className="n">{d.screens.length}</span>}
             </button>
@@ -135,7 +140,7 @@ function hasContent(section: DesignSection, d: GameDesign): boolean {
 }
 
 function AiBar({ section, design, onResult }: { section: DesignSection; design: GameDesign; onResult: (d: Partial<GameDesign>) => void }) {
-  const {t,locale} = useLocale()
+  const { t, locale } = useLocale()
 
   const { project, toast } = useStore()
   const [text, setText] = useState('')
@@ -143,13 +148,13 @@ function AiBar({ section, design, onResult }: { section: DesignSection; design: 
   const filled = hasContent(section, design)
   const run = async () => {
     if (filled && !window.confirm(t('panel.f99ea99e45'))) return
-    toast(t('panel.04c7188e81'))
+    toast(message('panel.04c7188e81'))
     try {
       const r = await window.forge.design.generate({ ...project!, design }, section, text, engine)
       onResult(r.data)
-      toast(`Hazır${r.usd ? ` ($${r.usd.toFixed(3)})` : ''}`, 'ok')
+      toast(message('design.ready', { usd: r.usd?.toFixed(3) ?? '0.000' }), 'ok')
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     }
   }
   return (
@@ -157,7 +162,7 @@ function AiBar({ section, design, onResult }: { section: DesignSection; design: 
       <div className="row" style={{ gap: 10, alignItems: 'flex-end' }}>
         <div style={{ flex: 1 }}>
           <Field label={filled ? t('panel.705b581768') : t('panel.25e7e92af8')} help={t('panel.0bdd55de83')}>
-            <TextInput value={text} onChange={setText} placeholder={panelLabel(locale,SECTION_HINT[section])} />
+            <TextInput value={text} onChange={setText} placeholder={panelLabel(locale, SECTION_HINT[section])} />
           </Field>
         </div>
         <div style={{ width: 220 }}>
@@ -168,7 +173,7 @@ function AiBar({ section, design, onResult }: { section: DesignSection; design: 
                 setEngine(v as Engine)
                 writePref('forge.design.engine', v)
               }}
-              options={ENGINES.map(x=>({...x,label:panelLabel(locale,x.label)}))}
+              options={ENGINES.map((x) => ({ ...x, label: panelLabel(locale, x.label) }))}
             />
           </Field>
         </div>
@@ -186,7 +191,7 @@ function AiBar({ section, design, onResult }: { section: DesignSection; design: 
 type SetFn = (patch: Partial<GameDesign>) => void
 
 function CoreTab({ d, set }: { d: GameDesign; set: SetFn }) {
-  const {t,locale} = useLocale()
+  const { t } = useLocale()
 
   const setMech = (i: number, patch: Partial<GameDesign['mechanics'][number]>) => set({ mechanics: d.mechanics.map((m, j) => (j === i ? { ...m, ...patch } : m)) })
   return (
@@ -211,7 +216,10 @@ function CoreTab({ d, set }: { d: GameDesign; set: SetFn }) {
       <section className="card">
         <div className="row between">
           <h2> {t('panel.430d7ee055')} </h2>
-          <button className="btn ghost" onClick={() => set({ mechanics: [...d.mechanics, { name: '', description: '' }] })}> {t('panel.ea50d5211b')} </button>
+          <button className="btn ghost" onClick={() => set({ mechanics: [...d.mechanics, { name: '', description: '' }] })}>
+            {' '}
+            {t('panel.ea50d5211b')}{' '}
+          </button>
         </div>
         {d.mechanics.length === 0 && <p className="muted"> {t('panel.54875121c8')} </p>}
         {d.mechanics.map((m, i) => (
@@ -234,13 +242,13 @@ function CoreTab({ d, set }: { d: GameDesign; set: SetFn }) {
 type LoopNodeData = { label: string; type: DesignNodeType; note: string }
 
 function LoopNode({ data, selected }: NodeProps<Node<LoopNodeData>>) {
-  const {locale} = useLocale()
+  const { locale } = useLocale()
   const t = NODE_TYPES.find((x) => x.value === data.type) ?? NODE_TYPES[0]
   return (
     <div className={`loop-node ${selected ? 'sel' : ''}`} style={{ borderColor: t.color }}>
       <Handle type="target" position={Position.Top} />
       <span className="loop-type" style={{ color: t.color }}>
-        {t.label}
+        {panelLabel(locale, t.label)}
       </span>
       <b>{data.label || '—'}</b>
       {data.note && <span className="loop-note">{data.note}</span>}
@@ -251,17 +259,24 @@ function LoopNode({ data, selected }: NodeProps<Node<LoopNodeData>>) {
 const nodeTypes = { loop: LoopNode }
 
 function LoopsTab({ d, set }: { d: GameDesign; set: SetFn }) {
-  const {t,locale} = useLocale()
+  const { t, locale } = useLocale()
 
   const [sel, setSel] = useState<string>(d.loops[0]?.id ?? '')
   const loop = d.loops.find((l) => l.id === sel) ?? d.loops[0]
   const setLoop = (patch: Partial<DesignGraph>) => loop && set({ loops: d.loops.map((l) => (l.id === loop.id ? { ...l, ...patch } : l)) })
   const add = (scope: DesignGraph['scope']) => {
     const base = circleLayout(
-      ['Eylem', 'Zorluk', 'Ödül', 'İlerleme'].map((label, i) => ({ id: newId('n'), label, type: (['action', 'challenge', 'reward', 'progress'] as const)[i], note: '', x: 0, y: 0 }))
+      ['Eylem', 'Zorluk', 'Ödül', 'İlerleme'].map((label, i) => ({
+        id: newId('n'),
+        label: panelLabel(locale, label),
+        type: (['action', 'challenge', 'reward', 'progress'] as const)[i],
+        note: '',
+        x: 0,
+        y: 0
+      }))
     )
     const edges = base.map((n, i) => ({ id: newId('e'), from: n.id, to: base[(i + 1) % base.length].id, label: '' }))
-    const g: DesignGraph = { id: newId('loop'), name: SCOPES.find((s) => s.value === scope)!.label, scope, description: '', nodes: base, edges }
+    const g: DesignGraph = { id: newId('loop'), name: panelLabel(locale, SCOPES.find((s) => s.value === scope)!.label), scope, description: '', nodes: base, edges }
     set({ loops: [...d.loops, g] })
     setSel(g.id)
   }
@@ -271,15 +286,15 @@ function LoopsTab({ d, set }: { d: GameDesign; set: SetFn }) {
         <h2> {t('panel.b016c6b0c1')} </h2>
         {d.loops.map((l) => (
           <button key={l.id} className={`loop-item ${loop?.id === l.id ? 'on' : ''}`} onClick={() => setSel(l.id)}>
-            <b>{l.name || panelLabel(locale,'Adsız')}</b>
-            <span className="muted small">{panelLabel(locale,SCOPES.find(s=>s.value===l.scope)?.label ?? l.scope)}</span>
+            <b>{l.name || panelLabel(locale, 'Adsız')}</b>
+            <span className="muted small">{panelLabel(locale, SCOPES.find((s) => s.value === l.scope)?.label ?? l.scope)}</span>
           </button>
         ))}
         <div style={{ marginTop: 10 }}>
           <Select
             value=""
             onChange={(v) => v && add(v as DesignGraph['scope'])}
-            options={[{ value: '', label: t('panel.c110946124') }, ...SCOPES.map((s) => ({ value: s.value, label: `${panelLabel(locale,s.label)} (${panelLabel(locale,s.hint)})` }))]}
+            options={[{ value: '', label: t('panel.c110946124') }, ...SCOPES.map((s) => ({ value: s.value, label: `${panelLabel(locale, s.label)} (${panelLabel(locale, s.hint)})` }))]}
           />
         </div>
       </aside>
@@ -297,7 +312,7 @@ function LoopsTab({ d, set }: { d: GameDesign; set: SetFn }) {
 }
 
 function LoopEditor({ loop, setLoop, onDelete }: { loop: DesignGraph; setLoop: (p: Partial<DesignGraph>) => void; onDelete: () => void }) {
-  const {t,locale} = useLocale()
+  const { t, locale } = useLocale()
 
   const [selNode, setSelNode] = useState<string>('')
   const [selEdge, setSelEdge] = useState<string>('')
@@ -360,7 +375,11 @@ function LoopEditor({ loop, setLoop, onDelete }: { loop: DesignGraph; setLoop: (
             <TextInput value={loop.name} onChange={(v) => setLoop({ name: v })} />
           </Field>
           <Field label={t('panel.7b0d5cffae')}>
-            <Select value={loop.scope} onChange={(v) => setLoop({ scope: v as DesignGraph['scope'] })} options={SCOPES.map((s) => ({ value: s.value, label: `${panelLabel(locale,s.label)} (${panelLabel(locale,s.hint)})` }))} />
+            <Select
+              value={loop.scope}
+              onChange={(v) => setLoop({ scope: v as DesignGraph['scope'] })}
+              options={SCOPES.map((s) => ({ value: s.value, label: `${panelLabel(locale, s.label)} (${panelLabel(locale, s.hint)})` }))}
+            />
           </Field>
           <Field label={t('panel.218fc41215')} wide>
             <TextArea rows={2} value={loop.description} onChange={(v) => setLoop({ description: v })} />
@@ -369,6 +388,7 @@ function LoopEditor({ loop, setLoop, onDelete }: { loop: DesignGraph; setLoop: (
       </section>
       <div className="loop-canvas">
         <ReactFlow
+          ariaLabelConfig={flowLabels(locale)}
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
@@ -384,9 +404,18 @@ function LoopEditor({ loop, setLoop, onDelete }: { loop: DesignGraph; setLoop: (
           <Controls showInteractive={false} />
         </ReactFlow>
         <div className="loop-tools">
-          <button className="btn ghost" onClick={addNode}> {t('panel.9d1e6393ef')} </button>
-          <button className="btn ghost" onClick={() => setLoop({ nodes: circleLayout(loop.nodes) })} title={t('panel.90595bb211')}> {t('panel.cf0cba41f6')} </button>
-          <button className="btn ghost danger" onClick={() => window.confirm(`“${loop.name}” silinsin mi?`) && onDelete()}> {t('panel.ee561c9c9f')} </button>
+          <button className="btn ghost" onClick={addNode}>
+            {' '}
+            {t('panel.9d1e6393ef')}{' '}
+          </button>
+          <button className="btn ghost" onClick={() => setLoop({ nodes: circleLayout(loop.nodes) })} title={t('panel.90595bb211')}>
+            {' '}
+            {t('panel.cf0cba41f6')}{' '}
+          </button>
+          <button className="btn ghost danger" onClick={() => window.confirm(t('common.deleteNamed', { name: loop.name })) && onDelete()}>
+            {' '}
+            {t('panel.ee561c9c9f')}{' '}
+          </button>
         </div>
       </div>
       <section className="card loop-inspector">
@@ -396,7 +425,7 @@ function LoopEditor({ loop, setLoop, onDelete }: { loop: DesignGraph; setLoop: (
               <TextInput value={node.label} onChange={(v) => setNode({ label: v })} />
             </Field>
             <Field label={t('surface.type')}>
-              <Select value={node.type} onChange={(v) => setNode({ type: v as DesignNodeType })} options={NODE_TYPES.map((t) => ({ value: t.value, label: panelLabel(locale,t.label) }))} />
+              <Select value={node.type} onChange={(v) => setNode({ type: v as DesignNodeType })} options={NODE_TYPES.map((t) => ({ value: t.value, label: panelLabel(locale, t.label) }))} />
             </Field>
             <Field label={t('panel.16270c7ae9')} wide>
               <TextArea rows={2} value={node.note} onChange={(v) => setNode({ note: v })} />
@@ -423,7 +452,7 @@ function pos(nodes: Node[], id: string): { x: number; y: number } {
 // Hikâye
 
 function StoryTab({ d, set }: { d: GameDesign; set: SetFn }) {
-  const {t,locale} = useLocale()
+  const { t } = useLocale()
 
   const st = d.story
   const setStory = (patch: Partial<GameDesign['story']>) => set({ story: { ...st, ...patch } })
@@ -455,7 +484,10 @@ function StoryTab({ d, set }: { d: GameDesign; set: SetFn }) {
       <section className="card">
         <div className="row between">
           <h2> {t('panel.5a28832a7e')} </h2>
-          <button className="btn ghost" onClick={() => setStory({ acts: [...st.acts, { id: newId('act'), title: `${st.acts.length + 1}. Perde`, summary: '', beats: [] }] })}> {t('panel.13f322c0ab')} </button>
+          <button className="btn ghost" onClick={() => setStory({ acts: [...st.acts, { id: newId('act'), title: t('design.actTitle', { count: st.acts.length + 1 }), summary: '', beats: [] }] })}>
+            {' '}
+            {t('panel.13f322c0ab')}{' '}
+          </button>
         </div>
         {st.acts.map((a, i) => (
           <div key={a.id} className="design-block">
@@ -473,7 +505,10 @@ function StoryTab({ d, set }: { d: GameDesign; set: SetFn }) {
       <section className="card">
         <div className="row between">
           <h2> {t('panel.2536871f10')} </h2>
-          <button className="btn ghost" onClick={() => setStory({ characters: [...st.characters, { id: newId('chr'), name: '', role: '', description: '', arc: '' }] })}> {t('panel.dd71779820')} </button>
+          <button className="btn ghost" onClick={() => setStory({ characters: [...st.characters, { id: newId('chr'), name: '', role: '', description: '', arc: '' }] })}>
+            {' '}
+            {t('panel.dd71779820')}{' '}
+          </button>
         </div>
         {st.characters.map((c, i) => (
           <div key={c.id} className="design-block">
@@ -497,7 +532,7 @@ function StoryTab({ d, set }: { d: GameDesign; set: SetFn }) {
 // Arayüz ekranları
 
 function ScreensTab({ d, set }: { d: GameDesign; set: SetFn }) {
-  const {t,locale} = useLocale()
+  const { t, locale } = useLocale()
 
   const [sel, setSel] = useState(d.screens[0]?.id ?? '')
   const s = d.screens.find((x) => x.id === sel)
@@ -512,7 +547,7 @@ function ScreensTab({ d, set }: { d: GameDesign; set: SetFn }) {
   }))
   const edges: Edge[] = d.screens.flatMap((x) => x.next.map((n) => ({ id: `${x.id}-${n}`, source: x.id, target: n, markerEnd: { type: MarkerType.ArrowClosed } })))
   const add = () => {
-    const n: UiScreen = { id: newId('scr'), name: 'Yeni ekran', purpose: '', when: '', layer: 'menu', widgets: [], next: [] }
+    const n: UiScreen = { id: newId('scr'), name: t('design.newScreen'), purpose: '', when: '', layer: 'menu', widgets: [], next: [] }
     set({ screens: [...d.screens, n] })
     setSel(n.id)
   }
@@ -521,11 +556,14 @@ function ScreensTab({ d, set }: { d: GameDesign; set: SetFn }) {
       <section className="card screen-flow">
         <div className="row between">
           <h2> {t('panel.34981dee11')} </h2>
-          <button className="btn ghost" onClick={add}> {t('panel.8b24715c93')} </button>
+          <button className="btn ghost" onClick={add}>
+            {' '}
+            {t('panel.8b24715c93')}{' '}
+          </button>
         </div>
         <div className="screen-canvas">
           <ReactFlowProvider>
-            <ReactFlow nodes={nodes} edges={edges} onNodeClick={(_, n) => setSel(n.id)} fitView colorMode="dark" nodesDraggable={false} nodesConnectable={false}>
+            <ReactFlow ariaLabelConfig={flowLabels(locale)} nodes={nodes} edges={edges} onNodeClick={(_, n) => setSel(n.id)} fitView colorMode="dark" nodesDraggable={false} nodesConnectable={false}>
               <Background gap={20} />
             </ReactFlow>
           </ReactFlowProvider>
@@ -537,8 +575,13 @@ function ScreensTab({ d, set }: { d: GameDesign; set: SetFn }) {
             <h2>{s.name}</h2>
             <button
               className="btn ghost danger"
-              onClick={() => window.confirm(`“${s.name}” silinsin mi?`) && set({ screens: d.screens.filter((x) => x.id !== s.id).map((x) => ({ ...x, next: x.next.filter((n) => n !== s.id) })) })}
-            > {t('panel.f698e9b40f')} </button>
+              onClick={() =>
+                window.confirm(t('common.deleteNamed', { name: s.name })) && set({ screens: d.screens.filter((x) => x.id !== s.id).map((x) => ({ ...x, next: x.next.filter((n) => n !== s.id) })) })
+              }
+            >
+              {' '}
+              {t('panel.f698e9b40f')}{' '}
+            </button>
           </div>
           <div className="grid2">
             <Field label={t('surface.name')}>
@@ -564,12 +607,19 @@ function ScreensTab({ d, set }: { d: GameDesign; set: SetFn }) {
           </div>
           <div className="row between" style={{ marginTop: 10 }}>
             <h3 style={{ margin: 0 }}> {t('panel.0f7cabcc5e')} </h3>
-            <button className="btn ghost" onClick={() => setScreen({ widgets: [...s.widgets, { type: 'text', label: '', binding: '' }] })}> {t('panel.e32c64218e')} </button>
+            <button className="btn ghost" onClick={() => setScreen({ widgets: [...s.widgets, { type: 'text', label: '', binding: '' }] })}>
+              {' '}
+              {t('panel.e32c64218e')}{' '}
+            </button>
           </div>
           {s.widgets.map((w, i) => (
             <div key={i} className="design-row">
               <div style={{ width: 120 }}>
-                <Select value={w.type} onChange={(v) => setScreen({ widgets: s.widgets.map((x, j) => (j === i ? { ...x, type: v as UiWidgetType } : x)) })} options={WIDGETS.map(x=>({...x,label:panelLabel(locale,x.label)}))} />
+                <Select
+                  value={w.type}
+                  onChange={(v) => setScreen({ widgets: s.widgets.map((x, j) => (j === i ? { ...x, type: v as UiWidgetType } : x)) })}
+                  options={WIDGETS.map((x) => ({ ...x, label: panelLabel(locale, x.label) }))}
+                />
               </div>
               <input
                 className="input"
@@ -617,8 +667,8 @@ function ScreensTab({ d, set }: { d: GameDesign; set: SetFn }) {
 // ---------------------------------------------------------------------------
 // Unreal
 
-function UnrealTab({ d, toast }: { d: GameDesign; toast: (m: string, kind?: 'ok' | 'error') => void }) {
-  const {t,locale} = useLocale()
+function UnrealTab({ d, toast }: { d: GameDesign; toast: (m: import('../../../shared/i18n/message').UiMessage, kind?: 'ok' | 'error') => void }) {
+  const { t } = useLocale()
 
   const { project } = useStore()
   const [status, setStatus] = useState<{ remote: { projectName: string; engineVersion: string }[]; mcp: boolean; python: string } | null>(null)
@@ -626,21 +676,24 @@ function UnrealTab({ d, toast }: { d: GameDesign; toast: (m: string, kind?: 'ok'
     try {
       setStatus(await window.forge.ueStatus())
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     }
   }
-  const counts = `${d.loops.length} döngü · ${d.story.acts.length} perde · ${d.story.characters.length} karakter · ${d.screens.length} ekran`
+  const counts = t('design.counts', { loops: d.loops.length, acts: d.story.acts.length, characters: d.story.characters.length, screens: d.screens.length })
   return (
     <>
       <section className="card">
         <h2> {t('panel.7916c8f047')} </h2>
         <div className="row" style={{ gap: 10 }}>
-          <AsyncButton className="primary" onClick={check}> {t('panel.107aee02e3')} </AsyncButton>
+          <AsyncButton className="primary" onClick={check}>
+            {' '}
+            {t('panel.107aee02e3')}{' '}
+          </AsyncButton>
           {status && (
             <span className="muted">
               {status.remote.length ? `Remote Execution: ${status.remote.map((n) => `${n.projectName} (UE ${n.engineVersion})`).join(', ')} · ` : ''}
-              {status.mcp ? `MCP bağlı${status.python ? ` · Python: ${status.python}` : ''}` : 'MCP yok'}
-              {!status.remote.length && !status.mcp && ' — Unreal Editor açık değil'}
+              {status.mcp ? t('design.mcpConnected') + (status.python ? ` · Python: ${status.python}` : '') : t('design.noMcp')}
+              {!status.remote.length && !status.mcp && t('design.noEditor')}
             </span>
           )}
         </div>
@@ -653,23 +706,31 @@ function UnrealTab({ d, toast }: { d: GameDesign; toast: (m: string, kind?: 'ok'
           onClick={async () => {
             try {
               const done = await window.forge.design.teachUe(project!)
-              toast(`Unreal’a öğretildi: ${done.join(' · ')}`, 'ok')
+              toast(message('design.taught', { list: done.join(' · ') }), 'ok')
             } catch (e) {
-              toast((e as Error).message, 'error')
+              toast(errorMessage(e), 'error')
             }
           }}
-        > {t('panel.f5e6f9a33c')} </AsyncButton>
+        >
+          {' '}
+          {t('panel.f5e6f9a33c')}{' '}
+        </AsyncButton>
       </section>
       <section className="card">
         <h2> {t('panel.1b6d4c78c4')} </h2>
-        <p className="muted">{counts} {t('panel.7702428040')} </p>
+        <p className="muted">
+          {counts} {t('panel.7702428040')}{' '}
+        </p>
         <AsyncButton
           onClick={async () => {
             const f = await window.forge.design.exportMd(project!)
-            toast(`GDD yazıldı: ${f}`, 'ok')
+            toast(message('design.exported', { file: f }), 'ok')
             await window.forge.openPath(f)
           }}
-        > {t('panel.73b1164e7a')} </AsyncButton>
+        >
+          {' '}
+          {t('panel.73b1164e7a')}{' '}
+        </AsyncButton>
       </section>
     </>
   )

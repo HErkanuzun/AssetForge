@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 import { translate } from '../../shared/i18n'
 import { getSettings } from '../settings'
 // Web hesapları: sahip parolası, davet bağlantıları (rol + süre + kullanım sayısı), oturumlar.
@@ -173,7 +175,7 @@ export function removeUser(id: string): void {
   const d = data()
   const u = d.users.find((x) => x.id === id)
   if (!u) return
-  if (u.role === 'owner') throw new Error('Sahip hesabı silinemez')
+  if (u.role === 'owner') throw new UiError(message('error.e2de6ebd9a'))
   d.users = d.users.filter((x) => x.id !== id)
   d.sessions = d.sessions.filter((s) => s.userId !== id)
   save()
@@ -181,8 +183,8 @@ export function removeUser(id: string): void {
 
 export function setRole(id: string, role: WebRole): void {
   const u = data().users.find((x) => x.id === id)
-  if (!u) throw new Error('Kullanıcı bulunamadı')
-  if (u.role === 'owner' || role === 'owner') throw new Error('Sahip rolü değiştirilemez')
+  if (!u) throw new UiError(message('error.523742afd8'))
+  if (u.role === 'owner' || role === 'owner') throw new UiError(message('error.32d3ce76ec'))
   u.role = role
   save()
 }

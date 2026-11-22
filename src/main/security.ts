@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../shared/i18n/errors'
+import { message } from '../shared/i18n/message'
 // Electron güvenlik ayarları: izinler, gezinme, yeni pencere, dış bağlantılar ve dosya açma kuralları.
 // Saf yardımcılar (isInside, externalUrl, isRunnable) testlerde Electron olmadan kullanılır.
 import { app, session, shell, type WebContents } from 'electron'
@@ -37,14 +39,14 @@ export function isRunnable(file: string): boolean {
 
 /** Arayüzden gelen "aç" isteği: yalnızca proje klasörü içinde; çalıştırılabilir dosyalar klasörde gösterilir. */
 export async function openInsideProject(file: string, projectDir: string): Promise<void> {
-  if (!isInside(projectDir, file, true)) throw new Error('Yalnızca proje klasöründeki dosyalar açılabilir')
+  if (!isInside(projectDir, file, true)) throw new UiError(message('error.c7dfef990d'))
   if (isRunnable(file)) return shell.showItemInFolder(file)
   const err = await shell.openPath(file)
   if (err) throw new Error(err)
 }
 
 export function showInsideProject(file: string, projectDir: string): void {
-  if (!isInside(projectDir, file, true)) throw new Error('Yalnızca proje klasöründeki dosyalar gösterilebilir')
+  if (!isInside(projectDir, file, true)) throw new UiError(message('error.31751cf7f3'))
   shell.showItemInFolder(file)
 }
 
