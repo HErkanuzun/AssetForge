@@ -15,7 +15,7 @@ import { getSecret, getSettings, providerFor, providerKey } from '../settings'
 import { sniffImage, truncateWords } from '../util'
 
 type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max'
-
+// test
 // $ / 1M token (girdi, çıktı)
 const PRICES: Record<string, [number, number]> = {
   'claude-fable-5-1': [10, 50],
