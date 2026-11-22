@@ -1,0 +1,3165 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+export const panelRows = {
+  "panel.0fbc3f3682": [
+    "Agents using your subscription",
+    "使用订阅的智能代理",
+    "Aboneliğinle çalışan ajanlar"
+  ],
+  "panel.00296035cc": [
+    "Agent Task, Assembly and Motion Rig, and Game Design steps can use Claude Code or Codex CLI installed on this computer instead of an API key. Open the CLI in a terminal and sign in once before using it.",
+    "代理任务、装配与运动绑定及游戏设计步骤可使用本机安装的 Claude Code 或 Codex CLI，无需 API 密钥。使用前请先在终端中打开并登录一次。",
+    "Ajan Görevi, Montaj ve Hareket Rigi ve Oyun Tasarımı adımları API anahtarı yerine bilgisayarında kurulu Claude Code ya da Codex CLI ile de çalışabilir. Kullanmadan önce bir kez terminalde açıp giriş yapman yeterli."
+  ],
+  "panel.3b827a806d": [
+    "not found",
+    "未找到",
+    "bulunamadı"
+  ],
+  "panel.f3e5a7f25e": [
+    "Install ↗",
+    "安装 ↗",
+    "Kurulum ↗"
+  ],
+  "panel.9ac0650a83": [
+    "Scan again",
+    "重新扫描",
+    "Yeniden tara"
+  ],
+  "panel.740f9ca963": [
+    "Quick connect",
+    "快速连接",
+    "Hızlı bağlantı"
+  ],
+  "panel.17b5259b01": [
+    "Click Connect to open the service in your browser. Sign in and copy the key: AssetForge reads it from the clipboard, validates it and stores it encrypted. If it is not detected, click Try clipboard or paste it into the fields below.",
+    "点击“连接”在浏览器中打开服务。登录并复制密钥，AssetForge 会从剪贴板读取、验证并加密保存。若未检测到，请点击“尝试剪贴板”或粘贴到下方字段。",
+    "“Bağlan”a basın: servisin sayfası tarayıcıda açılır. Giriş yapıp anahtarı kopyalamanız yeterli (sayfadaki Kopyala düğmesi de Ctrl+C de olur) — AssetForge panodan yakalar, doğrular ve şifreli kaydeder. Yakalanmazsa “Panodakini dene”ye basın ya da aşağıdaki alanlara elle yapıştırın."
+  ],
+  "panel.0f6301b812": [
+    "✓ connected",
+    "✓ 已连接",
+    "✓ bağlı"
+  ],
+  "panel.27f6e56345": [
+    "not connected",
+    "未连接",
+    "bağlı değil"
+  ],
+  "panel.ab1ca629df": [
+    "Try clipboard",
+    "尝试剪贴板",
+    "Panodakini dene"
+  ],
+  "panel.dcb935e308": [
+    "Validate the current clipboard text if the copied key was not detected",
+    "未检测到复制的密钥时，立即验证剪贴板中的文本",
+    "Anahtarı kopyaladınız ama yakalanmadıysa panodaki metni şimdi doğrular"
+  ],
+  "panel.08901b80c4": [
+    "Connect",
+    "连接",
+    "Bağlan"
+  ],
+  "panel.609eee0365": [
+    "Opening browser…",
+    "正在打开浏览器…",
+    "Tarayıcı açılıyor…"
+  ],
+  "panel.14b2e4df50": [
+    "Prompt engine, brief chat, quality checks",
+    "提示词引擎、需求对话、质量检查",
+    "Prompt motoru, brief sohbeti, kalite kontrol"
+  ],
+  "panel.144253c9c1": [
+    "3D models, textures, rigging",
+    "3D 模型、纹理、骨骼绑定",
+    "3D model, doku, rig"
+  ],
+  "panel.b78ed9ca48": [
+    "Sound effects, engine audio",
+    "音效、引擎声音",
+    "Ses efektleri, motor sesi"
+  ],
+  "panel.3656f5addb": [
+    "Kimodo animation (requires Llama-3 license)",
+    "Kimodo 动画（需接受 Llama-3 许可）",
+    "Kimodo animasyon (Llama-3 lisansı gerekir)"
+  ],
+  "panel.9b234b1467": [
+    "Hundreds of models with one account (optional)",
+    "一个账户访问数百种模型（可选）",
+    "Yüzlerce model tek hesapla (isteğe bağlı)"
+  ],
+  "panel.3befe2fb09": [
+    "Sign in → “Create Key” → Copy",
+    "登录 → “Create Key” → 复制",
+    "Giriş yap → “Create Key” → Kopyala"
+  ],
+  "panel.2b0a8ddf3f": [
+    "Sign in → “Create API Key” → Copy",
+    "登录 → “Create API Key” → 复制",
+    "Giriş yap → “Create API Key” → Kopyala"
+  ],
+  "panel.4cc4bc3b96": [
+    "Sign in → “Create API key” → Copy",
+    "登录 → “Create API key” → 复制",
+    "Giriş yap → “Create API key” → Kopyala"
+  ],
+  "panel.8ce3b4c824": [
+    "Sign in → “Create token” → Copy",
+    "登录 → “Create token” → 复制",
+    "Giriş yap → “Create token” → Kopyala"
+  ],
+  "panel.f41da27000": [
+    "Sign in → “Authorize” — no key needed",
+    "登录 → “Authorize”，无需密钥",
+    "Giriş yap → “Authorize” — anahtar gerekmez"
+  ],
+  "panel.b2d6da9df4": [
+    "Accept the Llama-3 license ↗",
+    "接受 Llama-3 许可 ↗",
+    "Llama-3 lisansını kabul et ↗"
+  ],
+  "panel.ddfa4c630d": [
+    "ComfyUI is running",
+    "ComfyUI 正在运行",
+    "ComfyUI çalışıyor"
+  ],
+  "panel.658bc0d097": [
+    "ComfyUI is starting…",
+    "ComfyUI 正在启动…",
+    "ComfyUI açılıyor…"
+  ],
+  "panel.f5ae2a887b": [
+    "ComfyUI is stopped",
+    "ComfyUI 已停止",
+    "ComfyUI kapalı"
+  ],
+  "panel.d292c9cc8d": [
+    "Opens the ComfyUI node editor in your browser; build workflows there and save with Export (API)",
+    "在浏览器中打开 ComfyUI 节点编辑器；在其中搭建工作流并通过 Export (API) 保存",
+    "ComfyUI’ın düğüm editörünü tarayıcıda açar; workflow’larınızı orada kurup Export (API) ile kaydedin"
+  ],
+  "panel.a191a73c56": [
+    "Open node editor",
+    "打开节点编辑器",
+    "Düğüm editörünü aç"
+  ],
+  "panel.5769a8f8ae": [
+    "Stop",
+    "停止",
+    "Durdur"
+  ],
+  "panel.24fa59605d": [
+    "Start",
+    "启动",
+    "Başlat"
+  ],
+  "panel.0b754b0278": [
+    "Server log",
+    "服务器日志",
+    "Sunucu günlüğü"
+  ],
+  "panel.e24b716d14": [
+    "No local ComfyUI found (8188, 8000, 8189, 8190, 8001)",
+    "未找到本机 ComfyUI（8188、8000、8189、8190、8001）",
+    "Bu bilgisayarda çalışan ComfyUI bulunamadı (8188, 8000, 8189, 8190, 8001)"
+  ],
+  "panel.bbb1132f30": [
+    "On",
+    "已开启",
+    "Açık"
+  ],
+  "panel.39ce8f3878": [
+    "Off",
+    "已关闭",
+    "Kapalı"
+  ],
+  "panel.32c6bebf1c": [
+    "Address",
+    "地址",
+    "Adres"
+  ],
+  "panel.a2b2a0847b": [
+    "Opens the ComfyUI node editor in your browser",
+    "在浏览器中打开 ComfyUI 节点编辑器",
+    "ComfyUI’ın düğüm editörünü tarayıcıda açar"
+  ],
+  "panel.dcc084f9a2": [
+    "Open",
+    "打开",
+    "Aç"
+  ],
+  "panel.3ff47d4e64": [
+    "Remove server",
+    "移除服务器",
+    "Sunucuyu kaldır"
+  ],
+  "panel.de91313104": [
+    "Enabled",
+    "已启用",
+    "Etkin"
+  ],
+  "panel.0f446b11bb": [
+    "AssetForge installation",
+    "AssetForge 安装",
+    "AssetForge kurulumu"
+  ],
+  "panel.c62801f0e9": [
+    "stopped · starts automatically when needed if installed",
+    "已停止 · 已安装时按需自动启动",
+    "kapalı · kuruluysa gerekince kendiliğinden açılır"
+  ],
+  "panel.21f7d98117": [
+    "stopped / unreachable",
+    "已停止 / 无法连接",
+    "kapalı / ulaşılamıyor"
+  ],
+  "panel.62e1011e4e": [
+    "token saved",
+    "令牌已保存",
+    "token kayıtlı"
+  ],
+  "panel.f698e9b40f": [
+    "Delete",
+    "删除",
+    "Sil"
+  ],
+  "panel.224504476b": [
+    "Token (optional)",
+    "令牌（可选）",
+    "Token (isteğe bağlı)"
+  ],
+  "panel.41510661f9": [
+    "If the server requires a password/token (reverse proxy, rented GPU). Sent as Authorization: Bearer.",
+    "若服务器需要密码或令牌（反向代理、租用 GPU），将通过 Authorization: Bearer 发送。",
+    "Sunucu bir parola/token istiyorsa (ters vekil, kiralık GPU). Authorization: Bearer olarak gönderilir."
+  ],
+  "panel.c1fe2ecdff": [
+    "Save",
+    "保存",
+    "Kaydet"
+  ],
+  "panel.06251617d6": [
+    "Add server",
+    "添加服务器",
+    "Sunucu ekle"
+  ],
+  "panel.701930f901": [
+    "Tries 8188 (ComfyUI), 8000 (ComfyUI Desktop) and nearby ports",
+    "尝试 8188（ComfyUI）、8000（ComfyUI Desktop）及相邻端口",
+    "8188 (ComfyUI), 8000 (ComfyUI Desktop) ve yakın portları dener"
+  ],
+  "panel.f42312b5c1": [
+    "Find on this computer",
+    "搜索本机",
+    "Bu bilgisayarda ara"
+  ],
+  "panel.8617ed5b97": [
+    "Default server",
+    "默认服务器",
+    "Varsayılan sunucu"
+  ],
+  "panel.ee1cd50e94": [
+    "Automatic",
+    "自动",
+    "Otomatik"
+  ],
+  "panel.201d61974b": [
+    "already listed",
+    "列表中已有",
+    "listede var"
+  ],
+  "panel.980cd6869f": [
+    "This computer (my ComfyUI)",
+    "本机（我的 ComfyUI）",
+    "Bu bilgisayar (kendi ComfyUI’ım)"
+  ],
+  "panel.f560a85f28": [
+    "Add",
+    "添加",
+    "Ekle"
+  ],
+  "panel.334e66d8e3": [
+    ": selects a running server with the workflow nodes and models installed and the shortest queue; skipped servers and reasons appear in the job log. To use ComfyUI on another computer, start it there with",
+    "：选择已运行、已安装工作流节点与模型且队列最短的服务器；跳过的服务器及原因会写入任务日志。如需使用其他电脑上的 ComfyUI，请在该电脑上使用以下参数启动",
+    ": açık, workflow’un düğüm ve modelleri kurulu, kuyruğu en kısa sunucu seçilir; uymayanlar iş günlüğünde nedeniyle yazılır. Başka bir bilgisayardaki ComfyUI’ı kullanmak için orada ComfyUI’ı"
+  ],
+  "panel.2a5249f17f": [
+    "and allow its port (e.g. 8188) through the firewall. ComfyUI has no built-in password; use a trusted home/office network. For internet access, put it behind a proxy requiring a token.",
+    "并在防火墙放行对应端口（例如 8188）。ComfyUI 没有内置密码，请在可信的家庭或办公网络中使用；通过互联网访问时应置于要求令牌的代理之后。",
+    "ile başlatın ve güvenlik duvarında portuna (ör. 8188) izin verin. ComfyUI’ın kendi parolası yoktur; yalnızca güvendiğiniz ev/ofis ağında açın, internete açacaksanız token isteyen bir vekilin arkasına koyun."
+  ],
+  "panel.a5ffec3085": [
+    "Install missing items using ComfyUI Manager on that computer (Install Missing Custom Nodes / Model Manager).",
+    "请通过该电脑上的 ComfyUI Manager 安装缺失项（Install Missing Custom Nodes / Model Manager）。",
+    "Eksikleri o bilgisayardaki ComfyUI Manager’dan kurun (Install Missing Custom Nodes / Model Manager)."
+  ],
+  "panel.0099439f4e": [
+    "Only .json workflow files can be added",
+    "只能添加 .json 工作流文件",
+    "Yalnızca .json workflow dosyaları eklenebilir"
+  ],
+  "panel.662d2760c7": [
+    "Add from file…",
+    "从文件添加…",
+    "Dosyadan ekle…"
+  ],
+  "panel.c898c04548": [
+    "Paste JSON",
+    "粘贴 JSON",
+    "JSON yapıştır"
+  ],
+  "panel.acfcab5145": [
+    "or drag .json files here",
+    "或将 .json 文件拖到这里",
+    "ya da .json dosyalarını buraya sürükleyin"
+  ],
+  "panel.006ac77b36": [
+    "Default",
+    "默认",
+    "Varsayılan"
+  ],
+  "panel.2bf4175235": [
+    "Built-in SDXL template",
+    "内置 SDXL 模板",
+    "Yerleşik SDXL şablonu"
+  ],
+  "panel.5aace6ffd8": [
+    "Name (e.g. TRELLIS.2 image to 3D)",
+    "名称（例如 TRELLIS.2 图像转 3D）",
+    "Ad (ör. TRELLIS.2 görselden 3D)"
+  ],
+  "panel.39a8d28c1c": [
+    "Cancel",
+    "取消",
+    "Vazgeç"
+  ],
+  "panel.aa07947909": [
+    "No workflows yet. Build your workflow in ComfyUI, save using",
+    "暂无工作流。请在 ComfyUI 中搭建工作流，通过以下方式保存",
+    "Henüz workflow yok. ComfyUI’da workflow’unuzu kurun,"
+  ],
+  "panel.143e0a7247": [
+    "and add it here. You can title nodes that AssetForge should fill as",
+    "然后添加到这里。可将需要 AssetForge 填充的节点命名为",
+    "ile kaydedip buraya ekleyin. AssetForge’un dolduracağı düğümlerin başlığını"
+  ],
+  "panel.aa2e6c9d1a": [
+    "…; otherwise it will infer them.",
+    "等；否则将自动推断。",
+    "… yapabilirsiniz; yoksa tahmin eder."
+  ],
+  "panel.1e83cb4ed7": [
+    "Which server should preferably run this workflow? Can also be selected on the node.",
+    "优先使用哪个服务器运行此工作流？也可在节点中选择。",
+    "Bu workflow’u tercihen hangi sunucu çalıştırsın? Düğümde ayrıca seçilebilir."
+  ],
+  "panel.9050739103": [
+    "Server: node / Settings selection",
+    "服务器：按节点 / 设置选择",
+    "Sunucu: düğümün / Ayarlar’ın seçimi"
+  ],
+  "panel.22e7dd248d": [
+    "Server: Automatic",
+    "服务器：自动",
+    "Sunucu: Otomatik"
+  ],
+  "panel.a79d5985e0": [
+    "Server:",
+    "服务器：",
+    "Sunucu:"
+  ],
+  "panel.e7a5327d5a": [
+    "Save node not recognized; output types are inferred from file extensions",
+    "未识别保存节点，将根据文件扩展名推断输出类型",
+    "Kaydetme düğümü tanınmadı; çıktılar dosya uzantısından anlaşılır"
+  ],
+  "panel.adbaf76e3a": [
+    "output: ?",
+    "输出：？",
+    "çıktı: ?"
+  ],
+  "panel.f2500b10fb": [
+    "Inputs AssetForge can fill",
+    "AssetForge 可填充的输入",
+    "AssetForge’un doldurabildiği girişler"
+  ],
+  "panel.4af6d574cd": [
+    "inputs:",
+    "输入：",
+    "girişler:"
+  ],
+  "panel.696a122136": [
+    "node type",
+    "节点类型",
+    "düğüm türü"
+  ],
+  "panel.9372c470ee": [
+    "model",
+    "模型",
+    "model"
+  ],
+  "panel.23f7d72164": [
+    "Are the workflow nodes and models installed on each server?",
+    "每台服务器是否都已安装此工作流的节点与模型？",
+    "Her sunucuda bu workflow’un düğümleri ve modelleri kurulu mu?"
+  ],
+  "panel.c812701f2d": [
+    "Check servers",
+    "检查服务器",
+    "Sunucularda denetle"
+  ],
+  "panel.58f10c66ea": [
+    "Replace with a file re-exported from ComfyUI",
+    "使用从 ComfyUI 重新导出的文件替换",
+    "ComfyUI’da yeniden dışa aktardığınız dosyayla değiştir"
+  ],
+  "panel.e662361c4f": [
+    "Create a copy",
+    "创建副本",
+    "Kopyasını oluştur"
+  ],
+  "panel.2fbdba3ba5": [
+    "Show file in folder",
+    "在文件夹中显示",
+    "Dosyayı klasörde göster"
+  ],
+  "panel.4a4c6d6e3d": [
+    "Delete from library",
+    "从库中删除",
+    "Kitaplıktan sil"
+  ],
+  "panel.f6c6ce6e81": [
+    "duration",
+    "时长",
+    "süre"
+  ],
+  "panel.e4c650f02d": [
+    "image",
+    "图像",
+    "görsel"
+  ],
+  "panel.c79bad1cc8": [
+    "No API endpoint available.",
+    "没有可用的 API 端点。",
+    "API’ye açık uç nokta yok."
+  ],
+  "panel.6c69dbe1e5": [
+    "no inputs",
+    "没有输入",
+    "giriş yok"
+  ],
+  "panel.67696171b9": [
+    "Arrows such as “← prompt” show what AssetForge fills in. Other inputs use defaults, which you can override with “Fixed values (JSON)” on the node.",
+    "“← prompt”等箭头表示 AssetForge 将填入的内容。其余输入使用默认值，可在节点的“固定值（JSON）”中覆盖。",
+    "“← prompt” gibi oklar AssetForge’un o girişe ne yazacağını gösterir; diğerleri varsayılanla gider. Düğümdeki “Sabit değerler (JSON)” ile değiştirebilirsiniz."
+  ],
+  "panel.cea26752e9": [
+    "starting…",
+    "正在启动…",
+    "açılıyor…"
+  ],
+  "panel.605c0faef3": [
+    "recipe changed: reinstall",
+    "配方已更改：请重新安装",
+    "tarif değişti: yeniden kurun"
+  ],
+  "panel.2197247807": [
+    "installed · stopped",
+    "已安装 · 已停止",
+    "kurulu · kapalı"
+  ],
+  "panel.07f789c95a": [
+    "downloaded · not installed",
+    "已下载 · 未安装",
+    "indirildi · kurulmadı"
+  ],
+  "panel.4edc8c3706": [
+    "Open application in browser",
+    "在浏览器中打开应用",
+    "Uygulamayı tarayıcıda aç"
+  ],
+  "panel.2ba9980b2e": [
+    "Save the recipe first",
+    "请先保存配方",
+    "Önce tarifi kaydedin"
+  ],
+  "panel.09d23a2f02": [
+    "Recipe",
+    "配方",
+    "Tarif"
+  ],
+  "panel.d6f2f6cad0": [
+    "Open folder",
+    "打开文件夹",
+    "Klasörü aç"
+  ],
+  "panel.08d26d4008": [
+    "Uninstall (deletes the folder and downloaded files)",
+    "卸载（删除文件夹及下载的文件）",
+    "Kaldır (klasörü ve indirilen dosyaları siler)"
+  ],
+  "panel.e05952bb64": [
+    "These commands run with your permissions in the repository folder:",
+    "以下命令将以你的权限在仓库文件夹中运行：",
+    "Bu komutlar bilgisayarınızda, deponun klasöründe tam yetkiyle çalışacak:"
+  ],
+  "panel.317f43193c": [
+    "Install only repositories you trust. Installation may take a while depending on download size.",
+    "仅安装你信任的仓库。安装所需时间取决于下载大小。",
+    "Yalnızca güvendiğiniz depoları kurun. Kurulum indirme boyutuna göre uzun sürebilir."
+  ],
+  "panel.4b8759a02d": [
+    "Confirm and install",
+    "确认并安装",
+    "Onayla ve kur"
+  ],
+  "panel.abbd490e36": [
+    "placeholders are filled in. Models are downloaded into the shared",
+    "占位符将被填充。模型将下载至共享的",
+    "yer tutucuları doldurulur. Modeller"
+  ],
+  "panel.640b7494bd": [
+    "cache. Save this recipe in the repository as",
+    "缓存中。将此配方以以下文件名保存到仓库",
+    "ortak önbelleğine iner. Bu tarifi depoya"
+  ],
+  "panel.491385856c": [
+    "to enable installation with one click.",
+    "即可支持一键安装。",
+    "olarak koyarsanız herkes tek tıkla kurar."
+  ],
+  "panel.6b65f1920b": [
+    "Revert",
+    "还原",
+    "Geri al"
+  ],
+  "panel.4583ec0338": [
+    "Save recipe",
+    "保存配方",
+    "Tarifi kaydet"
+  ],
+  "panel.9264d0bc8d": [
+    "Show endpoints",
+    "显示端点",
+    "Uç noktaları göster"
+  ],
+  "panel.bc33a3708a": [
+    "https://github.com/user/project",
+    "https://github.com/user/project",
+    "https://github.com/kullanıcı/proje"
+  ],
+  "panel.43e4b33aa8": [
+    "Add from repository",
+    "从仓库添加",
+    "Depodan ekle"
+  ],
+  "panel.3d57341122": [
+    "Inspect a running Gradio app: http://127.0.0.1:7860 or https://…hf.space",
+    "检查运行中的 Gradio 应用：http://127.0.0.1:7860 或 https://…hf.space",
+    "Çalışan bir Gradio uygulamasını incele: http://127.0.0.1:7860 ya da https://…hf.space"
+  ],
+  "panel.cd9db490c5": [
+    "Inspect",
+    "检查",
+    "İncele"
+  ],
+  "panel.265d44131b": [
+    "Installed backends and Gradio apps with known addresses (Pinokio, another computer, Hugging Face Space) can be used in pipelines with the",
+    "已安装的后端以及地址已知的 Gradio 应用（Pinokio、其他电脑、Hugging Face Space）可在流水线中通过以下节点使用",
+    "Kurulan arka uçlar ve adresini bildiğiniz Gradio uygulamaları (Pinokio, başka bir bilgisayar, Hugging Face Space) hatlarda"
+  ],
+  "panel.a82f2f3671": [
+    "Gradio Application",
+    "Gradio 应用",
+    "Gradio Uygulaması"
+  ],
+  "panel.baf24d6f0b": [
+    "node. Repository code runs with your permissions on this computer; install only projects you trust.",
+    "节点。仓库代码将在本机以你的权限运行，请仅安装可信项目。",
+    "düğümüyle kullanılır. Depo kodu bu bilgisayarda sizin yetkinizle çalışır; yalnızca güvendiğiniz projeleri kurun."
+  ],
+  "panel.3c929f99af": [
+    "Ollama (local)",
+    "Ollama（本机）",
+    "Ollama (yerel)"
+  ],
+  "panel.99eacd5516": [
+    "LM Studio (local)",
+    "LM Studio（本机）",
+    "LM Studio (yerel)"
+  ],
+  "panel.fba339193e": [
+    "OpenAI (images + audio)",
+    "OpenAI（图像 + 音频）",
+    "OpenAI (görsel + ses)"
+  ],
+  "panel.753dd20576": [
+    "Kokoro TTS (local audio)",
+    "Kokoro TTS（本机音频）",
+    "Kokoro TTS (yerel ses)"
+  ],
+  "panel.8a3be3a5c3": [
+    "LocalAI (local images + audio)",
+    "LocalAI（本机图像 + 音频）",
+    "LocalAI (yerel görsel + ses)"
+  ],
+  "panel.60aea48917": [
+    "OpenAI compatible (custom)",
+    "兼容 OpenAI（自定义）",
+    "OpenAI uyumlu (özel)"
+  ],
+  "panel.4ec57ba757": [
+    "Anthropic compatible endpoint",
+    "兼容 Anthropic 的端点",
+    "Anthropic uyumlu uç"
+  ],
+  "panel.696274dcbd": [
+    "Custom (command)",
+    "自定义（命令）",
+    "Özel (komut)"
+  ],
+  "panel.1134dd7c09": [
+    "Custom (HTTP)",
+    "自定义（HTTP）",
+    "Özel (HTTP)"
+  ],
+  "panel.a3979736c8": [
+    "File system",
+    "文件系统",
+    "Dosya sistemi"
+  ],
+  "panel.11b6a2c9ba": [
+    "Claude Opus 5.5 (recommended)",
+    "Claude Opus 5.5（推荐）",
+    "Claude Opus 5.5 (önerilen)"
+  ],
+  "panel.41b45a24e4": [
+    "Claude Fable 5.1 (most powerful, expensive)",
+    "Claude Fable 5.1（最强、费用高）",
+    "Claude Fable 5.1 (en güçlü, pahalı)"
+  ],
+  "panel.b7e6d80173": [
+    "Claude Sonnet 5.5 (fast / economical)",
+    "Claude Sonnet 5.5（快速、经济）",
+    "Claude Sonnet 5.5 (hızlı/ucuz)"
+  ],
+  "panel.ee15ef07cf": [
+    "Claude Haiku 5.5 (lowest cost)",
+    "Claude Haiku 5.5（费用最低）",
+    "Claude Haiku 5.5 (en ucuz)"
+  ],
+  "panel.02af74b2f0": [
+    "Copied",
+    "已复制",
+    "Kopyalandı"
+  ],
+  "panel.5ec0b592ec": [
+    "Providers",
+    "服务提供商",
+    "Sağlayıcılar"
+  ],
+  "panel.e5d507feef": [
+    "Claude is the default. Add local models (Ollama, LM Studio, vLLM) or APIs (OpenRouter, OpenAI compatible endpoints) and assign them to tasks. Local models must support tool calling, e.g. Qwen3, Llama 3.3/4, Mistral Small 3. OpenAI compatible providers are also used by the",
+    "默认使用 Claude。可添加本机模型（Ollama、LM Studio、vLLM）或 API（OpenRouter、兼容 OpenAI 的端点），并分别分配给各项任务。本机模型需支持工具调用，例如 Qwen3、Llama 3.3/4、Mistral Small 3。兼容 OpenAI 的服务也可用于以下节点：",
+    "Claude varsayılandır. Yerel modeller (Ollama, LM Studio, vLLM) ya da başka API’ler (OpenRouter, OpenAI uyumlu her uç) eklenebilir ve görevlere ayrı ayrı atanabilir. Yerel modellerde araç kullanımı (tool calling) destekleyen bir model seçin — ör. Qwen3, Llama 3.3/4, Mistral Small 3. OpenAI uyumlu kayıtlar ayrıca hatlardaki"
+  ],
+  "panel.a0a1f1e10e": [
+    "OpenAI Compatible Image",
+    "兼容 OpenAI 的图像",
+    "OpenAI Uyumlu Görsel"
+  ],
+  "panel.4bd2c412ba": [
+    "and",
+    "和",
+    "ve"
+  ],
+  "panel.5c60ddab3a": [
+    "Speech Line (TTS)",
+    "语音生成（TTS）",
+    "Ses Satırı (TTS)"
+  ],
+  "panel.9935a4f461": [
+    "nodes (select the image/audio model on the node); the",
+    "节点（在节点中选择图像或音频模型）；",
+    "düğümlerinde kullanılır (görsel/ses modelinin adı düğümde seçilir);"
+  ],
+  "panel.ecaaf35030": [
+    "HTTP Request",
+    "HTTP 请求",
+    "HTTP İsteği"
+  ],
+  "panel.0adeea5aaf": [
+    "node can also use its key.",
+    "节点也可使用此处保存的密钥。",
+    "düğümü de anahtarını buradan alabilir."
+  ],
+  "panel.2519c1391b": [
+    "Anthropic API · key in Accounts and API",
+    "Anthropic API · 密钥位于“账户与 API”",
+    "Anthropic API · anahtar “Hesaplar ve API”de"
+  ],
+  "panel.8ac1d85f31": [
+    "Claude model",
+    "Claude 模型",
+    "Claude modeli"
+  ],
+  "panel.c79dc9d317": [
+    "vision ✓",
+    "图像输入 ✓",
+    "görsel ✓"
+  ],
+  "panel.1fc9f698e1": [
+    "blank = api.anthropic.com",
+    "留空 = api.anthropic.com",
+    "boş = api.anthropic.com"
+  ],
+  "panel.86f89b0613": [
+    "model name",
+    "模型名称",
+    "model adı"
+  ],
+  "panel.5e2c614c23": [
+    "Model",
+    "模型",
+    "Model"
+  ],
+  "panel.48407c23fc": [
+    "•••• saved",
+    "•••• 已保存",
+    "•••• kayıtlı"
+  ],
+  "panel.3c522ef9ee": [
+    "key (optional)",
+    "密钥（可选）",
+    "anahtar (ops.)"
+  ],
+  "panel.4b627954b4": [
+    "Key saved",
+    "密钥已保存",
+    "Anahtar kaydedildi"
+  ],
+  "panel.532eaabd95": [
+    "Test",
+    "测试",
+    "Test"
+  ],
+  "panel.5755b72b49": [
+    "OpenAI compatible API",
+    "兼容 OpenAI 的 API",
+    "OpenAI uyumlu API"
+  ],
+  "panel.2050a93474": [
+    "Anthropic compatible API",
+    "兼容 Anthropic 的 API",
+    "Anthropic uyumlu API"
+  ],
+  "panel.998ee7cf86": [
+    "Supports image input",
+    "支持图像输入",
+    "Görsel girdi destekliyor"
+  ],
+  "panel.742531c466": [
+    "Task assignments",
+    "任务分配",
+    "Görev atamaları"
+  ],
+  "panel.1c52f4ac47": [
+    "Producer assistant",
+    "制作助手",
+    "Yapımcı asistanı"
+  ],
+  "panel.b60e86fadf": [
+    "Prompt engine · Project Bible · motion",
+    "提示词引擎 · 项目设定集 · 运动",
+    "Prompt motoru · Proje Kitabı · hareket"
+  ],
+  "panel.c0196cdf35": [
+    "Visual quality checks",
+    "视觉质量检查",
+    "Görsel kalite kontrol"
+  ],
+  "panel.90c5b03541": [
+    "Web search (Claude)",
+    "网络搜索（Claude）",
+    "Web araması (Claude)"
+  ],
+  "panel.af57907550": [
+    "For reference and technical research",
+    "用于参考资料和技术研究",
+    "Referans ve teknik araştırma için"
+  ],
+  "panel.abf5cc3ffd": [
+    "Brief chat currently uses Claude.",
+    "创作需求对话目前使用 Claude。",
+    "Brief sohbeti şimdilik Claude ile çalışır."
+  ],
+  "panel.c64b666ef9": [
+    "Connect Claude — AssetForge MCP server",
+    "连接 Claude — AssetForge MCP 服务器",
+    "Claude’u bağla — AssetForge MCP sunucusu"
+  ],
+  "panel.72e1b62251": [
+    "AssetForge exposes its tools (create assets, start production, inspect results, animation, Unreal Python) through MCP. Connect Claude Code or Claude Desktop to manage your project in chat. Access is restricted to this computer (127.0.0.1) and the secret key below.",
+    "AssetForge 通过 MCP 提供创建资源、启动生产、查看结果、动画及 Unreal Python 等工具。连接 Claude Code 或 Claude Desktop 后即可通过对话管理项目。仅本机（127.0.0.1）可使用下方密钥访问。",
+    "AssetForge kendi araçlarını (asset oluşturma, üretim başlatma, sonuçları görme, animasyon, Unreal Python) MCP üzerinden dışarı açar. Claude Code ya da Claude Desktop bağlanınca projeni sohbetten yönetebilir. Yalnızca bu bilgisayardan (127.0.0.1) ve aşağıdaki gizli anahtarla erişilir."
+  ],
+  "panel.8583da6400": [
+    "Server enabled",
+    "启用服务器",
+    "Sunucu açık"
+  ],
+  "panel.72e9a59f5a": [
+    "Port",
+    "端口",
+    "Port"
+  ],
+  "panel.358e18ead1": [
+    "off",
+    "已关闭",
+    "kapalı"
+  ],
+  "panel.0059a87193": [
+    "Regenerate key",
+    "重新生成密钥",
+    "Anahtarı yenile"
+  ],
+  "panel.2a3590f035": [
+    "Claude Code (run once in a terminal):",
+    "Claude Code（在终端运行一次）：",
+    "Claude Code (terminalde bir kez çalıştır):"
+  ],
+  "panel.a8bcca42d9": [
+    "Copy",
+    "复制",
+    "Kopyala"
+  ],
+  "panel.2d6e2ae842": [
+    "External tool servers (MCP)",
+    "外部工具服务器（MCP）",
+    "Dış araç sunucuları (MCP)"
+  ],
+  "panel.30de7ccd31": [
+    "Add MCP servers such as Blender MCP, Unreal MCP, file systems and search. Their tools become available to the Producer. With Auto-approve disabled, each call requires confirmation.",
+    "添加 Blender MCP、Unreal MCP、文件系统和搜索等 MCP 服务器，制作助手即可使用其工具。关闭“自动批准”时，每次调用都需确认。",
+    "Blender MCP, Unreal MCP, dosya sistemi, arama gibi MCP sunucularını ekle; araçları Yapımcı’ya katılır. “Onaysız çalıştır” kapalıyken her çağrı için onay istenir."
+  ],
+  "panel.7a0b514ce1": [
+    "Command",
+    "命令",
+    "Komut"
+  ],
+  "panel.b68070a072": [
+    "command",
+    "命令",
+    "komut"
+  ],
+  "panel.8f2a7d93f7": [
+    "arguments",
+    "参数",
+    "argümanlar"
+  ],
+  "panel.7414ad9940": [
+    "Auto-approve",
+    "自动批准",
+    "Onaysız çalıştır"
+  ],
+  "panel.2422c0dd94": [
+    "Connect / test",
+    "连接 / 测试",
+    "Bağlan / test"
+  ],
+  "panel.63bfca12e1": [
+    "Environment variables",
+    "环境变量",
+    "Ortam değişkenleri"
+  ],
+  "panel.edc9e28349": [
+    "Headers",
+    "请求头",
+    "Başlıklar"
+  ],
+  "panel.b35744103f": [
+    "Web server",
+    "Web 服务器",
+    "Web sunucusu"
+  ],
+  "panel.990581ffe0": [
+    "Open AssetForge in a browser: the same project, jobs and interface. Teammates join with an invitation link; changes appear for everyone immediately. Production runs on this computer using its API keys.",
+    "在浏览器中打开 AssetForge，共享项目、任务和界面。团队成员通过邀请链接加入，更改即时同步。生产任务将在本机使用本机 API 密钥执行。",
+    "AssetForge’u tarayıcıdan da açın: aynı proje, aynı işler, aynı arayüz. Ekip arkadaşlarınız davet bağlantısıyla katılır; herkesin yaptığı değişiklik diğerlerine anında yansır. Üretim bu bilgisayarda ve bu bilgisayarın anahtarlarıyla yapılır."
+  ],
+  "panel.2a603a335d": [
+    "Allow local network access (other computers)",
+    "允许局域网访问（其他电脑）",
+    "Yerel ağa aç (diğer bilgisayarlar)"
+  ],
+  "panel.4337798e64": [
+    "Start without a window (server only)",
+    "启动时不显示窗口（仅服务器）",
+    "Açılışta pencere açılmasın (yalnızca sunucu)"
+  ],
+  "panel.9b35f4d869": [
+    "1024–65535. Changing this restarts the server.",
+    "1024–65535，更改后会重启服务器。",
+    "1024–65535. Değiştirince sunucu yeniden başlar."
+  ],
+  "panel.08a24723d5": [
+    "Apply",
+    "应用",
+    "Uygula"
+  ],
+  "panel.51b0a3ddce": [
+    "this computer",
+    "本机",
+    "bu bilgisayar"
+  ],
+  "panel.48c9b994b4": [
+    "local network",
+    "局域网",
+    "yerel ağ"
+  ],
+  "panel.0b7c714d91": [
+    "Only accessible from this computer. Enable local network access or use a tunnel below to let others join.",
+    "目前仅限本机访问。如需其他人加入，请启用局域网访问或使用下方隧道方案。",
+    "Yalnızca bu bilgisayardan açılır. Başkaları katılacaksa “Yerel ağa aç”ı açın ya da aşağıdaki tünel yollarından birini kullanın."
+  ],
+  "panel.ec962927fa": [
+    "Create the owner account below before signing in from a browser.",
+    "请先在下方创建所有者账户，再通过浏览器登录。",
+    "Tarayıcıdan girebilmek için önce aşağıdan sahip hesabını oluşturun."
+  ],
+  "panel.d789b07f5e": [
+    "Closes the window while the server keeps running in the notification area. Click the icon to restore the window.",
+    "关闭窗口后服务器继续在通知区域运行，点击图标可恢复窗口。",
+    "Pencere kapanır; sunucu bildirim alanında (saatin yanında) çalışmaya devam eder. Simgeye tıklayınca pencere geri gelir."
+  ],
+  "panel.3cb14d8b6f": [
+    "Close window, keep server running",
+    "关闭窗口并保持服务器运行",
+    "Pencereyi kapat, sunucu çalışsın"
+  ],
+  "panel.4197eafbad": [
+    "Command line: AssetForge.exe --headless",
+    "命令行：AssetForge.exe --headless",
+    "Komut satırından: AssetForge.exe --headless"
+  ],
+  "panel.33485f74d8": [
+    "Owner account",
+    "所有者账户",
+    "Sahip hesabı"
+  ],
+  "panel.b423d54552": [
+    "Your browser login. The owner has full access, including Settings. Changing the password ends previous sessions.",
+    "用于浏览器登录。所有者拥有包括设置在内的全部权限，更改密码将结束已有会话。",
+    "Tarayıcıdan sizin girişiniz. Sahip her şeyi yapabilir (Ayarlar dahil). Parolayı değiştirmek eski oturumları kapatır."
+  ],
+  "panel.c9070b70f7": [
+    "e.g. Alex",
+    "例如 Alex",
+    "ör. Deniz"
+  ],
+  "panel.e3962ceb93": [
+    "Password",
+    "密码",
+    "Parola"
+  ],
+  "panel.a853252458": [
+    "At least 8 characters",
+    "至少 8 个字符",
+    "En az 8 karakter"
+  ],
+  "panel.e257ea5b74": [
+    "Owner account updated",
+    "所有者账户已更新",
+    "Sahip hesabı güncellendi"
+  ],
+  "panel.7366580f62": [
+    "Owner account created",
+    "所有者账户已创建",
+    "Sahip hesabı oluşturuldu"
+  ],
+  "panel.bf6531d30a": [
+    "Update",
+    "更新",
+    "Güncelle"
+  ],
+  "panel.89c75b03b9": [
+    "Create",
+    "创建",
+    "Oluştur"
+  ],
+  "panel.e4c0dfec04": [
+    "Invitation links",
+    "邀请链接",
+    "Davet bağlantıları"
+  ],
+  "panel.384242ca51": [
+    "People opening the link choose their own name and password to join. Share the link only with people you trust.",
+    "打开链接的人可设置自己的名称和密码后加入。请仅向可信人员分享链接。",
+    "Bağlantıyı açan kişi kendi adını ve parolasını seçip katılır. Bağlantıyı yalnızca güvendiğiniz kişilerle paylaşın."
+  ],
+  "panel.fb9f51fe92": [
+    "Role",
+    "角色",
+    "Rol"
+  ],
+  "panel.950cc4a742": [
+    "Editor — creates and edits",
+    "编辑者 — 生产和编辑",
+    "Editör — üretir ve düzenler"
+  ],
+  "panel.45efaf3a81": [
+    "Viewer — view only",
+    "查看者 — 只读",
+    "İzleyici — yalnızca bakar"
+  ],
+  "panel.0f2540d5f3": [
+    "Validity",
+    "有效期",
+    "Geçerlilik"
+  ],
+  "panel.384a906712": [
+    "1 hour",
+    "1 小时",
+    "1 saat"
+  ],
+  "panel.b90bcde7b2": [
+    "1 day",
+    "1 天",
+    "1 gün"
+  ],
+  "panel.28511bc326": [
+    "3 days",
+    "3 天",
+    "3 gün"
+  ],
+  "panel.ebfa7fc06a": [
+    "1 week",
+    "1 周",
+    "1 hafta"
+  ],
+  "panel.02a418f115": [
+    "Number of people allowed",
+    "可使用人数",
+    "Kaç kişi kullanabilir"
+  ],
+  "panel.463276e127": [
+    "1 person",
+    "1 人",
+    "1 kişi"
+  ],
+  "panel.6827d2bde5": [
+    "5 people",
+    "5 人",
+    "5 kişi"
+  ],
+  "panel.b66a2719c7": [
+    "20 people",
+    "20 人",
+    "20 kişi"
+  ],
+  "panel.e157651b7f": [
+    "Start the server first",
+    "请先启动服务器",
+    "Önce sunucuyu açın"
+  ],
+  "panel.7c03117929": [
+    "Invitation link created and copied",
+    "邀请链接已创建并复制",
+    "Davet bağlantısı oluşturuldu ve kopyalandı"
+  ],
+  "panel.96bc426fd7": [
+    "Create invitation",
+    "创建邀请",
+    "Davet oluştur"
+  ],
+  "panel.a2bb5f86fa": [
+    "Copy link",
+    "复制链接",
+    "Bağlantıyı kopyala"
+  ],
+  "panel.d68eeec498": [
+    "Invitation revoked",
+    "邀请已撤销",
+    "Davet iptal edildi"
+  ],
+  "panel.9ec02b00cc": [
+    "People",
+    "成员",
+    "Kişiler"
+  ],
+  "panel.c980168c12": [
+    "Changing a role or removing a person closes their connection; they reconnect with the new role.",
+    "更改角色或移除成员将关闭其当前连接；重新连接后使用新角色。",
+    "Rol değişince ya da kişi kaldırılınca açık bağlantısı kapanır; yeni rolle yeniden bağlanır."
+  ],
+  "panel.f152953309": [
+    "No accounts yet.",
+    "暂无账户。",
+    "Henüz hesap yok."
+  ],
+  "panel.96c969056a": [
+    "Connected now",
+    "当前已连接",
+    "Şu an bağlı"
+  ],
+  "panel.a6204fb9ae": [
+    "Not connected",
+    "未连接",
+    "Bağlı değil"
+  ],
+  "panel.68af8fa298": [
+    "now",
+    "现在",
+    "şimdi"
+  ],
+  "panel.4661915f75": [
+    "Owner",
+    "所有者",
+    "Sahip"
+  ],
+  "panel.e3948c8c82": [
+    "Editor",
+    "编辑者",
+    "Editör"
+  ],
+  "panel.ec9c1cfbf8": [
+    "Viewer",
+    "查看者",
+    "İzleyici"
+  ],
+  "panel.065c074ce3": [
+    "Remove account",
+    "移除账户",
+    "Hesabı kaldır"
+  ],
+  "panel.2e0cef85fb": [
+    "Internet access and security",
+    "互联网访问与安全",
+    "İnternetten erişim ve güvenlik"
+  ],
+  "panel.b916659b94": [
+    "Same network (office, home):",
+    "同一网络（办公、家庭）：",
+    "Aynı ağ (ofis, ev):"
+  ],
+  "panel.88bdecdabc": [
+    "Enable local network access and share the address above. Windows may ask for firewall permission the first time; allow Private networks.",
+    "启用局域网访问并分享上方网络地址。Windows 首次运行时可能请求防火墙权限，请允许“专用网络”。",
+    "“Yerel ağa aç”ı açıp yukarıdaki ağ adresini paylaşın. Windows ilk seferde güvenlik duvarı izni sorar; “Özel ağlar”a izin verin."
+  ],
+  "panel.2e376bb0b4": [
+    "Tailscale (recommended):",
+    "Tailscale（推荐）：",
+    "Tailscale (önerilen):"
+  ],
+  "panel.f758b8a9f1": [
+    "Everyone installs Tailscale and joins the same tailnet; the address is",
+    "所有人安装 Tailscale 并加入同一 tailnet；访问地址为",
+    "herkes Tailscale’i kurup aynı ağa (tailnet) katılır; adres"
+  ],
+  "panel.503999d609": [
+    "Traffic is encrypted and no public port is exposed.",
+    "。流量已加密，无需开放公网端口。",
+    "olur. Trafik şifrelidir ve dışarıya açık port yoktur."
+  ],
+  "panel.b67804e196": [
+    "gives you an HTTPS address. Local network access can stay off. Replace the host in invitation links with the tunnel address.",
+    "命令会提供 HTTPS 地址。局域网访问可保持关闭，请将邀请链接中的主机地址替换为隧道地址。",
+    "komutu size bir https adresi verir. “Yerel ağa aç” kapalı kalabilir. Davet bağlantılarındaki adresi tünel adresiyle değiştirin."
+  ],
+  "panel.195981fd2f": [
+    "Local network connections use unencrypted HTTP; others on that network may see passwords. Use Tailscale or a tunnel on untrusted networks. Production started by editors uses this computer's API keys and credits. Editors cannot read files outside the project folder or access Settings or Unreal Python.",
+    "局域网连接使用未加密的 HTTP，同一网络中的人可能看到密码。在不可信网络上请使用 Tailscale 或隧道。编辑者启动的生产任务会使用本机的 API 密钥和额度。编辑者无法读取项目目录以外的文件，也不能访问设置或 Unreal Python。",
+    "Yerel ağda bağlantı şifresiz HTTP’dir; parolalar aynı ağdaki biri tarafından görülebilir. Güvenmediğiniz ağlarda Tailscale ya da tünel kullanın. Editörlerin başlattığı üretimler bu bilgisayardaki API anahtarlarıyla ve kredisiyle yapılır. Editörler proje klasörü dışındaki dosyaları okutamaz, Ayarlar’a ve Unreal Python’a erişemez."
+  ],
+  "panel.b9aa448f61": [
+    "Reviewed the project",
+    "查看了项目",
+    "Projeye baktı"
+  ],
+  "panel.95e946c8ef": [
+    "Searched the library",
+    "搜索了资源库",
+    "Kütüphaneyi taradı"
+  ],
+  "panel.1b51919199": [
+    "Inspected an asset",
+    "检查了资源",
+    "Asset’i inceledi"
+  ],
+  "panel.4eaab17ab6": [
+    "Viewed previews",
+    "查看了预览",
+    "Önizlemelere baktı"
+  ],
+  "panel.7f096776a9": [
+    "Saved an asset",
+    "保存了资源",
+    "Asset yazdı"
+  ],
+  "panel.2324b9f32b": [
+    "Deleted an asset",
+    "删除了资源",
+    "Asset sildi"
+  ],
+  "panel.4c0e6077eb": [
+    "Read the Project Bible",
+    "读取了项目设定集",
+    "Proje Kitabı’nı okudu"
+  ],
+  "panel.07ccaed697": [
+    "Updated the Project Bible",
+    "更新了项目设定集",
+    "Proje Kitabı’nı güncelledi"
+  ],
+  "panel.29e08d7f7e": [
+    "Reviewed pipelines",
+    "查看了流水线",
+    "Hatlara baktı"
+  ],
+  "panel.c7849da219": [
+    "Started production",
+    "启动了生产",
+    "Üretim başlattı"
+  ],
+  "panel.a3b83fbee2": [
+    "Reviewed jobs",
+    "查看了任务",
+    "İşlere baktı"
+  ],
+  "panel.49285670b0": [
+    "Inspected a job",
+    "检查了任务",
+    "İşi inceledi"
+  ],
+  "panel.75d9f43c80": [
+    "Waited for a job to finish",
+    "等待任务完成",
+    "İşin bitmesini bekledi"
+  ],
+  "panel.92be5d3abb": [
+    "Canceled a job",
+    "取消了任务",
+    "İşi iptal etti"
+  ],
+  "panel.e278756fc5": [
+    "Generated animation",
+    "生成了动画",
+    "Animasyon üretti"
+  ],
+  "panel.86c7ddc9e8": [
+    "Reviewed briefs",
+    "查看了创作需求",
+    "Brief’lere baktı"
+  ],
+  "panel.aba5d755b4": [
+    "Read a brief",
+    "读取了创作需求",
+    "Brief’i okudu"
+  ],
+  "panel.defbaab329": [
+    "Checked Kimodo",
+    "检查了 Kimodo",
+    "Kimodo’yu kontrol etti"
+  ],
+  "panel.bf9762c680": [
+    "Checked Unreal",
+    "检查了 Unreal",
+    "Unreal’ı aradı"
+  ],
+  "panel.d6e011bbeb": [
+    "Ran Python in Unreal",
+    "在 Unreal 中执行了 Python",
+    "Unreal’da Python çalıştırdı"
+  ],
+  "panel.8e5b69f4b9": [
+    "Searched the web",
+    "搜索了网络",
+    "Web’de araştırdı"
+  ],
+  "panel.935495de0a": [
+    "Review the project and tell me what is missing and what to do next",
+    "查看项目，告诉我缺少什么以及接下来该做什么",
+    "Projeye bak, eksikleri ve sıradaki adımları söyle"
+  ],
+  "panel.517e2ab6d4": [
+    "Generate my selected assets, check the results and fix them",
+    "生成我选中的资源，检查结果并修正",
+    "Seçtiğim asset’leri üret, sonuçları kontrol edip düzelt"
+  ],
+  "panel.f13f25d30a": [
+    "Create an asset list for a realistic desert town and add it to the library",
+    "为写实沙漠小镇创建资源列表并添加到资源库",
+    "Gerçekçi bir çöl kasabası için asset listesi çıkar ve kütüphaneye ekle"
+  ],
+  "panel.551303bfa1": [
+    "Generate a locomotion animation set suitable for motion matching for my character",
+    "为我的角色生成适合运动匹配的移动动画集",
+    "Karakterim için motion matching’e uygun lokomosyon animasyon seti üret"
+  ],
+  "panel.fdacbb32d3": [
+    "Inspect the open Unreal scene and make the lighting realistic",
+    "检查 Unreal 当前场景，将光照调整为写实效果",
+    "Unreal’da açık sahneyi incele ve ışığı gerçekçi hale getir"
+  ],
+  "panel.8f2e0d241d": [
+    "Approve",
+    "批准",
+    "Onayla"
+  ],
+  "panel.fd78c713b1": [
+    "Reject",
+    "拒绝",
+    "Reddet"
+  ],
+  "panel.fb9e8771b6": [
+    "Input",
+    "输入",
+    "Girdi"
+  ],
+  "panel.8e7f4d257e": [
+    "Result",
+    "结果",
+    "Sonuç"
+  ],
+  "panel.b85cc7254c": [
+    "Producer",
+    "制作助手",
+    "Yapımcı"
+  ],
+  "panel.a66b56b53f": [
+    "Conversations",
+    "对话列表",
+    "Sohbetler"
+  ],
+  "panel.11dbb00508": [
+    "New conversation",
+    "新建对话",
+    "Yeni sohbet"
+  ],
+  "panel.d887e00ded": [
+    "Close (Ctrl+J)",
+    "关闭（Ctrl+J）",
+    "Kapat (Ctrl+J)"
+  ],
+  "panel.63399891eb": [
+    "Model for new conversation",
+    "新对话使用的模型",
+    "Yeni sohbet modeli"
+  ],
+  "panel.39fbfd1884": [
+    "No conversations yet.",
+    "暂无对话。",
+    "Henüz sohbet yok."
+  ],
+  "panel.72fef98d19": [
+    "Let's build your game together",
+    "一起打造你的游戏",
+    "Oyununu birlikte yapalım"
+  ],
+  "panel.5a6f0b9db2": [
+    "I can generate assets, review results, create animation and build Unreal scenes. I ask for approval before any step that spends money or cannot be undone.",
+    "我可以生成资源、检查结果、制作动画和搭建 Unreal 场景。任何会产生费用或无法撤销的步骤都会先请求批准。",
+    "Asset üretir, sonuçlara bakıp eleştiririm, animasyon çıkarırım, Unreal’da sahne kurarım. Para harcayan ya da geri alınamayan her adımda önce onay isterim."
+  ],
+  "panel.6747207040": [
+    "Thinking…",
+    "正在思考…",
+    "Düşünüyor…"
+  ],
+  "panel.29f4095092": [
+    "Working…",
+    "正在处理…",
+    "Çalışıyor…"
+  ],
+  "panel.2094d016b7": [
+    "Context:",
+    "上下文：",
+    "Bağlam:"
+  ],
+  "panel.1ac4e29874": [
+    "Add image",
+    "添加图像",
+    "Görsel ekle"
+  ],
+  "panel.d7243c1a06": [
+    "What should we do?",
+    "我们做点什么？",
+    "Ne yapalım?"
+  ],
+  "panel.edf4790b6a": [
+    "Drop image here",
+    "将图像拖放到这里",
+    "Görseli bırak"
+  ],
+  "panel.f524acbd22": [
+    "Service ready",
+    "服务已就绪",
+    "Servis hazır"
+  ],
+  "panel.aa1a41ea85": [
+    "Service starting…",
+    "服务正在启动…",
+    "Servis açılıyor…"
+  ],
+  "panel.798c8e2663": [
+    "Service stopped",
+    "服务已停止",
+    "Servis kapalı"
+  ],
+  "panel.de9d9695cb": [
+    " · generating",
+    " · 正在生成",
+    " · üretiyor"
+  ],
+  "panel.2924a50bf0": [
+    "Text to motion (local GPU)",
+    "文本生成动作（本机 GPU）",
+    "Metinden hareket üretimi (yerel GPU)"
+  ],
+  "panel.748f306924": [
+    "Key",
+    "密钥",
+    "Anahtar"
+  ],
+  "panel.662b30d776": [
+    "Virtualization (SVM / VT-x) is disabled in BIOS. Enable it for WSL, or choose the Native Windows backend in Settings.",
+    "BIOS 中未启用虚拟化（SVM / VT-x）。使用 WSL 需先启用，或在设置中选择“原生 Windows”后端。",
+    "BIOS’ta sanallaştırma (SVM / VT-x) kapalı. WSL yolu için açılmalı — ya da Ayarlar’dan “Yerel Windows” arka ucunu seç."
+  ],
+  "panel.88490cdac7": [
+    "Installation output will appear here.",
+    "安装输出将显示在这里。",
+    "Kurulum çıktısı burada görünecek."
+  ],
+  "panel.334a93a950": [
+    "Service log",
+    "服务日志",
+    "Servis günlüğü"
+  ],
+  "panel.24b00c07d9": [
+    "Describe the action first",
+    "请先描述动作",
+    "Önce ne yapacağını yaz"
+  ],
+  "panel.1527c39f36": [
+    "Animation starts when character production finishes",
+    "角色生产完成后开始生成动画",
+    "Karakter üretimi bitince animasyon başlayacak"
+  ],
+  "panel.b86ded88ab": [
+    "Kimodo production started",
+    "Kimodo 已开始生成",
+    "Kimodo üretimi başladı"
+  ],
+  "panel.da562bc382": [
+    "No characters yet",
+    "暂无角色",
+    "Henüz karakter yok"
+  ],
+  "panel.4b0cb5ace5": [
+    "Kimodo uses a human skeleton (SOMA → Manny). First generate a character in the Workshop.",
+    "Kimodo 使用人形骨骼（SOMA → Manny）。请先在工作台生成一个角色。",
+    "Kimodo insan iskeletiyle (SOMA → Manny) çalışır. Önce Atölye’de bir karakter üret."
+  ],
+  "panel.7b265e9963": [
+    "Generate character",
+    "生成角色",
+    "Karakter üret"
+  ],
+  "panel.2bf49aac2e": [
+    "Systems",
+    "动画系统",
+    "Sistemler"
+  ],
+  "panel.7ebf74f2e5": [
+    "Individual clips",
+    "独立片段",
+    "Tek klipler"
+  ],
+  "panel.df7b7b73c5": [
+    "Blend Space, Montage, Aim Offset, state machine, Motion Matching — synchronized clip sets",
+    "混合空间、蒙太奇、瞄准偏移、状态机、运动匹配 — 同步动画片段集",
+    "Blend Space, Montage, Aim Offset, durum makinesi, Motion Matching — senkron klip setleri"
+  ],
+  "panel.415feb46dc": [
+    "Generate a single animation from a description",
+    "根据描述生成单个动画",
+    "Serbest tarifle tek animasyon üret"
+  ],
+  "panel.2536871f10": [
+    "Characters",
+    "角色",
+    "Karakterler"
+  ],
+  "panel.80e7cdb5ca": [
+    "Clips",
+    "动画片段",
+    "Klipler"
+  ],
+  "panel.d053be492a": [
+    "New clip",
+    "新建片段",
+    "Yeni klip"
+  ],
+  "panel.8320afe478": [
+    "s",
+    "秒",
+    "sn"
+  ],
+  "panel.30b2c5ddbf": [
+    "queued",
+    "排队中",
+    "sırada"
+  ],
+  "panel.5aa460c91c": [
+    "ready",
+    "已就绪",
+    "hazır"
+  ],
+  "panel.614894decf": [
+    "error",
+    "错误",
+    "hata"
+  ],
+  "panel.aaa7d23fd6": [
+    "canceled",
+    "已取消",
+    "iptal"
+  ],
+  "panel.3f3e0c4810": [
+    "not generated",
+    "尚未生成",
+    "üretilmedi"
+  ],
+  "panel.92312a8405": [
+    "This character has no clips yet.",
+    "此角色暂无动画片段。",
+    "Bu karakterin henüz klibi yok."
+  ],
+  "panel.54ac1c3a9e": [
+    "Describe the motion",
+    "描述动作",
+    "Hareketi tarif et"
+  ],
+  "panel.03636a0de1": [
+    "For example, “Walks with tired steps, stops and looks around.” The generated motion plays here in 3D.",
+    "例如“迈着疲惫的步伐行走，停下并环顾四周”。生成的动作将在此以 3D 播放。",
+    "“Yorgun adımlarla yürür, durur ve etrafına bakınır” gibi. Üretilen hareket burada 3B oynar."
+  ],
+  "panel.c0bf145548": [
+    "Clip name (e.g. Walk loop)",
+    "片段名称（例如行走循环）",
+    "Klip adı (ör. Yürüyüş döngüsü)"
+  ],
+  "panel.3212d4915d": [
+    "In place",
+    "原地",
+    "Yerinde"
+  ],
+  "panel.887faf457a": [
+    "Raw",
+    "原始",
+    "Ham"
+  ],
+  "panel.7df9aed372": [
+    "Loop",
+    "循环",
+    "Döngü"
+  ],
+  "panel.22b593fd9a": [
+    "Describe the action in your language — Claude turns it into segments Kimodo can understand.",
+    "使用你的语言描述动作，Claude 会将其转换为 Kimodo 可理解的片段。",
+    "Ne yapsın? Türkçe yazabilirsin — Claude Kimodo’nun anlayacağı segmentlere çevirir."
+  ],
+  "panel.9f45efb790": [
+    "Convert to segments with Claude",
+    "使用 Claude 拆分片段",
+    "Claude ile segmentlere çevir"
+  ],
+  "panel.a099c9ba3e": [
+    "Segment",
+    "拆分片段",
+    "Segmentle"
+  ],
+  "panel.caf50f35a3": [
+    "Add segment",
+    "添加片段",
+    "Segment ekle"
+  ],
+  "panel.37e38914f7": [
+    "Without segments the description is used as a single action",
+    "没有片段时，将描述作为一个完整动作使用",
+    "Segment yoksa açıklama tek parça kullanılır"
+  ],
+  "panel.90c7785118": [
+    "automatically retargeted to this skeleton",
+    "自动重定向至该骨骼",
+    "iskeletine otomatik retarget"
+  ],
+  "panel.a320681412": [
+    "generating %",
+    "正在生成 %",
+    "üretiliyor %"
+  ],
+  "panel.987b9baf05": [
+    "Regenerate",
+    "重新生成",
+    "Yeniden üret"
+  ],
+  "panel.5da57b457b": [
+    "Repeat",
+    "重试",
+    "Tekrar"
+  ],
+  "panel.02d45832f7": [
+    "Native Windows",
+    "原生 Windows",
+    "Yerel Windows"
+  ],
+  "panel.cb6203ae01": [
+    "built-in SDXL",
+    "内置 SDXL",
+    "yerleşik SDXL"
+  ],
+  "panel.ceda9cc78d": [
+    " (no key)",
+    "（无密钥）",
+    " (anahtarsız)"
+  ],
+  "panel.632ce1361b": [
+    "(removed provider)",
+    "（服务提供商已移除）",
+    "(silinmiş sağlayıcı)"
+  ],
+  "panel.a9abd76545": [
+    "None (enter an address below)",
+    "无（请在下方输入地址）",
+    "Yok (adresi aşağıya yazın)"
+  ],
+  "panel.aa6add7088": [
+    "(removed backend)",
+    "（后端已移除）",
+    "(kaldırılmış arka uç)"
+  ],
+  "panel.cd3af53b73": [
+    "(removed server → Automatic)",
+    "（服务器已移除 → 自动）",
+    "(silinmiş sunucu → Otomatik)"
+  ],
+  "panel.dbc1c97f56": [
+    "Producer assistant model",
+    "制作助手使用的模型",
+    "Yapımcı asistanının modeli"
+  ],
+  "panel.aa26a6dbfd": [
+    "All enabled servers",
+    "所有已启用的服务器",
+    "Tüm etkin sunucular"
+  ],
+  "panel.d4e232040b": [
+    "None",
+    "无",
+    "Hiçbiri"
+  ],
+  "panel.ec2ef9a2da": [
+    "No pipelines",
+    "暂无流水线",
+    "Pipeline yok"
+  ],
+  "panel.d95b50e050": [
+    "Empty pipeline",
+    "空流水线",
+    "Boş hat"
+  ],
+  "panel.6010272334": [
+    "Template: ",
+    "模板：",
+    "Şablon: "
+  ],
+  "panel.9eb5db7d08": [
+    "Duplicate this pipeline",
+    "复制此流水线",
+    "Bu hattı kopyala"
+  ],
+  "panel.94775a5e2a": [
+    "▶ Run",
+    "▶ 运行",
+    "▶ Çalıştır"
+  ],
+  "panel.f1bd5ab113": [
+    "Select a node or add one from the list on the left.",
+    "选择一个节点，或从左侧列表添加。",
+    "Bir node seçin ya da soldaki listeden ekleyin."
+  ],
+  "panel.50254caf5b": [
+    "Drag between ports to connect. Colors indicate data types; incompatible ports cannot connect. To delete, press",
+    "拖动端口以连接。颜色代表数据类型，不兼容的端口无法连接。删除请按",
+    "Portları sürükleyerek bağlayın. Renkler veri tipini gösterir; uyumsuz portlar bağlanmaz. Silmek için"
+  ],
+  "panel.f29f27a1a2": [
+    "Quality Check",
+    "质量检查",
+    "Kalite Kontrol"
+  ],
+  "panel.1b2d078ca6": [
+    "If this node fails, feedback is sent to the nearest",
+    "节点失败时，会向最近的",
+    "node'u başarısız olursa kendisine en yakın"
+  ],
+  "panel.7d8bab40d3": [
+    "Prompt Engine",
+    "提示词引擎",
+    "Prompt Motoru"
+  ],
+  "panel.6483e3c0d8": [
+    "node, and the steps in between run again.",
+    "节点发送反馈，并重新运行两者之间的步骤。",
+    "na geri bildirim gönderir ve aradaki adımlar yeniden çalışır."
+  ],
+  "panel.1b60eb555b": [
+    "Which assets should be generated?",
+    "要生成哪些资源？",
+    "Hangi asset(ler) üretilsin?"
+  ],
+  "panel.0349858e5f": [
+    "No assets — import from the Asset List first.",
+    "暂无资源，请先从资源列表导入。",
+    "Asset yok — önce Asset Listesi'nden içe aktarın."
+  ],
+  "panel.4d67b1a833": [
+    "selected",
+    "已选择",
+    "seçili"
+  ],
+  "panel.10260b08d7": [
+    "▶ Start",
+    "▶ 启动",
+    "▶ Başlat"
+  ],
+  "panel.541aab0bd5": [
+    "budget",
+    "预算",
+    "bütçe"
+  ],
+  "panel.a1062b9666": [
+    "Unknown:",
+    "未知：",
+    "Bilinmeyen:"
+  ],
+  "panel.25b80b3556": [
+    "attempt",
+    "尝试",
+    "deneme"
+  ],
+  "panel.828dc61499": [
+    "Could not read BVH (",
+    "无法读取 BVH（",
+    "BVH okunamadı ("
+  ],
+  "panel.4ccc9faad3": [
+    "Overview",
+    "概览",
+    "Özet"
+  ],
+  "panel.b016c6b0c1": [
+    "Loops",
+    "循环",
+    "Döngüler"
+  ],
+  "panel.b69c49f23b": [
+    "Story",
+    "故事",
+    "Hikâye"
+  ],
+  "panel.016008ab8f": [
+    "Interface",
+    "界面",
+    "Arayüz"
+  ],
+  "panel.40c3b999d4": [
+    "Claude Code (subscription)",
+    "Claude Code（使用订阅）",
+    "Claude Code (aboneliğinle)"
+  ],
+  "panel.19d8589ffe": [
+    "Codex CLI (subscription)",
+    "Codex CLI（使用订阅）",
+    "Codex CLI (aboneliğinle)"
+  ],
+  "panel.d25dc8c89e": [
+    "Button",
+    "按钮",
+    "Düğme"
+  ],
+  "panel.ccfb0610c8": [
+    "Bar",
+    "进度条",
+    "Çubuk"
+  ],
+  "panel.d6df9e9790": [
+    "Icon",
+    "图标",
+    "İkon"
+  ],
+  "panel.790357450f": [
+    "Input",
+    "输入框",
+    "Giriş"
+  ],
+  "panel.cebd0074d5": [
+    "Game Design",
+    "游戏设计",
+    "Oyun Tasarımı"
+  ],
+  "panel.6a12c35545": [
+    ": loops, story and interface. The brief director and Unreal AI know this design; asset suggestions follow the game's needs.",
+    "：循环、故事和界面。创作导演及 Unreal 中的 AI 会参考此设计，按游戏需要推荐资源。",
+    ": döngüler, hikâye ve arayüz. Brief yönetmeni ve Unreal’daki yapay zekâ bu tasarımı bilir; asset’ler oyunun ihtiyacına göre önerilir."
+  ],
+  "panel.f3ec2c3f7c": [
+    "e.g. “A calm vehicle exploration game; no combat”",
+    "例如“节奏舒缓、注重探索的载具游戏，没有战斗”",
+    "Ör. \"Sakin, keşif odaklı bir araç oyunu; çatışma yok\""
+  ],
+  "panel.6ee3572e30": [
+    "e.g. “Driving and deliveries form the core loop; garage upgrades form the meta loop”",
+    "例如“核心循环为驾驶和配送，长期循环为升级车库”",
+    "Ör. \"Çekirdek döngü sürüş ve teslimat olsun; meta döngüde garaj geliştirme\""
+  ],
+  "panel.b7ecbd2bd5": [
+    "e.g. “Three acts with a betrayal at the end; the protagonist is a courier”",
+    "例如“三幕结构，结尾发生背叛，主角是一名快递员”",
+    "Ör. \"Üç perde, sonunda ihanet; ana karakter kurye\""
+  ],
+  "panel.7f9ddf8b87": [
+    "e.g. “Allow vehicle part changes in the garage; keep the HUD simple”",
+    "例如“在车库界面更换载具零件，HUD 保持简洁”",
+    "Ör. \"Garaj ekranında araç parçaları değiştirilebilsin; HUD sade\""
+  ],
+  "panel.f99ea99e45": [
+    "This section will be replaced by a new AI version (existing content is provided as context). Continue?",
+    "AI 将重写此部分（现有内容会作为参考上下文）。是否继续？",
+    "Bu bölüm yapay zekânın yeni sürümüyle değiştirilecek (mevcut içerik ona bağlam olarak verilir). Devam edilsin mi?"
+  ],
+  "panel.04c7188e81": [
+    "Writing design… (1–3 min)",
+    "正在编写设计…（1–3 分钟）",
+    "Tasarım yazılıyor… (1-3 dk)"
+  ],
+  "panel.705b581768": [
+    "Improve with AI",
+    "使用 AI 改进",
+    "Yapay zekâ ile geliştir"
+  ],
+  "panel.25e7e92af8": [
+    "Create with AI",
+    "使用 AI 创建",
+    "Yapay zekâ ile oluştur"
+  ],
+  "panel.0bdd55de83": [
+    "The Project Bible, library and other design sections are provided as context",
+    "项目设定集、资源库和其他设计部分将作为参考上下文",
+    "Proje Kitabı, kütüphane ve tasarımın diğer bölümleri bağlam olarak verilir"
+  ],
+  "panel.b25a14f2be": [
+    "Engine",
+    "引擎",
+    "Motor"
+  ],
+  "panel.0573a35623": [
+    "Improve",
+    "改进",
+    "Geliştir"
+  ],
+  "panel.83a1c2f0f3": [
+    "Core idea",
+    "核心创意",
+    "Çekirdek fikir"
+  ],
+  "panel.9320befb7a": [
+    "The game in one sentence",
+    "用一句话描述游戏",
+    "Tek cümlede oyun"
+  ],
+  "panel.9bbb3e8e71": [
+    "A courier's survival journey carrying cargo through sandstorms",
+    "一名快递员穿越沙尘暴运送货物的求生之旅",
+    "Kum fırtınalarında yük taşıyan bir kuryenin hayatta kalma yolculuğu"
+  ],
+  "panel.c62716edd1": [
+    "Player fantasy",
+    "玩家幻想",
+    "Oyuncu fantezisi"
+  ],
+  "panel.cb9ea88d2b": [
+    "How should playing feel?",
+    "游玩时应有什么感受？",
+    "Oynarken ne hissettiriyor?"
+  ],
+  "panel.f7058febf5": [
+    "Target audience / platform",
+    "目标用户 / 平台",
+    "Hedef kitle / platform"
+  ],
+  "panel.014b39bd0f": [
+    "Design pillars (one per line)",
+    "设计支柱（每行一项）",
+    "Tasarım sütunları (her satıra bir)"
+  ],
+  "panel.6df9a90e0f": [
+    "Every feature should support at least one of these rules",
+    "每项功能应至少服务于其中一条原则",
+    "Her özellik bu kurallardan en az birine hizmet etmeli"
+  ],
+  "panel.430d7ee055": [
+    "Mechanics",
+    "机制",
+    "Mekanikler"
+  ],
+  "panel.ea50d5211b": [
+    "+ Mechanic",
+    "+ 添加机制",
+    "+ Mekanik"
+  ],
+  "panel.54875121c8": [
+    "No mechanics yet.",
+    "暂无机制。",
+    "Henüz mekanik yok."
+  ],
+  "panel.96078f242d": [
+    "How it works",
+    "工作原理",
+    "Nasıl çalışır"
+  ],
+  "panel.3b0aa1eb13": [
+    "Reward",
+    "奖励",
+    "Ödül"
+  ],
+  "panel.6650e909ce": [
+    "Progression",
+    "成长",
+    "İlerleme"
+  ],
+  "panel.cbe2d4af9f": [
+    "Unnamed",
+    "未命名",
+    "Adsız"
+  ],
+  "panel.c110946124": [
+    "+ New loop…",
+    "+ 新建循环…",
+    "+ Yeni döngü…"
+  ],
+  "panel.4c4f6c15c4": [
+    "No loops yet. Generate them with AI above or add a loop on the left.",
+    "暂无循环。可在上方使用 AI 生成，或从左侧添加。",
+    "Henüz döngü yok. Yukarıdan yapay zekâya oluşturtun ya da soldan yeni bir döngü ekleyin."
+  ],
+  "panel.4e44a0580d": [
+    "New step",
+    "新步骤",
+    "Yeni adım"
+  ],
+  "panel.7b0d5cffae": [
+    "Scope",
+    "范围",
+    "Kapsam"
+  ],
+  "panel.218fc41215": [
+    "Why it is fun / what it supports",
+    "乐趣来源 / 支持的目标",
+    "Neden eğlenceli / neyi besliyor"
+  ],
+  "panel.9d1e6393ef": [
+    "+ Step",
+    "+ 添加步骤",
+    "+ Adım"
+  ],
+  "panel.90595bb211": [
+    "Arrange nodes in a circle",
+    "将节点排列成圆形",
+    "Düğümleri çembere diz"
+  ],
+  "panel.cf0cba41f6": [
+    "◯ Arrange",
+    "◯ 排列",
+    "◯ Diz"
+  ],
+  "panel.ee561c9c9f": [
+    "Delete loop",
+    "删除循环",
+    "Döngüyü sil"
+  ],
+  "panel.98a3d97c81": [
+    "Step",
+    "步骤",
+    "Adım"
+  ],
+  "panel.16270c7ae9": [
+    "Details (rules, numbers, feel)",
+    "详情（规则、数值、体验）",
+    "Ayrıntı (kurallar, sayılar, his)"
+  ],
+  "panel.843e8c32d6": [
+    "Transition condition",
+    "转换条件",
+    "Geçiş koşulu"
+  ],
+  "panel.625032dc08": [
+    "e.g. “when mission completes”, “when fuel runs out”",
+    "例如“任务完成时”“燃料耗尽时”",
+    "Ör. “görev tamamlanınca”, “yakıt bitince”"
+  ],
+  "panel.8d8bc026a8": [
+    "Click a step or arrow. Drag from the bottom point to connect steps; press Delete to remove.",
+    "点击步骤或箭头。从底部连接点拖动以连接步骤；按 Delete 删除。",
+    "Bir adıma ya da oka tıklayın. Adımları bağlamak için alt noktadan sürükleyin; silmek için Delete."
+  ],
+  "panel.817762ba24": [
+    "Premise",
+    "故事前提",
+    "Öncül"
+  ],
+  "panel.338b39473b": [
+    "The heart of the story",
+    "故事核心",
+    "Hikâyenin özü"
+  ],
+  "panel.6a5c484b91": [
+    "Themes (comma-separated)",
+    "主题（逗号分隔）",
+    "Temalar (virgülle)"
+  ],
+  "panel.5a28832a7e": [
+    "Acts and plot",
+    "幕与情节",
+    "Perdeler ve olay örgüsü"
+  ],
+  "panel.13f322c0ab": [
+    "+ Act",
+    "+ 添加幕",
+    "+ Perde"
+  ],
+  "panel.5cef69bd66": [
+    "Events in order (one per line)",
+    "按顺序排列的事件（每行一项）",
+    "Olaylar, sırayla (her satıra bir)"
+  ],
+  "panel.dd71779820": [
+    "+ Character",
+    "+ 添加角色",
+    "+ Karakter"
+  ],
+  "panel.37c9299cc7": [
+    "Definition",
+    "定义",
+    "Tanım"
+  ],
+  "panel.9aadd05deb": [
+    "Arc (beginning → end)",
+    "角色成长（开始 → 结尾）",
+    "Gelişim (başta → sonda)"
+  ],
+  "panel.34981dee11": [
+    "Screen flow",
+    "界面流程",
+    "Ekran akışı"
+  ],
+  "panel.8b24715c93": [
+    "+ Screen",
+    "+ 添加界面",
+    "+ Ekran"
+  ],
+  "panel.304db21f01": [
+    "Layer",
+    "层级",
+    "Katman"
+  ],
+  "panel.2425c55d12": [
+    "HUD (over the game)",
+    "HUD（游戏画面上方）",
+    "HUD (oyunun üstünde)"
+  ],
+  "panel.8ed9123eab": [
+    "Menu (full screen)",
+    "菜单（全屏）",
+    "Menü (tam ekran)"
+  ],
+  "panel.3142bc3be2": [
+    "Popup",
+    "弹窗",
+    "Açılır pencere"
+  ],
+  "panel.3515d148a8": [
+    "Purpose",
+    "用途",
+    "Amaç"
+  ],
+  "panel.c26f21c3a6": [
+    "When it appears",
+    "显示时机",
+    "Ne zaman görünür"
+  ],
+  "panel.d49005d67a": [
+    "e.g. on Esc, while driving, after a mission",
+    "例如按 Esc 时、驾驶时、任务结束后",
+    "Ör. Esc ile, sürüş sırasında, görev bitince"
+  ],
+  "panel.0f7cabcc5e": [
+    "Elements",
+    "元素",
+    "Öğeler"
+  ],
+  "panel.e32c64218e": [
+    "+ Element",
+    "+ 添加元素",
+    "+ Öğe"
+  ],
+  "panel.bc91fce11d": [
+    "Label",
+    "标签",
+    "Etiket"
+  ],
+  "panel.fb2883be17": [
+    "Data (e.g. Player.Health)",
+    "数据（例如 Player.Health）",
+    "Veri (ör. Player.Health)"
+  ],
+  "panel.ed903d3ea5": [
+    "Transitions",
+    "转换",
+    "Geçişler"
+  ],
+  "panel.2c90094dca": [
+    "Select a screen or generate the interface with AI.",
+    "选择界面，或使用 AI 生成界面。",
+    "Bir ekran seçin ya da yapay zekâya arayüzü oluşturtun."
+  ],
+  "panel.7916c8f047": [
+    "Connection",
+    "连接",
+    "Bağlantı"
+  ],
+  "panel.107aee02e3": [
+    "Check Unreal",
+    "检查 Unreal",
+    "Unreal’ı kontrol et"
+  ],
+  "panel.08dd9baee3": [
+    " — Unreal Editor is not open",
+    " — Unreal Editor 未打开",
+    " — Unreal Editor açık değil"
+  ],
+  "panel.53a9a2c92f": [
+    "Teach the AI in Unreal",
+    "向 Unreal 中的 AI 提供设计知识",
+    "Unreal’daki yapay zekâya öğret"
+  ],
+  "panel.104db4ed50": [
+    "The game design and AssetForge asset rules (folders, naming, tool setup, collision targets, optimization) are written to Unreal as an Agent Skill. Any AI connected through Unreal MCP uses them when adding game content, building UI or optimizing imported assets. Send again after changing the design.",
+    "游戏设计和 AssetForge 资源规则（文件夹、命名、工具配置、碰撞目标、优化）将作为 Agent Skill 写入 Unreal。通过 Unreal MCP 连接的 AI 可在添加内容、创建 UI 或优化导入资源时使用这些规则。设计更改后请重新发送。",
+    "Oyunun tasarımı ve AssetForge’un asset kuralları (klasörler, adlandırma, araç kurulumu, ezilme hedefleri, optimizasyon) Unreal’a Agent Skill olarak yazılır. Unreal MCP’ye bağlanan her yapay zekâ oyuna bir şey eklerken, UI kurarken ya da içe aktarılan asset’leri optimize ederken bunları kullanır. Tasarım değişince yeniden gönderin."
+  ],
+  "panel.f5e6f9a33c": [
+    "Send design and rules to Unreal",
+    "将设计和规则发送到 Unreal",
+    "Tasarımı ve kuralları Unreal’a gönder"
+  ],
+  "panel.1b6d4c78c4": [
+    "Design document",
+    "设计文档",
+    "Tasarım dokümanı"
+  ],
+  "panel.7702428040": [
+    ". The full design is written to one Markdown GDD (loops become Mermaid flowcharts).",
+    "。完整设计将写入一个 Markdown 游戏设计文档，循环使用 Mermaid 流程图表示。",
+    ". Tüm tasarım tek bir Markdown GDD’ye yazılır (döngüler mermaid akış şeması olarak)."
+  ],
+  "panel.73b1164e7a": [
+    "Export and open GDD",
+    "导出并打开游戏设计文档",
+    "GDD’yi dışa aktar ve aç"
+  ],
+  "panel.fe97cf5dae": [
+    "Animation systems",
+    "动画系统",
+    "Animasyon sistemleri"
+  ],
+  "panel.a512ec6e3f": [
+    "In games, clips work together in complementary",
+    "在游戏中，动画片段相互配合，组成",
+    "Oyunlarda klipler tek başına değil, birbirini tamamlayan"
+  ],
+  "panel.7cf15db0a7": [
+    "systems",
+    "系统",
+    "sistemler"
+  ],
+  "panel.aae603253b": [
+    ". Choose a system; AssetForge generates synchronized clips in the same style (starting on the same foot with matching endpoints) and builds the system in Unreal.",
+    "。选择系统后，AssetForge 会生成风格一致、同脚起步、端点匹配的同步片段，并在 Unreal 中搭建系统。",
+    "halinde çalışır. Bir sistem seç; AssetForge kliplerini aynı stilde, senkron (aynı ayakla başlayan, uçları birbirine kilitli) üretir ve Unreal’da kurar."
+  ],
+  "panel.d23b2e72bb": [
+    "clips",
+    "个片段",
+    "klip"
+  ],
+  "panel.91ea1e5607": [
+    "What it is",
+    "是什么",
+    "Nedir"
+  ],
+  "panel.521c513aa5": [
+    "When to use it",
+    "何时使用",
+    "Ne zaman"
+  ],
+  "panel.54a317b033": [
+    "How professionals do it",
+    "专业制作方法",
+    "Profesyoneller nasıl yapar"
+  ],
+  "panel.db13ae5ff0": [
+    "What AssetForge automates",
+    "AssetForge 自动完成的工作",
+    "AssetForge ne otomatikleştirir"
+  ],
+  "panel.be2360cb36": [
+    "Limitations",
+    "限制",
+    "Sınırlar"
+  ],
+  "panel.5728f0adfd": [
+    "Create this system",
+    "创建此系统",
+    "Bu sistemi oluştur"
+  ],
+  "panel.19ff0f7f50": [
+    "loop",
+    "循环",
+    "döngü"
+  ],
+  "panel.539d77af55": [
+    "Quality",
+    "质量",
+    "Kalite"
+  ],
+  "panel.cb42042966": [
+    "Kimodo prompt (",
+    "Kimodo 提示词（",
+    "Kimodo promptu ("
+  ],
+  "panel.2dcc0db832": [
+    "= style subject)",
+    "= 风格主体）",
+    "= stil öznesi)"
+  ],
+  "panel.fbfceccd03": [
+    "Duration",
+    "时长",
+    "Süre"
+  ],
+  "panel.3dd0fc2f0e": [
+    "Start speed",
+    "起始速度",
+    "Başlangıç hızı"
+  ],
+  "panel.78cc179f19": [
+    "Speed",
+    "速度",
+    "Hız"
+  ],
+  "panel.a529b2a9b6": [
+    "End speed",
+    "结束速度",
+    "Bitiş hızı"
+  ],
+  "panel.2c5cc78e1c": [
+    "Movement direction",
+    "移动方向",
+    "Hareket yönü"
+  ],
+  "panel.a07e62d297": [
+    "Turn",
+    "转向",
+    "Dönüş"
+  ],
+  "panel.eaf3725fa6": [
+    "Seed",
+    "随机种子",
+    "Tohum"
+  ],
+  "panel.f4debd3aa7": [
+    "Root path lock",
+    "根路径锁定",
+    "Kök yolu kilidi"
+  ],
+  "panel.bf412c24b5": [
+    "Start pose ←",
+    "起始姿势 ←",
+    "Başlangıç pozu ←"
+  ],
+  "panel.d75ae77708": [
+    "End pose →",
+    "结束姿势 →",
+    "Bitiş pozu →"
+  ],
+  "panel.b2fd561105": [
+    "Quality check:",
+    "质量检查：",
+    "Kalite kontrol:"
+  ],
+  "panel.93d5c62c92": [
+    "Feet stay planted, motion is smooth and meets the targets.",
+    "脚部着地稳定、动作流畅且符合目标。",
+    "Ayaklar yerde sabit, hareket akıcı, hedeflere uygun."
+  ],
+  "panel.ab8e742a5d": [
+    "Measured",
+    "测量值",
+    "Ölçülen"
+  ],
+  "panel.5e7cc18fff": [
+    "s ·",
+    "秒 ·",
+    "sn ·"
+  ],
+  "panel.0b57f14ab1": [
+    "m/s · direction",
+    "米/秒 · 方向",
+    "m/sn · yön"
+  ],
+  "panel.d77577a87b": [
+    "° · turn",
+    "° · 转向",
+    "° · dönüş"
+  ],
+  "panel.37423df64e": [
+    "Loop:",
+    "循环：",
+    "Döngü:"
+  ],
+  "panel.318c9fa0dc": [
+    "frame /",
+    "帧 /",
+    ". kare /"
+  ],
+  "panel.40a8ee6ced": [
+    "· seam difference",
+    "· 接缝差异",
+    "· dikiş farkı"
+  ],
+  "panel.e7aaa4d2d0": [
+    "Sync marker: L",
+    "同步标记：左",
+    "Sync marker: L"
+  ],
+  "panel.da8ec3e284": [
+    "· R",
+    "· 右",
+    "· R"
+  ],
+  "panel.4a8c102951": [
+    "This clip",
+    "此片段",
+    "Bu klibi"
+  ],
+  "panel.295bba7c6f": [
+    "generate",
+    "生成",
+    "üret"
+  ],
+  "panel.e66e352cfd": [
+    "No missing clips to generate",
+    "没有需要生成的缺失片段",
+    "Üretilecek eksik klip yok"
+  ],
+  "panel.fb8392ab22": [
+    "Unreal setup failed — details below",
+    "Unreal 搭建失败，详情见下方",
+    "Unreal kurulumu tamamlanamadı — ayrıntılar aşağıda"
+  ],
+  "panel.e61227c573": [
+    "systems",
+    "个系统",
+    "sistem"
+  ],
+  "panel.063f053afd": [
+    "New system",
+    "新建系统",
+    "Yeni sistem"
+  ],
+  "panel.de2f5af731": [
+    "Create the first system",
+    "创建第一个系统",
+    "İlk sistemi kur"
+  ],
+  "panel.36ce1836df": [
+    "clips ready",
+    "个片段已就绪",
+    "klip hazır"
+  ],
+  "panel.96a91c77ae": [
+    "Style subject",
+    "风格主体",
+    "Stil öznesi"
+  ],
+  "panel.77066e1c86": [
+    "Describe: “An injured soldier protecting the left leg; no running, slow walking. Remove arcs and add 2 idle variations.”",
+    "描述：“受伤的士兵，护着左腿；不跑步，缓慢行走。移除弧线移动，添加两种待机变化。”",
+    "Tarif et: “Yaralı asker, sol bacağını kolluyor; koşu yok, yürüyüş yavaş. Kavisleri çıkar, 2 bekleme varyasyonu ekle.”"
+  ],
+  "panel.8626114773": [
+    "Claude adapts the card to the character and description",
+    "Claude 根据角色和描述调整卡片",
+    "Claude kartı karaktere ve tarife göre uyarlar"
+  ],
+  "panel.03ed1f2c68": [
+    "Adapt with AI",
+    "使用 AI 调整",
+    "AI ile uyarla"
+  ],
+  "panel.59df408e6d": [
+    "Stop production",
+    "停止生产",
+    "Üretimi durdur"
+  ],
+  "panel.59a0613a59": [
+    "Generate missing",
+    "生成缺失片段",
+    "Eksikleri üret"
+  ],
+  "panel.33110810e4": [
+    "Generate all",
+    "生成全部",
+    "Hepsini üret"
+  ],
+  "panel.9dc71c7e47": [
+    "Build Blend Space / Montage / Motion Matching database",
+    "搭建混合空间 / 蒙太奇 / 运动匹配数据库",
+    "Blend Space / Montage / Motion Matching veritabanını kur"
+  ],
+  "panel.5b4adaae77": [
+    "Build in Unreal",
+    "在 Unreal 中搭建",
+    "Unreal’da kur"
+  ],
+  "panel.58ac484c23": [
+    "Order: pose sources first (idles, loops), then transitions locked to them. Each clip is retargeted to your character. Build in Unreal uses measured speeds and foot contacts.",
+    "顺序：先生成姿势来源（待机、循环），再生成锁定到它们的过渡。每个片段都会重定向到你的角色；“在 Unreal 中搭建”使用测得的真实速度和脚步接触。",
+    "Sıra: önce poz kaynakları (bekleme, döngüler), sonra onlara kilitlenen geçişler. Her klip karakterine retarget edilir; “Unreal’da kur” ölçülen gerçek hız ve ayak basışlarıyla sistemi kurar."
+  ],
+  "panel.3823843c53": [
+    "Unreal setup ·",
+    "Unreal 搭建 ·",
+    "Unreal kurulumu ·"
+  ],
+  "panel.0e4421527c": [
+    "Script:",
+    "脚本：",
+    "Betik:"
+  ],
+  "panel.8794ad5701": [
+    "1. Choose a system.",
+    "1. 选择系统。",
+    "1. Sistem seç."
+  ],
+  "panel.476ac2e987": [
+    "Each system includes the clip set used for that purpose in games.",
+    "每个系统都包含游戏中实现该功能所需的动画片段集。",
+    "Her sistem, oyunlarda o işi yapan klip setini (“dans kartı”) hazır getirir."
+  ],
+  "panel.8527633206": [
+    "2. Adapt.",
+    "2. 调整。",
+    "2. Uyarla."
+  ],
+  "panel.73a10b88b3": [
+    "The style subject (“A tired soldier”) gives all clips the same character; AI adjusts speeds, prompts and clips to your description.",
+    "风格主体（“A tired soldier”）让所有片段使用同一角色特征；AI 根据描述调整速度、提示词和片段。",
+    "Stil öznesi (“A tired soldier”) tüm kliplere aynı karakteri verir; AI tarifine göre hız, prompt ve klipleri düzenler."
+  ],
+  "panel.aea1ab0076": [
+    "3. Generate.",
+    "3. 生成。",
+    "3. Üret."
+  ],
+  "panel.b8921b2b40": [
+    "Kimodo generates each clip along a root path at the target speed/direction/turn. Transitions match neighboring poses; loops are cut at left-foot contact and joined seamlessly.",
+    "Kimodo 根据目标速度、方向、转向和根路径生成每个片段。过渡端点匹配相邻姿势；循环在左脚接触处裁切并平滑接合。",
+    "Kimodo her klibi hedef hız/yön/dönüşte kök yolu ile üretir; geçişlerin uçları komşu klibin pozuna kilitlenir; döngüler sol ayak basışında kesilip dikişi kapatılır."
+  ],
+  "panel.8ad768bd22": [
+    "4. Build.",
+    "4. 搭建。",
+    "4. Kur."
+  ],
+  "panel.09de66a632": [
+    "Creates Blend Space / Montage / Aim Offset / Pose Search databases in Unreal and adds left/right sync markers.",
+    "在 Unreal 中创建混合空间、蒙太奇、瞄准偏移、姿势搜索数据库，并添加左右脚同步标记。",
+    "Unreal’da Blend Space / Montage / Aim Offset / Pose Search veritabanı kurulur, L/R sync marker’ları eklenir."
+  ],
+  "panel.2aad14a132": [
+    "Action",
+    "行动",
+    "Eylem"
+  ],
+  "panel.408b35d852": [
+    "Challenge",
+    "挑战",
+    "Zorluk"
+  ],
+  "panel.80422e3865": [
+    "Text",
+    "文本",
+    "Metin"
+  ],
+  "panel.7343841e72": [
+    "List",
+    "列表",
+    "Liste"
+  ],
+  "panel.3d315bd4a9": [
+    "API (LLM in Settings)",
+    "API（设置中的 LLM）",
+    "API (Ayarlar’daki LLM)"
+  ],
+  "panel.04dc15e527": [
+    "Agent",
+    "智能代理",
+    "Ajan"
+  ],
+  "panel.f0114a2d75": [
+    "Custom API",
+    "自定义 API",
+    "Özel API"
+  ],
+  "panel.b59a5c47ca": [
+    "Processing",
+    "处理",
+    "İşleme"
+  ],
+  "panel.9ecfaa1a2e": [
+    "Output",
+    "输出",
+    "Çıktı"
+  ],
+  "panel.ba4c331379": [
+    "Meshy Text→3D",
+    "Meshy 文本→3D",
+    "Meshy Metin→3D"
+  ],
+  "panel.c1291baa32": [
+    "Meshy Retexture",
+    "Meshy 重新贴图",
+    "Meshy Yeniden Doku"
+  ],
+  "panel.9714884ffa": [
+    "Concept Image (for Image→3D)",
+    "概念图（用于图像→3D）",
+    "Konsept Görsel (Görsel→3D için)"
+  ],
+  "panel.8e0e1aff5c": [
+    "Character Concept (A-pose)",
+    "角色概念图（A 姿势）",
+    "Karakter Konsepti (A-pose)"
+  ],
+  "panel.327c5b881f": [
+    "ComfyUI Tileable Texture",
+    "ComfyUI 无缝纹理",
+    "ComfyUI Tileable Doku"
+  ],
+  "panel.77a8477002": [
+    "ComfyUI Concept Image",
+    "ComfyUI 概念图",
+    "ComfyUI Konsept Görsel"
+  ],
+  "panel.c02130e49d": [
+    "Speech Line (dialogue)",
+    "语音台词（对话）",
+    "Ses Satırı (konuşma)"
+  ],
+  "panel.74e4de0aae": [
+    "ElevenLabs Sound Effect",
+    "ElevenLabs 音效",
+    "ElevenLabs Ses Efekti"
+  ],
+  "panel.32a933f896": [
+    "Engine Character (dynamic audio)",
+    "引擎特征（动态音频）",
+    "Motor Karakteri (dinamik ses)"
+  ],
+  "panel.5298246e84": [
+    "VFX Sprite (for Niagara)",
+    "VFX 精灵（用于 Niagara）",
+    "VFX Sprite (Niagara için)"
+  ],
+  "panel.dc2742c726": [
+    "Kimodo Motion Prompt",
+    "Kimodo 动作提示词",
+    "Kimodo Hareket Promptu"
+  ],
+  "panel.80d298c9f2": [
+    "Asset",
+    "资源",
+    "Asset"
+  ],
+  "panel.5f2bcbdd36": [
+    "Local Model",
+    "本机模型",
+    "Yerel Model"
+  ],
+  "panel.865d0f17e2": [
+    "File path",
+    "文件路径",
+    "Dosya yolu"
+  ],
+  "panel.21c5d7765a": [
+    "Rigged",
+    "已绑定骨骼",
+    "Riglenmiş"
+  ],
+  "panel.f78d5b3ef3": [
+    "Local Image",
+    "本机图像",
+    "Yerel Görsel"
+  ],
+  "panel.3417d5427b": [
+    "Target service",
+    "目标服务",
+    "Hedef servis"
+  ],
+  "panel.8005faa2da": [
+    "Additional instructions",
+    "附加指令",
+    "Ek talimat"
+  ],
+  "panel.06f88138ab": [
+    "Meshy Image",
+    "Meshy 图像",
+    "Meshy Görsel"
+  ],
+  "panel.c9e08644fc": [
+    "Aspect ratio",
+    "宽高比",
+    "En-boy"
+  ],
+  "panel.d46f7334bb": [
+    "Multiple views",
+    "多角度",
+    "Çoklu açı"
+  ],
+  "panel.a02c4ccba7": [
+    "Pose",
+    "姿势",
+    "Poz"
+  ],
+  "panel.8c89579983": [
+    "Remove background",
+    "移除背景",
+    "Arka planı kaldır"
+  ],
+  "panel.a001965e50": [
+    "ComfyUI Image",
+    "ComfyUI 图像",
+    "ComfyUI Görsel"
+  ],
+  "panel.6949310c74": [
+    "ComfyUI server",
+    "ComfyUI 服务器",
+    "ComfyUI sunucusu"
+  ],
+  "panel.8c84891410": [
+    "ComfyUI Workflow",
+    "ComfyUI 工作流",
+    "ComfyUI İş Akışı"
+  ],
+  "panel.4435deee3e": [
+    "Text (when prompt is not connected)",
+    "文本（未连接提示词时）",
+    "Metin (prompt bağlı değilse)"
+  ],
+  "panel.e4428a97e8": [
+    "Duration (s, audio/animation)",
+    "时长（秒，音频/动画）",
+    "Süre (sn, ses/animasyon)"
+  ],
+  "panel.27d246fe70": [
+    "Timeout (min)",
+    "超时（分钟）",
+    "Zaman aşımı (dk)"
+  ],
+  "panel.883cd22421": [
+    "Source image (editing)",
+    "源图像（编辑）",
+    "Kaynak görsel (düzenleme)"
+  ],
+  "panel.c47c939160": [
+    "Provider",
+    "服务提供商",
+    "Sağlayıcı"
+  ],
+  "panel.fb2a010eee": [
+    "Count",
+    "数量",
+    "Adet"
+  ],
+  "panel.05946d15b0": [
+    "Dialogue",
+    "台词",
+    "Replik"
+  ],
+  "panel.e6e800e015": [
+    "Text (when dialogue is not connected)",
+    "文本（未连接台词时）",
+    "Metin (replik bağlı değilse)"
+  ],
+  "panel.ee74faad28": [
+    "Delivery instructions",
+    "语气指令",
+    "Söyleyiş talimatı"
+  ],
+  "panel.a2381a982d": [
+    "Format",
+    "格式",
+    "Biçim"
+  ],
+  "panel.d9bb02bb73": [
+    "Output type",
+    "输出类型",
+    "Çıktı türü"
+  ],
+  "panel.916fcb8406": [
+    "Method",
+    "方法",
+    "Yöntem"
+  ],
+  "panel.822178b166": [
+    "Authentication (key)",
+    "认证（密钥）",
+    "Kimlik (anahtar)"
+  ],
+  "panel.506a071b50": [
+    "Body",
+    "请求体",
+    "Gövde"
+  ],
+  "panel.f47ac5eddb": [
+    "Body template",
+    "请求体模板",
+    "Gövde şablonu"
+  ],
+  "panel.ae57d76c6f": [
+    "Result path",
+    "结果路径",
+    "Sonuç yolu"
+  ],
+  "panel.cf25b42cec": [
+    "Job ID path (async)",
+    "任务 ID 路径（异步）",
+    "İş kimliği yolu (async)"
+  ],
+  "panel.52349dc4c6": [
+    "Status polling URL",
+    "状态查询地址",
+    "Durum sorgu adresi"
+  ],
+  "panel.2244cdc6fe": [
+    "Status path",
+    "状态路径",
+    "Durum yolu"
+  ],
+  "panel.18ed8d5968": [
+    "Completion values",
+    "完成状态值",
+    "Bitti değerleri"
+  ],
+  "panel.eefa38435d": [
+    "Application",
+    "应用",
+    "Uygulama"
+  ],
+  "panel.6b47b6817b": [
+    "Address (if no backend selected)",
+    "地址（未选择后端时）",
+    "Adres (arka uç seçilmediyse)"
+  ],
+  "panel.f84adb9291": [
+    "Endpoint",
+    "端点",
+    "Uç nokta"
+  ],
+  "panel.4e3b532d68": [
+    "Fixed values (JSON)",
+    "固定值（JSON）",
+    "Sabit değerler (JSON)"
+  ],
+  "panel.642e21255d": [
+    "Duration (s, audio)",
+    "时长（秒，音频）",
+    "Süre (sn, ses)"
+  ],
+  "panel.fa00f1c8e8": [
+    "Agent Task",
+    "代理任务",
+    "Ajan Görevi"
+  ],
+  "panel.5d5aa88047": [
+    "LLM (API engine)",
+    "LLM（API 引擎）",
+    "LLM (API motoru)"
+  ],
+  "panel.38bb8f648a": [
+    "Tools (MCP)",
+    "工具（MCP）",
+    "Araçlar (MCP)"
+  ],
+  "panel.ded8f16b01": [
+    "Allow terminal use",
+    "允许使用终端",
+    "Terminal kullanabilsin"
+  ],
+  "panel.87cbe59e5f": [
+    "Task",
+    "任务",
+    "Görev"
+  ],
+  "panel.6bdc25c56b": [
+    "Expected output",
+    "预期输出",
+    "Beklenen çıktı"
+  ],
+  "panel.ce34df47d8": [
+    "CLI model",
+    "CLI 模型",
+    "CLI modeli"
+  ],
+  "panel.7ee86c05fb": [
+    "Maximum turns (API)",
+    "最大轮次（API）",
+    "En fazla tur (API)"
+  ],
+  "panel.33dc5c8cc2": [
+    "Generate texture (refine)",
+    "生成纹理（细化）",
+    "Doku üret (refine)"
+  ],
+  "panel.2b5009dd2e": [
+    "PBR maps",
+    "PBR 贴图",
+    "PBR haritaları"
+  ],
+  "panel.c5bc12de9a": [
+    "Remesh (polygon control)",
+    "重新拓扑（多边形控制）",
+    "Remesh (poly kontrolü)"
+  ],
+  "panel.5f6b0c8c50": [
+    "Target polygon count",
+    "目标多边形数量",
+    "Hedef poligon"
+  ],
+  "panel.bd07fa231c": [
+    "Meshy Image→3D",
+    "Meshy 图像→3D",
+    "Meshy Görsel→3D"
+  ],
+  "panel.64be42ff41": [
+    "Texture prompt",
+    "纹理提示词",
+    "Doku promptu"
+  ],
+  "panel.9a0e4a705b": [
+    "Generate texture",
+    "生成纹理",
+    "Doku üret"
+  ],
+  "panel.2bf2e9ea42": [
+    "Preserve original UV",
+    "保留原始 UV",
+    "Orijinal UV koru"
+  ],
+  "panel.1151c4b63e": [
+    "Topology",
+    "拓扑",
+    "Topoloji"
+  ],
+  "panel.a7823354ad": [
+    "Rigged model",
+    "已绑定骨骼的模型",
+    "Riglenmiş model"
+  ],
+  "panel.2d3e60f7df": [
+    "Height (m)",
+    "高度（米）",
+    "Boy (m)"
+  ],
+  "panel.cf59867389": [
+    "Blender Cleanup",
+    "Blender 清理",
+    "Blender Temizlik"
+  ],
+  "panel.e4fa522607": [
+    "Output format",
+    "输出格式",
+    "Çıktı formatı"
+  ],
+  "panel.19b16e314e": [
+    "Scale to dimensions",
+    "缩放至目标尺寸",
+    "Boyuta ölçekle"
+  ],
+  "panel.c68ba74d22": [
+    "Reduce to budget",
+    "减面至预算",
+    "Bütçeye indir"
+  ],
+  "panel.cfe04d4696": [
+    "Preview render",
+    "渲染预览",
+    "Önizleme render"
+  ],
+  "panel.ea8b52407c": [
+    "Skeleton standard",
+    "骨骼标准",
+    "İskelet standardı"
+  ],
+  "panel.1895f6cc2f": [
+    "Assembly and Motion Rig",
+    "装配与运动绑定",
+    "Montaj ve Hareket Rigi"
+  ],
+  "panel.7cf3812621": [
+    "Reference image",
+    "参考图像",
+    "Referans görsel"
+  ],
+  "panel.326ff85499": [
+    "Rigged model",
+    "已绑定模型",
+    "Rigli model"
+  ],
+  "panel.455b897e96": [
+    "LLM (API engine, vision support)",
+    "LLM（API 引擎，支持图像）",
+    "LLM (API motoru, görsel destekli)"
+  ],
+  "panel.a6754f87dc": [
+    "Actual length (m)",
+    "实际长度（米）",
+    "Gerçek uzunluk (m)"
+  ],
+  "panel.7861f31477": [
+    "Review rounds",
+    "检查轮数",
+    "Kontrol turu"
+  ],
+  "panel.f5956d99ca": [
+    "Manual plan (JSON)",
+    "手动方案（JSON）",
+    "Elle plan (JSON)"
+  ],
+  "panel.9b55c94d27": [
+    "Subject to review",
+    "检查对象",
+    "İncelenecek"
+  ],
+  "panel.50d19f2b3b": [
+    "Approved",
+    "已通过",
+    "Onaylı"
+  ],
+  "panel.bfd9634de5": [
+    "Report",
+    "报告",
+    "Rapor"
+  ],
+  "panel.a8e96a3f66": [
+    "Passing score (0–10)",
+    "通过分数（0–10）",
+    "Geçme puanı (0-10)"
+  ],
+  "panel.28c0372158": [
+    "Maximum retries",
+    "最多重试次数",
+    "En fazla yeniden deneme"
+  ],
+  "panel.5cb008255b": [
+    "If still failing",
+    "仍失败时",
+    "Hâlâ başarısızsa"
+  ],
+  "panel.ad5d6878a5": [
+    "Additional criteria",
+    "附加条件",
+    "Ek kriter"
+  ],
+  "panel.2e72a793b9": [
+    "Variations",
+    "变体数量",
+    "Varyasyon"
+  ],
+  "panel.a010ece9b8": [
+    "Duration (s)",
+    "时长（秒）",
+    "Süre (sn)"
+  ],
+  "panel.cae4450f79": [
+    "Prompt influence (0–1)",
+    "提示词影响（0–1）",
+    "Prompt etkisi (0-1)"
+  ],
+  "panel.255fe0c7fd": [
+    "Dynamic Engine Audio",
+    "动态引擎音频",
+    "Dinamik Motor Sesi"
+  ],
+  "panel.d77ff49fc1": [
+    "Engine character",
+    "引擎特征",
+    "Motor karakteri"
+  ],
+  "panel.521d7949c2": [
+    "Audio set",
+    "音频集",
+    "Ses seti"
+  ],
+  "panel.14ebad4d16": [
+    "Layer count",
+    "层数",
+    "Katman sayısı"
+  ],
+  "panel.8b339122b3": [
+    "Idle RPM",
+    "怠速转速",
+    "Rölanti devri"
+  ],
+  "panel.28c0a29647": [
+    "Maximum RPM",
+    "最高转速",
+    "En yüksek devir"
+  ],
+  "panel.b31d4cb293": [
+    "Layer duration (s)",
+    "每层时长（秒）",
+    "Katman süresi (sn)"
+  ],
+  "panel.0fa2d53a18": [
+    "Kimodo Motion",
+    "Kimodo 动作",
+    "Kimodo Hareket"
+  ],
+  "panel.96c3fdb570": [
+    "Motion",
+    "动作",
+    "Hareket"
+  ],
+  "panel.102f2ff332": [
+    "Diffusion steps",
+    "扩散步数",
+    "Difüzyon adımı"
+  ],
+  "panel.6e048a971b": [
+    "Content path",
+    "内容路径",
+    "İçerik yolu"
+  ],
+  "panel.60976e3cf2": [
+    "LOD ratios",
+    "LOD 比例",
+    "LOD oranları"
+  ],
+  "panel.6a34402a70": [
+    "Vehicle template",
+    "载具模板",
+    "Araç şablonu"
+  ],
+  "panel.7e1dab3ff5": [
+    "Wait for kit audio (min)",
+    "等待套件音频（分钟）",
+    "Kit seslerini bekle (dk)"
+  ],
+  "panel.779c7177e9": [
+    "Decision",
+    "决策",
+    "Karar"
+  ],
+  "panel.3941a2fbf7": [
+    "Core loop",
+    "核心循环",
+    "Çekirdek döngü"
+  ],
+  "panel.c9c2b99cce": [
+    "Session loop",
+    "单局循环",
+    "Oturum döngüsü"
+  ],
+  "panel.892380b17e": [
+    "Meta loop",
+    "长期循环",
+    "Meta döngü"
+  ],
+  "panel.23bb7eb706": [
+    "Story loop",
+    "故事循环",
+    "Hikâye döngüsü"
+  ],
+  "panel.efe5b10d85": [
+    "Free flow",
+    "自由流程",
+    "Serbest akış"
+  ],
+  "panel.b484e2b102": [
+    "seconds: the player's constantly repeated action",
+    "秒级：玩家不断重复的操作",
+    "saniyeler: oyuncunun sürekli tekrarladığı eylem"
+  ],
+  "panel.7aa1c9594b": [
+    "minutes: mission / match / level",
+    "分钟级：任务 / 对局 / 关卡",
+    "dakikalar: görev / maç / bölüm"
+  ],
+  "panel.2951527d36": [
+    "days: progression, collection, economy",
+    "天级：成长、收集、经济",
+    "günler: gelişim, koleksiyon, ekonomi"
+  ],
+  "panel.46eb170ee8": [
+    "the repeating rhythm of the narrative",
+    "叙事中反复出现的节奏",
+    "anlatının tekrar eden ritmi"
+  ],
+  "panel.fcf0a467aa": [
+    "any flowchart",
+    "任意流程图",
+    "herhangi bir akış şeması"
+  ],
+  "panel.468bc9a504": [
+    "This computer (AssetForge installation)",
+    "本机（AssetForge 安装）",
+    "Bu bilgisayar (AssetForge kurulumu)"
+  ],
+  "panel.ce0bf2403e": [
+    "This computer",
+    "本机",
+    "Bu bilgisayar"
+  ],
+  "panel.a438bce963": [
+    "Remote ComfyUI",
+    "远程 ComfyUI",
+    "Uzak ComfyUI"
+  ]
+} as const
+
+function column<I extends 0 | 1 | 2>(index: I) {
+ return Object.fromEntries(Object.entries(panelRows).map(([key,row])=>[key,row[index]])) as {[K in keyof typeof panelRows]: (typeof panelRows)[K][I]}
+}
+export const panelsEn=column(0)
+export const panelsZh=column(1)
+export const panelsTr=column(2)

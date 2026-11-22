@@ -4,9 +4,9 @@
 
 ## 1. 本地化基础与设置契约
 
-- [ ] 1.1 建立共享 locale 类型、语言归一化、英语/简中/土语词典和类型安全插值/Intl 工具；用 Vitest 验证 zh-CN/zh-SG/zh-Hans、tr、其他语言回退、词典 key/参数一致性和缺译英语 fallback。
-- [ ] 1.2 扩展 SettingsFile/Public/Patch、默认值、磁盘归一化与更新校验；测试旧配置保留 secrets/路径、显式选择优先、重启读取、无效更新不部分写入，并记录设置字段约定。
-- [ ] 1.3 贯通 preload、Web 桥和脱敏 locale 事件订阅；测试 owner 更新后桌面/Web 接收新 locale，editor/viewer 写设置被拒绝且事件中没有秘密字段。
+- [x] 1.1 建立共享 locale 类型、语言归一化、英语/简中/土语词典和类型安全插值/Intl 工具；用 Vitest 验证 zh-CN/zh-SG/zh-Hans、tr、其他语言回退、词典 key/参数一致性和缺译英语 fallback。
+- [x] 1.2 扩展 SettingsFile/Public/Patch、默认值、磁盘归一化与更新校验；测试旧配置保留 secrets/路径、显式选择优先、重启读取、无效更新不部分写入，并记录设置字段约定。
+- [x] 1.3 贯通 preload、Web 桥和脱敏 locale 事件订阅；测试 owner 更新后桌面/Web 接收新 locale，editor/viewer 写设置被拒绝且事件中没有秘密字段。
 - [ ] 1.4 接入 React provider、启动语言加载、document.lang 和中文字体；验证初始界面无土语闪现、切换不重挂载业务树，并测试格式化/搜索不再固定 tr。
 - [ ] 1.5 在 Settings 分类与搜索外增加语言选择，处理保存中/成功/失败；验证无匹配、缺 key 自动分类及所有分类下都能切换，失败保留原语言，补充用户使用说明。
 

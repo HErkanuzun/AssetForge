@@ -1,3 +1,5 @@
+import {panelLabel} from '../../../shared/i18n/display'
+import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
 // Yapımcı — her ekrandan açılan, projeyi araçlarla yöneten asistan paneli
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -39,50 +41,49 @@ const SUGGEST = [
   'Unreal’da açık sahneyi incele ve ışığı gerçekçi hale getir'
 ]
 
-function ToolCard({ t, convId }: { t: Extract<AgentViewItem, { kind: 'tool' }>; convId: string }) {
+function ToolCard({ tool, convId }: { tool: Extract<AgentViewItem, { kind: 'tool' }>; convId: string }) {
+  const {t,locale} = useLocale()
+
   const [open, setOpen] = useState(false)
-  const ext = t.name.includes('__')
-  const [label, icon] = TOOL_LABEL[t.name] ?? [ext ? t.name.replace('__', ' → ') : t.name, 'link' as IconName]
-  const st = { running: 'çalışıyor', done: '', error: 'hata', awaiting: 'onay bekliyor', denied: 'reddedildi' }[t.status]
+  const ext = tool.name.includes('__')
+  const [label, icon] = TOOL_LABEL[tool.name] ?? [ext ? tool.name.replace('__', ' → ') : tool.name, 'link' as IconName]
+  const st = { running: 'çalışıyor', done: '', error: 'hata', awaiting: 'onay bekliyor', denied: 'reddedildi' }[tool.status]
   return (
-    <div className={`tcard ${t.status}`}>
+    <div className={`tcard ${tool.status}`}>
       <div className="tcard-head" onClick={() => setOpen(!open)}>
-        <span className="tcard-ico">{t.status === 'running' ? <span className="spinner" /> : <Icon name={icon} size={14} />}</span>
+        <span className="tcard-ico">{tool.status === 'running' ? <span className="spinner" /> : <Icon name={icon} size={14} />}</span>
         <span className="ellipsis" style={{ flex: 1 }}>
-          {label}
+          {TOOL_LABEL[tool.name] ? panelLabel(locale,label) : label}
           {ext && <span className="dim"> · MCP</span>}
         </span>
-        {st && <span className={`chip ${t.status === 'error' || t.status === 'denied' ? 'pink' : t.status === 'awaiting' ? 'accent' : ''}`}>{st}</span>}
+        {st && <span className={`chip ${tool.status === 'error' || tool.status === 'denied' ? 'pink' : tool.status === 'awaiting' ? 'accent' : ''}`}>{st}</span>}
         <Icon name="chevron" size={12} style={{ transform: open ? 'rotate(90deg)' : undefined, opacity: 0.5 }} />
       </div>
-      {t.status === 'awaiting' && (
+      {tool.status === 'awaiting' && (
         <div className="tcard-ask">
-          <pre>{t.ask}</pre>
+          <pre>{tool.ask}</pre>
           <div className="row">
-            <button className="btn primary" onClick={() => window.forge.agent.approve(convId, t.id, true)}>
-              <Icon name="check" size={14} /> Onayla
-            </button>
-            <button className="btn" onClick={() => window.forge.agent.approve(convId, t.id, false)}>
-              Reddet
-            </button>
+            <button className="btn primary" onClick={() => window.forge.agent.approve(convId, tool.id, true)}>
+              <Icon name="check" size={14} /> {t('panel.8f2e0d241d')} </button>
+            <button className="btn" onClick={() => window.forge.agent.approve(convId, tool.id, false)}> {t('panel.fd78c713b1')} </button>
           </div>
         </div>
       )}
       {open && (
         <div className="tcard-body">
-          <div className="dim small">Girdi</div>
-          <pre>{JSON.stringify(t.input, null, 1)}</pre>
-          {t.result && (
+          <div className="dim small"> {t('panel.fb9e8771b6')} </div>
+          <pre>{JSON.stringify(tool.input, null, 1)}</pre>
+          {tool.result && (
             <>
-              <div className="dim small">Sonuç</div>
-              <pre>{t.result}</pre>
+              <div className="dim small"> {t('panel.8e7f4d257e')} </div>
+              <pre>{tool.result}</pre>
             </>
           )}
         </div>
       )}
-      {!!t.images?.length && (
+      {!!tool.images?.length && (
         <div className="tcard-imgs">
-          {t.images.map((f) => (
+          {tool.images.map((f) => (
             <img key={f} src={forgeUrl(f)} alt="" onClick={() => window.forge.openPath(f)} />
           ))}
         </div>
@@ -92,6 +93,8 @@ function ToolCard({ t, convId }: { t: Extract<AgentViewItem, { kind: 'tool' }>; 
 }
 
 export default function AssistantPanel({ onClose }: { onClose: () => void }) {
+  const {t,locale} = useLocale()
+
   const { settings, selectedAssets, toast } = useStore()
   const nav = useNav()
   const [convs, setConvs] = useState<AgentConversation[]>([])
@@ -194,19 +197,19 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
       <div className="as-head">
         <ForgeMark size={26} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <b>Yapımcı</b>
+          <b> {t('panel.b85cc7254c')} </b>
           <div className="dim small ellipsis">
             {prov ? `${prov.name} · ${prov.model}` : conv ? `${conv.model} (sağlayıcı silinmiş — yeni sohbet aç)` : '—'}
             {conv && conv.costUsd > 0 ? ` · $${conv.costUsd.toFixed(3)}` : ''}
           </div>
         </div>
-        <button className="btn ghost" title="Sohbetler" onClick={() => setShowList(!showList)}>
+        <button className="btn ghost" title={t('panel.a66b56b53f')} onClick={() => setShowList(!showList)}>
           <Icon name="list" size={15} />
         </button>
-        <button className="btn ghost" title="Yeni sohbet" onClick={newChat}>
+        <button className="btn ghost" title={t('panel.11dbb00508')} onClick={newChat}>
           <Icon name="plus" size={15} />
         </button>
-        <button className="btn ghost" title="Kapat (Ctrl+J)" onClick={onClose}>
+        <button className="btn ghost" title={t('panel.d887e00ded')} onClick={onClose}>
           <Icon name="x" size={15} />
         </button>
       </div>
@@ -214,7 +217,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
       {showList && (
         <div className="as-list">
           <div className="row" style={{ marginBottom: 8 }}>
-            <span className="dim small">Yeni sohbet modeli</span>
+            <span className="dim small"> {t('panel.63399891eb')} </span>
             <select className="input" style={{ flex: 1, height: 30, padding: '0 8px' }} value={providerId || defaultProvider} onChange={(e) => setProviderId(e.target.value)}>
               {providers.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -250,7 +253,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
               </button>
             </div>
           ))}
-          {!convs.length && <div className="dim small">Henüz sohbet yok.</div>}
+          {!convs.length && <div className="dim small"> {t('panel.39fbfd1884')} </div>}
         </div>
       )}
 
@@ -258,11 +261,11 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
         {!conv?.view.length && (
           <div className="as-empty">
             <ForgeMark size={48} />
-            <h3>Oyununu birlikte yapalım</h3>
-            <p className="muted small">Asset üretir, sonuçlara bakıp eleştiririm, animasyon çıkarırım, Unreal’da sahne kurarım. Para harcayan ya da geri alınamayan her adımda önce onay isterim.</p>
+            <h3> {t('panel.72fef98d19')} </h3>
+            <p className="muted small"> {t('panel.5a6f0b9db2')} </p>
             {SUGGEST.map((s) => (
-              <button key={s} className="as-sug" onClick={() => send(s)}>
-                {s}
+              <button key={s} className="as-sug" onClick={() => send(panelLabel(locale,s))}>
+                {panelLabel(locale,s)}
               </button>
             ))}
           </div>
@@ -274,7 +277,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
                 {v.text}
               </div>
             )
-          if (v.kind === 'tool') return <ToolCard key={v.id + i} t={v} convId={conv.id} />
+          if (v.kind === 'tool') return <ToolCard key={v.id + i} tool={v} convId={conv.id} />
           if (v.kind === 'user')
             return (
               <div key={i} className="as-user">
@@ -303,7 +306,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
           <div className="typing" style={{ marginLeft: 0 }}>
             <i />
             <i />
-            <i /> {thinking ? 'Düşünüyor…' : 'Çalışıyor…'}
+            <i /> {thinking ? t('panel.6747207040') : t('panel.29f4095092')}
           </div>
         )}
       </div>
@@ -311,7 +314,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
       <div className="as-input">
         {ctxLabel && (
           <div className="dim small" style={{ marginBottom: 6 }}>
-            <Icon name="link" size={11} /> Bağlam: {ctxLabel}
+            <Icon name="link" size={11} /> {t('panel.2094d016b7')} {ctxLabel}
           </div>
         )}
         {images.length > 0 && (
@@ -329,7 +332,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
         <div className="composer" style={{ maxWidth: 'none', padding: '6px 6px 6px 8px' }}>
           <button
             className="btn ghost"
-            title="Görsel ekle"
+            title={t('panel.1ac4e29874')}
             onClick={async () => {
               const f = await window.forge.pickFiles([{ name: 'Görseller', extensions: ['png', 'jpg', 'jpeg', 'webp'] }], true)
               setImages((cur) => [...cur, ...f.map((p) => ({ path: p }))])
@@ -340,7 +343,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
           <textarea
             rows={1}
             value={text}
-            placeholder={busy ? 'Çalışıyor…' : 'Ne yapalım?'}
+            placeholder={busy ? t('panel.29f4095092') : t('panel.d7243c1a06')}
             disabled={busy}
             onChange={(e) => {
               setText(e.target.value)
@@ -355,7 +358,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
             }}
           />
           {busy ? (
-            <button className="btn" title="Durdur" onClick={() => conv && window.forge.agent.stop(conv.id)}>
+            <button className="btn" title={t('panel.5769a8f8ae')} onClick={() => conv && window.forge.agent.stop(conv.id)}>
               <Icon name="pause" size={14} />
             </button>
           ) : (
@@ -365,7 +368,7 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
           )}
         </div>
       </div>
-      {drag && <div className="dropzone">Görseli bırak</div>}
+      {drag && <div className="dropzone"> {t('panel.edf4790b6a')} </div>}
     </aside>
   )
 }

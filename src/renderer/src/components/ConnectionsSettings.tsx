@@ -1,3 +1,6 @@
+import {message} from '../../../shared/i18n/message'
+import {panelLabel} from '../../../shared/i18n/display'
+import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
 // Ayarlar: yapay zeka sağlayıcıları ve görev atamaları (ModelSettings), MCP sunucusu ve dış araçlar (McpSettings)
 import { useEffect, useState } from 'react'
@@ -49,8 +52,8 @@ export const CLAUDE_MODELS = [
 
 const rid = (p: string) => `${p}_${Math.random().toString(36).slice(2, 8)}`
 
-function copy(text: string, toast: (t: string, k?: 'ok') => void) {
-  navigator.clipboard.writeText(text).then(() => toast('Kopyalandı', 'ok'))
+function copy(text: string, toast: (t: string, k?: 'ok') => void, message: string) {
+  navigator.clipboard.writeText(text).then(() => toast(message, 'ok'))
 }
 
 function useSettingsPatch() {
@@ -61,6 +64,8 @@ function useSettingsPatch() {
 
 /** Yapay zeka sağlayıcıları ve görev atamaları */
 export function ModelSettings() {
+  const {t, locale} = useLocale()
+
   const { s, patch, toast } = useSettingsPatch()
   const [keys, setKeys] = useState<Record<string, string>>({})
   const [testing, setTesting] = useState('')
@@ -73,7 +78,7 @@ export function ModelSettings() {
   const test = async (id: string) => {
     setTesting(id)
     try {
-      toast(`Bağlantı tamam — ${await window.forge.llm.test(id)}`, 'ok')
+      toast(message('mcp.connected', {detail:await window.forge.llm.test(id)}), 'ok')
     } catch (e) {
       toast((e as Error).message, 'error')
     } finally {
@@ -89,91 +94,85 @@ export function ModelSettings() {
 
   return (
     <section className="card">
-      <h2>Sağlayıcılar</h2>
-      <p className="muted small">
-        Claude varsayılandır. Yerel modeller (Ollama, LM Studio, vLLM) ya da başka API’ler (OpenRouter, OpenAI uyumlu her uç) eklenebilir ve görevlere ayrı ayrı atanabilir. Yerel modellerde araç
-        kullanımı (tool calling) destekleyen bir model seçin — ör. Qwen3, Llama 3.3/4, Mistral Small 3. OpenAI uyumlu kayıtlar ayrıca hatlardaki <b>OpenAI Uyumlu Görsel</b> ve <b>Ses Satırı (TTS)</b>{' '}
-        düğümlerinde kullanılır (görsel/ses modelinin adı düğümde seçilir); <b>HTTP İsteği</b> düğümü de anahtarını buradan alabilir.
-      </p>
+      <h2> {t('panel.5ec0b592ec')} </h2>
+      <p className="muted small"> {t('panel.e5d507feef')} <b> {t('panel.a0a1f1e10e')} </b> {t('panel.4bd2c412ba')} <b> {t('panel.5c60ddab3a')} </b>{' '} {t('panel.9935a4f461')} <b> {t('panel.ecaaf35030')} </b> {t('panel.0adeea5aaf')} </p>
       <div className="prov">
         <b>Claude (Anthropic)</b>
-        <span className="muted small">Anthropic API · anahtar “Hesaplar ve API”de</span>
-        <select className="input" value={s.claudeModel} onChange={(e) => patch({ claudeModel: e.target.value })} title="Claude modeli">
+        <span className="muted small"> {t('panel.2519c1391b')} </span>
+        <select className="input" value={s.claudeModel} onChange={(e) => patch({ claudeModel: e.target.value })} title={t('panel.8ac1d85f31')}>
           {CLAUDE_MODELS.map((m) => (
             <option key={m.value} value={m.value}>
-              {m.label}
+              {panelLabel(locale,m.label)}
             </option>
           ))}
         </select>
-        <span className="chip ok" style={{ justifySelf: 'start' }}>
-          görsel ✓
-        </span>
+        <span className="chip ok" style={{ justifySelf: 'start' }}> {t('panel.c79dc9d317')} </span>
         <button className="btn" disabled={testing === 'claude'} onClick={() => test('claude')}>
-          {testing === 'claude' ? <span className="spinner" /> : 'Test'}
+          {testing === 'claude' ? <span className="spinner" /> : t('panel.532eaabd95')}
         </button>
       </div>
       {custom.map((p) => (
         <div key={p.id} className="prov" style={{ gridTemplateColumns: '1fr 1.5fr 1.1fr 0.9fr auto' }}>
-          <input className="input" value={p.name} onChange={(e) => editProvider(p.id, { name: e.target.value })} title="Ad" />
+          <input className="input" value={p.name} onChange={(e) => editProvider(p.id, { name: e.target.value })} title={t('surface.name')} />
           <input
             className="input"
             value={p.baseUrl}
-            placeholder={p.kind === 'anthropic' ? 'boş = api.anthropic.com' : 'http://127.0.0.1:11434/v1'}
+            placeholder={p.kind === 'anthropic' ? t('panel.1fc9f698e1') : 'http://127.0.0.1:11434/v1'}
             onChange={(e) => editProvider(p.id, { baseUrl: e.target.value })}
-            title="Adres"
+            title={t('panel.32c6bebf1c')}
           />
-          <input className="input" value={p.model} placeholder="model adı" onChange={(e) => editProvider(p.id, { model: e.target.value })} title="Model" />
+          <input className="input" value={p.model} placeholder={t('panel.86f89b0613')} onChange={(e) => editProvider(p.id, { model: e.target.value })} title={t('panel.5e2c614c23')} />
           <div className="row">
             <input
               className="input"
               type="password"
-              placeholder={p.hasKey ? '•••• kayıtlı' : 'anahtar (ops.)'}
+              placeholder={p.hasKey ? t('panel.48407c23fc') : t('panel.3c522ef9ee')}
               value={keys[p.id] ?? ''}
               onChange={(e) => setKeys({ ...keys, [p.id]: e.target.value })}
               onBlur={async () => {
                 if (keys[p.id] === undefined) return
                 await patch({ providerKeys: { [p.id]: keys[p.id] } })
                 setKeys(({ [p.id]: _x, ...rest }) => rest)
-                toast('Anahtar kaydedildi', 'ok')
+                toast(message('panel.4b627954b4'), 'ok')
               }}
             />
           </div>
           <div className="row">
             <button className="btn" disabled={testing === p.id} onClick={() => test(p.id)}>
-              {testing === p.id ? <span className="spinner" /> : 'Test'}
+              {testing === p.id ? <span className="spinner" /> : t('panel.532eaabd95')}
             </button>
-            <button className="btn ghost" title="Sil" onClick={() => setProviders(custom.filter((x) => x.id !== p.id))}>
+            <button className="btn ghost" title={t('panel.f698e9b40f')} onClick={() => setProviders(custom.filter((x) => x.id !== p.id))}>
               <Icon name="trash" size={14} />
             </button>
           </div>
           <div className="row small muted" style={{ gridColumn: '1 / -1' }}>
             <select className="input" style={{ width: 200, height: 30, padding: '0 8px' }} value={p.kind} onChange={(e) => editProvider(p.id, { kind: e.target.value as LlmProvider['kind'] })}>
-              <option value="openai">OpenAI uyumlu API</option>
-              <option value="anthropic">Anthropic uyumlu API</option>
+              <option value="openai"> {t('panel.5755b72b49')} </option>
+              <option value="anthropic"> {t('panel.2050a93474')} </option>
             </select>
-            <Toggle value={p.vision} onChange={(v) => editProvider(p.id, { vision: v })} label="Görsel girdi destekliyor" />
+            <Toggle value={p.vision} onChange={(v) => editProvider(p.id, { vision: v })} label={t('panel.998ee7cf86')} />
           </div>
         </div>
       ))}
       <div className="presets">
         {PRESETS.map((x) => (
-          <button key={x.label} className="btn" onClick={() => setProviders([...custom, { ...x.p, id: rid('llm') }])}>
+          <button key={panelLabel(locale,x.label)} className="btn" onClick={() => setProviders([...custom, { ...x.p, id: rid('llm') }])}>
             <Icon name="plus" size={13} /> {x.label}
           </button>
         ))}
       </div>
 
-      <h3 style={{ marginTop: 10 }}>Görev atamaları</h3>
+      <h3 style={{ marginTop: 10 }}> {t('panel.742531c466')} </h3>
       <div className="kv2" style={{ gridTemplateColumns: '190px 1fr', alignItems: 'center' }}>
-        <span>Yapımcı asistanı</span>
+        <span> {t('panel.1c52f4ac47')} </span>
         <select className="input" value={s.llmRoles.assistant} onChange={(e) => setRole('assistant', e.target.value)}>
           {roleOpts}
         </select>
-        <span>Prompt motoru · Proje Kitabı · hareket</span>
+        <span> {t('panel.b60e86fadf')} </span>
         <select className="input" value={s.llmRoles.prompts} onChange={(e) => setRole('prompts', e.target.value)}>
           {roleOpts}
         </select>
-        <span>Görsel kalite kontrol</span>
+        <span> {t('panel.c0196cdf35')} </span>
         <select className="input" value={s.llmRoles.vision} onChange={(e) => setRole('vision', e.target.value)}>
           {s.llmProviders
             .filter((p) => p.vision)
@@ -183,18 +182,18 @@ export function ModelSettings() {
               </option>
             ))}
         </select>
-        <span>Web araması (Claude)</span>
-        <Toggle value={s.webSearch} onChange={(v) => patch({ webSearch: v })} label="Referans ve teknik araştırma için" />
+        <span> {t('panel.90c5b03541')} </span>
+        <Toggle value={s.webSearch} onChange={(v) => patch({ webSearch: v })} label={t('panel.af57907550')} />
       </div>
-      <p className="dim small" style={{ marginTop: 8 }}>
-        Brief sohbeti şimdilik Claude ile çalışır.
-      </p>
+      <p className="dim small" style={{ marginTop: 8 }}> {t('panel.abf5cc3ffd')} </p>
     </section>
   )
 }
 
 /** AssetForge MCP sunucusu (dışarı açma) ve dış MCP araç sunucuları */
 export function McpSettings() {
+  const {t, locale} = useLocale()
+
   const { s, patch, toast } = useSettingsPatch()
   const [mcp, setMcp] = useState<{ servers: McpServerStatus[]; expose: { running: boolean; url: string } } | null>(null)
   const [testing, setTesting] = useState('')
@@ -214,14 +213,11 @@ export function McpSettings() {
   return (
     <>
       <section className="card">
-        <h2>Claude’u bağla — AssetForge MCP sunucusu</h2>
-        <p className="muted small">
-          AssetForge kendi araçlarını (asset oluşturma, üretim başlatma, sonuçları görme, animasyon, Unreal Python) MCP üzerinden dışarı açar. Claude Code ya da Claude Desktop bağlanınca projeni
-          sohbetten yönetebilir. Yalnızca bu bilgisayardan (127.0.0.1) ve aşağıdaki gizli anahtarla erişilir.
-        </p>
+        <h2> {t('panel.c64b666ef9')} </h2>
+        <p className="muted small"> {t('panel.72e1b62251')} </p>
         <div className="row" style={{ marginBottom: 8 }}>
-          <Toggle value={s.mcpExpose.enabled} onChange={(v) => patch({ mcpExpose: { ...s.mcpExpose, enabled: v } }).then(refreshMcp)} label="Sunucu açık" />
-          <span className="dim small">Port</span>
+          <Toggle value={s.mcpExpose.enabled} onChange={(v) => patch({ mcpExpose: { ...s.mcpExpose, enabled: v } }).then(refreshMcp)} label={t('panel.8583da6400')} />
+          <span className="dim small"> {t('panel.72e9a59f5a')} </span>
           <input
             className="input"
             type="number"
@@ -229,7 +225,7 @@ export function McpSettings() {
             value={s.mcpExpose.port}
             onChange={(e) => patch({ mcpExpose: { ...s.mcpExpose, port: Number(e.target.value) || 9560 } }).then(refreshMcp)}
           />
-          <span className={`chip ${mcp?.expose.running ? 'ok' : ''}`}>{mcp?.expose.running ? `çalışıyor · ${url}` : 'kapalı'}</span>
+          <span className={`chip ${mcp?.expose.running ? 'ok' : ''}`}>{mcp?.expose.running ? t('backend.running', {url}) : t('comfy.off')}</span>
           <span className="spacer" />
           <button
             className="btn ghost"
@@ -238,32 +234,27 @@ export function McpSettings() {
               patch({ mcpExpose: { ...s.mcpExpose, token: t } }).then(refreshMcp)
             }}
           >
-            <Icon name="refresh" size={13} /> Anahtarı yenile
-          </button>
+            <Icon name="refresh" size={13} /> {t('panel.0059a87193')} </button>
         </div>
-        <div className="dim small">Claude Code (terminalde bir kez çalıştır):</div>
+        <div className="dim small"> {t('panel.2a3590f035')} </div>
         <div className="row" style={{ alignItems: 'stretch' }}>
           <div className="codebox" style={{ flex: 1 }}>
             {ccCmd}
           </div>
-          <button className="btn" onClick={() => copy(ccCmd, toast)}>
-            Kopyala
-          </button>
+          <button className="btn" onClick={() => copy(ccCmd, toast, panelLabel(locale,'Kopyalandı'))}> {t('panel.a8bcca42d9')} </button>
         </div>
         <div className="dim small">Claude Desktop (claude_desktop_config.json):</div>
         <div className="row" style={{ alignItems: 'stretch' }}>
           <div className="codebox" style={{ flex: 1 }}>
             {desktop}
           </div>
-          <button className="btn" onClick={() => copy(desktop, toast)}>
-            Kopyala
-          </button>
+          <button className="btn" onClick={() => copy(desktop, toast, panelLabel(locale,'Kopyalandı'))}> {t('panel.a8bcca42d9')} </button>
         </div>
       </section>
 
       <section className="card">
-        <h2>Dış araç sunucuları (MCP)</h2>
-        <p className="muted small">Blender MCP, Unreal MCP, dosya sistemi, arama gibi MCP sunucularını ekle; araçları Yapımcı’ya katılır. “Onaysız çalıştır” kapalıyken her çağrı için onay istenir.</p>
+        <h2> {t('panel.2d6e2ae842')} </h2>
+        <p className="muted small"> {t('panel.30de7ccd31')} </p>
         {s.mcpServers.map((x) => {
           const st = mcp?.servers.find((y) => y.id === x.id)
           return (
@@ -271,23 +262,23 @@ export function McpSettings() {
               <div className="row" style={{ marginBottom: 8 }}>
                 <input className="input" style={{ width: 160 }} value={x.name} onChange={(e) => editServer(x.id, { name: e.target.value })} />
                 <select className="input" style={{ width: 120 }} value={x.transport} onChange={(e) => editServer(x.id, { transport: e.target.value as 'stdio' | 'http' })}>
-                  <option value="stdio">Komut</option>
+                  <option value="stdio"> {t('panel.7a0b514ce1')} </option>
                   <option value="http">HTTP</option>
                 </select>
                 {x.transport === 'stdio' ? (
                   <>
-                    <input className="input" style={{ width: 110 }} placeholder="komut" value={x.command} onChange={(e) => editServer(x.id, { command: e.target.value })} />
-                    <input className="input" style={{ flex: 1 }} placeholder="argümanlar" value={x.args} onChange={(e) => editServer(x.id, { args: e.target.value })} />
+                    <input className="input" style={{ width: 110 }} placeholder={t('panel.b68070a072')} value={x.command} onChange={(e) => editServer(x.id, { command: e.target.value })} />
+                    <input className="input" style={{ flex: 1 }} placeholder={t('panel.8f2a7d93f7')} value={x.args} onChange={(e) => editServer(x.id, { args: e.target.value })} />
                   </>
                 ) : (
                   <input className="input" style={{ flex: 1 }} placeholder="https://…/mcp" value={x.url} onChange={(e) => editServer(x.id, { url: e.target.value })} />
                 )}
               </div>
               <div className="row">
-                <Toggle value={x.enabled} onChange={(v) => editServer(x.id, { enabled: v })} label="Etkin" />
-                <Toggle value={x.autoApprove} onChange={(v) => editServer(x.id, { autoApprove: v })} label="Onaysız çalıştır" />
+                <Toggle value={x.enabled} onChange={(v) => editServer(x.id, { enabled: v })} label={t('panel.de91313104')} />
+                <Toggle value={x.autoApprove} onChange={(v) => editServer(x.id, { autoApprove: v })} label={t('panel.7414ad9940')} />
                 <span className="spacer" />
-                {st?.connected && <span className="chip ok">{st.tools.length} araç</span>}
+                {st?.connected && <span className="chip ok">{t('mcp.tools', {count:st.tools.length})}</span>}
                 {st?.error && (
                   <span className="chip pink ellipsis" style={{ maxWidth: 280 }} title={st.error}>
                     {st.error}
@@ -301,11 +292,11 @@ export function McpSettings() {
                     const r = await window.forge.mcp.test(x.id)
                     setTesting('')
                     await refreshMcp()
-                    if (r.connected) toast(`${x.name}: ${r.tools.length} araç — ${r.tools.slice(0, 6).join(', ')}`, 'ok')
+                    if (r.connected) toast(message('mcp.testResult', {name:x.name,count:r.tools.length,list:r.tools.slice(0,6).join(', ')}), 'ok')
                     else toast(`${x.name}: ${r.error}`, 'error')
                   }}
                 >
-                  {testing === x.id ? <span className="spinner" /> : 'Bağlan / test'}
+                  {testing === x.id ? <span className="spinner" /> : t('panel.2422c0dd94')}
                 </button>
                 <button className="btn ghost" onClick={() => setServers(s.mcpServers.filter((y) => y.id !== x.id))}>
                   <Icon name="trash" size={14} />
@@ -313,7 +304,7 @@ export function McpSettings() {
               </div>
               <details style={{ marginTop: 6 }}>
                 <summary className="dim small" style={{ cursor: 'pointer' }}>
-                  {x.transport === 'stdio' ? 'Ortam değişkenleri' : 'Başlıklar'}
+                  {x.transport === 'stdio' ? t('panel.63bfca12e1') : t('panel.edc9e28349')}
                 </summary>
                 <textarea
                   className="input"

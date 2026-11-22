@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { translate } from '../shared/i18n'
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, net, protocol, shell, Tray } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -202,6 +203,11 @@ function registerIpc(): void {
   })
   handle('settings:set', async (patch: SettingsPatch) => {
     setSettings(patch)
+    if (patch.locale !== undefined) {
+      emit('settings:locale', publicSettings().locale)
+      setupJumpList()
+      updateTray()
+    }
     if (patch.mcpExpose) await startMcp()
     if (patch.web) await startWeb()
     return publicSettings()
@@ -220,7 +226,7 @@ function registerIpc(): void {
     return { rev: r.rev, project: r.merged ? r.project : undefined }
   })
   handle('project:pickDir', async () => {
-    const r = await dialog.showOpenDialog(win!, { properties: ['openDirectory', 'createDirectory'], title: 'Proje klasörü seç' })
+    const r = await dialog.showOpenDialog(win!, { properties: ['openDirectory', 'createDirectory'], title: translate(getSettings().locale, 'native.pickProject') })
     if (r.canceled || !r.filePaths[0]) return null
     setSettings({ projectDir: r.filePaths[0] })
     return loadProject(r.filePaths[0])
@@ -452,20 +458,21 @@ function startWeb(): Promise<void> {
 let tray: Tray | null = null
 
 function trayMenu(): Menu {
+  const locale = getSettings().locale
   const urls = webRunning() ? webUrls() : []
   return Menu.buildFromTemplate([
-    { label: 'AssetForge’u aç', click: () => showWindow() },
+    { label: translate(locale, 'native.open'), click: () => showWindow() },
     { type: 'separator' },
-    { label: webRunning() ? `Web sunucusu açık · ${onlineClients().length} bağlı` : 'Web sunucusu kapalı', enabled: false },
-    ...urls.map((u) => ({ label: `Kopyala: ${u}`, click: () => clipboard.writeText(u) })),
+    { label: webRunning() ? translate(locale, 'native.webRunning', { count: onlineClients().length }) : translate(locale, 'native.webStopped'), enabled: false },
+    ...urls.map((u) => ({ label: translate(locale, 'native.copy', { url: u }), click: () => clipboard.writeText(u) })),
     { type: 'separator' },
-    { label: 'Çık', click: () => app.quit() }
+    { label: translate(locale, 'native.quit'), click: () => app.quit() }
   ])
 }
 
 function updateTray(): void {
   tray?.setContextMenu(trayMenu())
-  tray?.setToolTip(webRunning() ? `AssetForge — web sunucusu açık (${webUrls()[0]})` : 'AssetForge')
+  tray?.setToolTip(webRunning() ? translate(getSettings().locale, 'native.webTooltip', { url: webUrls()[0] }) : 'AssetForge')
 }
 
 /** Pencere yokken uygulamanın yaşadığını gösteren bildirim alanı simgesi */

@@ -1,0 +1,85 @@
+Overview|概览|Özet
+Loops|循环|Döngüler
+Story|故事|Hikâye
+Interface|界面|Arayüz
+Claude Code (subscription)|Claude Code（使用订阅）|Claude Code (aboneliğinle)
+Codex CLI (subscription)|Codex CLI（使用订阅）|Codex CLI (aboneliğinle)
+Button|按钮|Düğme
+Bar|进度条|Çubuk
+Icon|图标|İkon
+Input|输入框|Giriş
+Game Design|游戏设计|Oyun Tasarımı
+: loops, story and interface. The brief director and Unreal AI know this design; asset suggestions follow the game's needs.|：循环、故事和界面。创作导演及 Unreal 中的 AI 会参考此设计，按游戏需要推荐资源。|: döngüler, hikâye ve arayüz. Brief yönetmeni ve Unreal’daki yapay zekâ bu tasarımı bilir; asset’ler oyunun ihtiyacına göre önerilir.
+e.g. “A calm vehicle exploration game; no combat”|例如“节奏舒缓、注重探索的载具游戏，没有战斗”|Ör. "Sakin, keşif odaklı bir araç oyunu; çatışma yok"
+e.g. “Driving and deliveries form the core loop; garage upgrades form the meta loop”|例如“核心循环为驾驶和配送，长期循环为升级车库”|Ör. "Çekirdek döngü sürüş ve teslimat olsun; meta döngüde garaj geliştirme"
+e.g. “Three acts with a betrayal at the end; the protagonist is a courier”|例如“三幕结构，结尾发生背叛，主角是一名快递员”|Ör. "Üç perde, sonunda ihanet; ana karakter kurye"
+e.g. “Allow vehicle part changes in the garage; keep the HUD simple”|例如“在车库界面更换载具零件，HUD 保持简洁”|Ör. "Garaj ekranında araç parçaları değiştirilebilsin; HUD sade"
+This section will be replaced by a new AI version (existing content is provided as context). Continue?|AI 将重写此部分（现有内容会作为参考上下文）。是否继续？|Bu bölüm yapay zekânın yeni sürümüyle değiştirilecek (mevcut içerik ona bağlam olarak verilir). Devam edilsin mi?
+Writing design… (1–3 min)|正在编写设计…（1–3 分钟）|Tasarım yazılıyor… (1-3 dk)
+Improve with AI|使用 AI 改进|Yapay zekâ ile geliştir
+Create with AI|使用 AI 创建|Yapay zekâ ile oluştur
+The Project Bible, library and other design sections are provided as context|项目设定集、资源库和其他设计部分将作为参考上下文|Proje Kitabı, kütüphane ve tasarımın diğer bölümleri bağlam olarak verilir
+Engine|引擎|Motor
+Improve|改进|Geliştir
+Core idea|核心创意|Çekirdek fikir
+The game in one sentence|用一句话描述游戏|Tek cümlede oyun
+A courier's survival journey carrying cargo through sandstorms|一名快递员穿越沙尘暴运送货物的求生之旅|Kum fırtınalarında yük taşıyan bir kuryenin hayatta kalma yolculuğu
+Player fantasy|玩家幻想|Oyuncu fantezisi
+How should playing feel?|游玩时应有什么感受？|Oynarken ne hissettiriyor?
+Target audience / platform|目标用户 / 平台|Hedef kitle / platform
+Design pillars (one per line)|设计支柱（每行一项）|Tasarım sütunları (her satıra bir)
+Every feature should support at least one of these rules|每项功能应至少服务于其中一条原则|Her özellik bu kurallardan en az birine hizmet etmeli
+Mechanics|机制|Mekanikler
++ Mechanic|+ 添加机制|+ Mekanik
+No mechanics yet.|暂无机制。|Henüz mekanik yok.
+How it works|运作方式|Nasıl çalışır
+Reward|奖励|Ödül
+Progression|成长|İlerleme
+Untitled|未命名|Adsız
++ New loop…|+ 新建循环…|+ Yeni döngü…
+No loops yet. Generate them with AI above or add a loop on the left.|暂无循环。可在上方使用 AI 生成，或从左侧添加。|Henüz döngü yok. Yukarıdan yapay zekâya oluşturtun ya da soldan yeni bir döngü ekleyin.
+New step|新步骤|Yeni adım
+Scope|范围|Kapsam
+Why it is fun / what it supports|乐趣来源 / 支持的目标|Neden eğlenceli / neyi besliyor
++ Step|+ 添加步骤|+ Adım
+Arrange nodes in a circle|将节点排列成圆形|Düğümleri çembere diz
+◯ Arrange|◯ 排列|◯ Diz
+Delete loop|删除循环|Döngüyü sil
+Step|步骤|Adım
+Details (rules, numbers, feel)|详情（规则、数值、体验）|Ayrıntı (kurallar, sayılar, his)
+Transition condition|转换条件|Geçiş koşulu
+e.g. “when mission completes”, “when fuel runs out”|例如“任务完成时”“燃料耗尽时”|Ör. “görev tamamlanınca”, “yakıt bitince”
+Click a step or arrow. Drag from the bottom point to connect steps; press Delete to remove.|点击步骤或箭头。从底部连接点拖动以连接步骤；按 Delete 删除。|Bir adıma ya da oka tıklayın. Adımları bağlamak için alt noktadan sürükleyin; silmek için Delete.
+Premise|故事前提|Öncül
+The heart of the story|故事核心|Hikâyenin özü
+Themes (comma-separated)|主题（逗号分隔）|Temalar (virgülle)
+Acts and plot|幕与情节|Perdeler ve olay örgüsü
++ Act|+ 添加幕|+ Perde
+Events in order (one per line)|按顺序排列的事件（每行一项）|Olaylar, sırayla (her satıra bir)
++ Character|+ 添加角色|+ Karakter
+Definition|定义|Tanım
+Arc (beginning → end)|角色成长（开始 → 结尾）|Gelişim (başta → sonda)
+Screen flow|界面流程|Ekran akışı
++ Screen|+ 添加界面|+ Ekran
+Layer|层级|Katman
+HUD (over the game)|HUD（游戏画面上方）|HUD (oyunun üstünde)
+Menu (full screen)|菜单（全屏）|Menü (tam ekran)
+Popup|弹窗|Açılır pencere
+Purpose|用途|Amaç
+When it appears|显示时机|Ne zaman görünür
+e.g. on Esc, while driving, after a mission|例如按 Esc 时、驾驶时、任务结束后|Ör. Esc ile, sürüş sırasında, görev bitince
+Elements|元素|Öğeler
++ Element|+ 添加元素|+ Öğe
+Label|标签|Etiket
+Data (e.g. Player.Health)|数据（例如 Player.Health）|Veri (ör. Player.Health)
+Transitions|转换|Geçişler
+Select a screen or generate the interface with AI.|选择界面，或使用 AI 生成界面。|Bir ekran seçin ya da yapay zekâya arayüzü oluşturtun.
+Connection|连接|Bağlantı
+Check Unreal|检查 Unreal|Unreal’ı kontrol et
+ — Unreal Editor is not open| — Unreal Editor 未打开| — Unreal Editor açık değil
+Teach the AI in Unreal|向 Unreal 中的 AI 提供设计知识|Unreal’daki yapay zekâya öğret
+The game design and AssetForge asset rules (folders, naming, tool setup, collision targets, optimization) are written to Unreal as an Agent Skill. Any AI connected through Unreal MCP uses them when adding game content, building UI or optimizing imported assets. Send again after changing the design.|游戏设计和 AssetForge 资源规则（文件夹、命名、工具配置、碰撞目标、优化）将作为 Agent Skill 写入 Unreal。通过 Unreal MCP 连接的 AI 可在添加内容、创建 UI 或优化导入资源时使用这些规则。设计更改后请重新发送。|Oyunun tasarımı ve AssetForge’un asset kuralları (klasörler, adlandırma, araç kurulumu, ezilme hedefleri, optimizasyon) Unreal’a Agent Skill olarak yazılır. Unreal MCP’ye bağlanan her yapay zekâ oyuna bir şey eklerken, UI kurarken ya da içe aktarılan asset’leri optimize ederken bunları kullanır. Tasarım değişince yeniden gönderin.
+Send design and rules to Unreal|将设计和规则发送到 Unreal|Tasarımı ve kuralları Unreal’a gönder
+Design document|设计文档|Tasarım dokümanı
+. The full design is written to one Markdown GDD (loops become Mermaid flowcharts).|。完整设计将写入一个 Markdown 游戏设计文档，循环使用 Mermaid 流程图表示。|. Tüm tasarım tek bir Markdown GDD’ye yazılır (döngüler mermaid akış şeması olarak).
+Export and open GDD|导出并打开游戏设计文档|GDD’yi dışa aktar ve aç

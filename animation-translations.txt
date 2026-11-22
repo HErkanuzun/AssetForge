@@ -1,0 +1,73 @@
+Service ready|服务已就绪|Servis hazır
+Service starting…|服务正在启动…|Servis açılıyor…
+Service stopped|服务已停止|Servis kapalı
+ · generating| · 正在生成| · üretiyor
+Text to motion (local GPU)|文本生成动作（本机 GPU）|Metinden hareket üretimi (yerel GPU)
+Key|密钥|Anahtar
+Virtualization (SVM / VT-x) is disabled in BIOS. Enable it for WSL, or choose the Native Windows backend in Settings.|BIOS 中未启用虚拟化（SVM / VT-x）。使用 WSL 需先启用，或在设置中选择“原生 Windows”后端。|BIOS’ta sanallaştırma (SVM / VT-x) kapalı. WSL yolu için açılmalı — ya da Ayarlar’dan “Yerel Windows” arka ucunu seç.
+Installation output will appear here.|安装输出将显示在这里。|Kurulum çıktısı burada görünecek.
+Service log|服务日志|Servis günlüğü
+Describe the action first|请先描述动作|Önce ne yapacağını yaz
+Animation starts when character production finishes|角色生产完成后开始生成动画|Karakter üretimi bitince animasyon başlayacak
+Kimodo production started|Kimodo 已开始生成|Kimodo üretimi başladı
+No characters yet|暂无角色|Henüz karakter yok
+Kimodo uses a human skeleton (SOMA → Manny). First generate a character in the Workshop.|Kimodo 使用人形骨骼（SOMA → Manny）。请先在工作台生成一个角色。|Kimodo insan iskeletiyle (SOMA → Manny) çalışır. Önce Atölye’de bir karakter üret.
+Generate character|生成角色|Karakter üret
+Systems|动画系统|Sistemler
+Individual clips|独立片段|Tek klipler
+Blend Space, Montage, Aim Offset, state machine, Motion Matching — synchronized clip sets|混合空间、蒙太奇、瞄准偏移、状态机、运动匹配 — 同步动画片段集|Blend Space, Montage, Aim Offset, durum makinesi, Motion Matching — senkron klip setleri
+Generate a single animation from a description|根据描述生成单个动画|Serbest tarifle tek animasyon üret
+Characters|角色|Karakterler
+Clips|动画片段|Klipler
+New clip|新建片段|Yeni klip
+s|秒|sn
+queued|排队中|sırada
+ready|已就绪|hazır
+error|错误|hata
+canceled|已取消|iptal
+not generated|尚未生成|üretilmedi
+This character has no clips yet.|此角色暂无动画片段。|Bu karakterin henüz klibi yok.
+Describe the motion|描述动作|Hareketi tarif et
+For example, “Walks with tired steps, stops and looks around.” The generated motion plays here in 3D.|例如“迈着疲惫的步伐行走，停下并环顾四周”。生成的动作将在此以 3D 播放。|“Yorgun adımlarla yürür, durur ve etrafına bakınır” gibi. Üretilen hareket burada 3B oynar.
+Clip name (e.g. Walk loop)|片段名称（例如行走循环）|Klip adı (ör. Yürüyüş döngüsü)
+In place|原地|Yerinde
+Raw|原始|Ham
+Loop|循环|Döngü
+Describe the action in your language — Claude turns it into segments Kimodo can understand.|使用你的语言描述动作，Claude 会将其转换为 Kimodo 可理解的片段。|Ne yapsın? Türkçe yazabilirsin — Claude Kimodo’nun anlayacağı segmentlere çevirir.
+Convert to segments with Claude|使用 Claude 拆分片段|Claude ile segmentlere çevir
+Segment|拆分片段|Segmentle
+Add segment|添加片段|Segment ekle
+Without segments the description is used as a single action|没有片段时，将描述作为一个完整动作使用|Segment yoksa açıklama tek parça kullanılır
+automatically retargeted to this skeleton|自动重定向至该骨骼|iskeletine otomatik retarget
+generating %|正在生成 %|üretiliyor %
+Regenerate|重新生成|Yeniden üret
+Repeat|重试|Tekrar
+Native Windows|原生 Windows|Yerel Windows
+built-in SDXL|内置 SDXL|yerleşik SDXL
+ (no key)|（无密钥）| (anahtarsız)
+(removed provider)|（服务提供商已移除）|(silinmiş sağlayıcı)
+None (enter an address below)|无（请在下方输入地址）|Yok (adresi aşağıya yazın)
+(removed backend)|（后端已移除）|(kaldırılmış arka uç)
+(removed server → Automatic)|（服务器已移除 → 自动）|(silinmiş sunucu → Otomatik)
+Producer assistant model|制作助手使用的模型|Yapımcı asistanının modeli
+All enabled servers|所有已启用的服务器|Tüm etkin sunucular
+None|无|Hiçbiri
+No pipelines|暂无流水线|Pipeline yok
+Empty pipeline|空流水线|Boş hat
+Template: |模板：|Şablon: 
+Duplicate this pipeline|复制此流水线|Bu hattı kopyala
+▶ Run|▶ 运行|▶ Çalıştır
+Select a node or add one from the list on the left.|选择一个节点，或从左侧列表添加。|Bir node seçin ya da soldaki listeden ekleyin.
+Drag between ports to connect. Colors indicate data types; incompatible ports cannot connect. To delete, press|拖动端口以连接。颜色代表数据类型，不兼容的端口无法连接。删除请按|Portları sürükleyerek bağlayın. Renkler veri tipini gösterir; uyumsuz portlar bağlanmaz. Silmek için
+Quality Check|质量检查|Kalite Kontrol
+If this node fails, feedback is sent to the nearest|节点失败时，会向最近的|node'u başarısız olursa kendisine en yakın
+Prompt Engine|提示词引擎|Prompt Motoru
+node, and the steps in between run again.|节点发送反馈，并重新运行两者之间的步骤。|na geri bildirim gönderir ve aradaki adımlar yeniden çalışır.
+Which assets should be generated?|要生成哪些资源？|Hangi asset(ler) üretilsin?
+No assets — import from the Asset List first.|暂无资源，请先从资源列表导入。|Asset yok — önce Asset Listesi'nden içe aktarın.
+selected|已选择|seçili
+▶ Start|▶ 启动|▶ Başlat
+budget|预算|bütçe
+Unknown:|未知：|Bilinmeyen:
+attempt|尝试|deneme
+Could not read BVH (|无法读取 BVH（|BVH okunamadı (

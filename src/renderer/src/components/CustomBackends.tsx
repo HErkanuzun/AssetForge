@@ -1,3 +1,5 @@
+import {message} from '../../../shared/i18n/message'
+import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
 // Ayarlar → Yerel araçlar → Özel arka uçlar: git deposundan bir yapay zekâ projesi ekle, kurulum tarifini gözden geçir,
 // onaylayıp kur, başlat/durdur. Gradio uygulamalarının uç noktalarını ve girişlerin nasıl eşleneceğini gösterir.
@@ -7,29 +9,33 @@ import { recipeToJson } from '../../../shared/backends'
 import { useStore } from '../store'
 import { Icon } from './icons'
 
-const ROLE_LABEL: Record<string, string> = { prompt: 'prompt', negative: 'negatif', seed: 'seed', seconds: 'süre', image: 'görsel', model: '3D model', audio: 'ses', file: 'dosya' }
+const ROLE_LABEL = {prompt:'backend.role.prompt',negative:'backend.role.negative',seed:'backend.role.seed',seconds:'backend.role.seconds',image:'backend.role.image',model:'backend.role.model',audio:'backend.role.audio',file:'backend.role.file'} as const
 const clean = (e: unknown) => (e as Error).message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '')
 
 function Endpoints({ list }: { list: GradioEndpointInfo[] }) {
-  if (!list.length) return <div className="dim small">API’ye açık uç nokta yok.</div>
+  const {t} = useLocale()
+
+  if (!list.length) return <div className="dim small"> {t('panel.c79bad1cc8')} </div>
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
       {list.map((ep) => (
         <div key={ep.name} className="small">
           <code>{ep.name}</code>{' '}
           <span className="muted">
-            {ep.params.map((p) => `${p.name}${p.role ? ` ← ${ROLE_LABEL[p.role] ?? p.role}` : p.hasDefault ? ` = ${JSON.stringify(p.default)?.slice(0, 24)}` : ''}`).join(' · ') || 'giriş yok'}
+            {ep.params.map((p) => `${p.name}${p.role ? ` ← ${p.role in ROLE_LABEL ? t(ROLE_LABEL[p.role as keyof typeof ROLE_LABEL]) : p.role}` : p.hasDefault ? ` = ${JSON.stringify(p.default)?.slice(0, 24)}` : ''}`).join(' · ') || t('backend.noInputs')}
             {' → '}
             {ep.returns.map((r) => r.component || r.label).join(', ') || '?'}
           </span>
         </div>
       ))}
-      <div className="dim small">“← prompt” gibi oklar AssetForge’un o girişe ne yazacağını gösterir; diğerleri varsayılanla gider. Düğümdeki “Sabit değerler (JSON)” ile değiştirebilirsiniz.</div>
+      <div className="dim small"> {t('panel.67696171b9')} </div>
     </div>
   )
 }
 
 function Row({ b, st, refresh }: { b: CustomBackend; st?: BackendStatus; refresh: () => Promise<void> }) {
+  const {t} = useLocale()
+
   const { setSettings, toast } = useStore()
   const [json, setJson] = useState(() => recipeToJson(b.recipe))
   const [open, setOpen] = useState(!st?.installed)
@@ -54,21 +60,21 @@ function Row({ b, st, refresh }: { b: CustomBackend; st?: BackendStatus; refresh
     }
   }
   const dirty = json.trim() !== recipeToJson(b.recipe).trim()
-  const saveRecipe = () => act('save', () => window.forge.backends.setRecipe(b.id, json), 'Tarif kaydedildi')
+  const saveRecipe = () => act('save', () => window.forge.backends.setRecipe(b.id, json), t('backend.saved'))
   const led = st?.healthy ? 'on' : st?.running ? 'wait' : ''
   const state = !st
     ? '…'
     : st.healthy
-      ? `çalışıyor · ${st.url}`
+      ? t('backend.running', {url:st.url ?? ''})
       : st.running
-        ? 'açılıyor…'
+        ? t('panel.cea26752e9')
         : st.installed
           ? st.stale
-            ? 'tarif değişti: yeniden kurun'
-            : 'kurulu · kapalı'
+            ? t('panel.605c0faef3')
+            : t('panel.2197247807')
           : st.cloned
-            ? 'indirildi · kurulmadı'
-            : 'depo yok'
+            ? t('panel.07f789c95a')
+            : t('backend.noRepo')
 
   return (
     <div className="mcp-row">
@@ -83,36 +89,32 @@ function Row({ b, st, refresh }: { b: CustomBackend; st?: BackendStatus; refresh
           </div>
         </div>
         {st?.installed && !st.stale && (st.running || st.healthy) ? (
-          <button className="btn" disabled={!!busy} onClick={() => act('stop', () => window.forge.backends.stop(b.id))}>
-            Durdur
-          </button>
+          <button className="btn" disabled={!!busy} onClick={() => act('stop', () => window.forge.backends.stop(b.id))}> {t('panel.5769a8f8ae')} </button>
         ) : (
           st?.installed &&
           !st.stale && (
-            <button className="btn primary" disabled={!!busy} onClick={() => act('start', () => window.forge.backends.start(b.id), `${b.name} hazır`)}>
-              {busy === 'start' ? <span className="spinner" /> : <Icon name="play" size={13} />} Başlat
-            </button>
+            <button className="btn primary" disabled={!!busy} onClick={() => act('start', () => window.forge.backends.start(b.id), t('backend.ready', {name:b.name}))}>
+              {busy === 'start' ? <span className="spinner" /> : <Icon name="play" size={13} />} {t('panel.24fa59605d')} </button>
           )
         )}
         {st?.healthy && (
-          <button className="btn" title="Uygulamayı tarayıcıda aç" onClick={() => window.forge.backends.open(b.id)}>
-            <Icon name="link" size={13} /> Aç
-          </button>
+          <button className="btn" title={t('panel.4edc8c3706')} onClick={() => window.forge.backends.open(b.id)}>
+            <Icon name="link" size={13} /> {t('panel.dcc084f9a2')} </button>
         )}
-        <button className={`btn ${!st?.installed || st.stale ? 'primary' : ''}`} disabled={!!busy || dirty} title={dirty ? 'Önce tarifi kaydedin' : undefined} onClick={() => setConfirm(true)}>
-          {busy === 'install' ? <span className="spinner" /> : st?.installed ? 'Yeniden kur' : 'Kur'}
+        <button className={`btn ${!st?.installed || st.stale ? 'primary' : ''}`} disabled={!!busy || dirty} title={dirty ? t('panel.2ba9980b2e') : undefined} onClick={() => setConfirm(true)}>
+          {busy === 'install' ? <span className="spinner" /> : st?.installed ? t('backend.reinstall') : t('backend.install')}
         </button>
-        <button className="btn ghost" title="Tarif" onClick={() => setOpen(!open)}>
+        <button className="btn ghost" title={t('panel.09d23a2f02')} onClick={() => setOpen(!open)}>
           <Icon name="settings" size={14} />
         </button>
-        <button className="btn ghost" title="Klasörü aç" onClick={() => window.forge.backends.folder(b.id)}>
+        <button className="btn ghost" title={t('panel.d6f2f6cad0')} onClick={() => window.forge.backends.folder(b.id)}>
           <Icon name="folder" size={14} />
         </button>
         <button
           className="btn ghost"
-          title="Kaldır (klasörü ve indirilen dosyaları siler)"
+          title={t('panel.08d26d4008')}
           disabled={!!busy}
-          onClick={() => act('remove', () => window.forge.backends.remove(b.id), `${b.name} kaldırıldı`)}
+          onClick={() => act('remove', () => window.forge.backends.remove(b.id), t('backend.removed', {name:b.name}))}
         >
           <Icon name="trash" size={14} />
         </button>
@@ -120,21 +122,19 @@ function Row({ b, st, refresh }: { b: CustomBackend; st?: BackendStatus; refresh
 
       {confirm && (
         <div className="set-note warn" style={{ flexDirection: 'column', alignItems: 'stretch', marginTop: 8 }}>
-          <b>Bu komutlar bilgisayarınızda, deponun klasöründe tam yetkiyle çalışacak:</b>
+          <b> {t('panel.e05952bb64')} </b>
           <div className="console" style={{ maxHeight: 160 }}>
             {[
               `git clone ${b.recipe.repo}${b.recipe.ref ? ` (${b.recipe.ref})` : ''}`,
               ...(b.recipe.python ? [`uv venv --python ${b.recipe.python}`] : []),
               ...b.recipe.install,
-              `başlatma: ${b.recipe.start}`
+              t('backend.startCommand', {command:b.recipe.start})
             ].join('\n')}
           </div>
-          <span className="small">Yalnızca güvendiğiniz depoları kurun. Kurulum indirme boyutuna göre uzun sürebilir.</span>
+          <span className="small"> {t('panel.317f43193c')} </span>
           <div className="row">
             <span className="spacer" />
-            <button className="btn ghost" onClick={() => setConfirm(false)}>
-              Vazgeç
-            </button>
+            <button className="btn ghost" onClick={() => setConfirm(false)}> {t('panel.39a8d28c1c')} </button>
             <button
               className="btn primary"
               onClick={() => {
@@ -142,9 +142,7 @@ function Row({ b, st, refresh }: { b: CustomBackend; st?: BackendStatus; refresh
                 setLines([])
                 void act('install', () => window.forge.backends.install(b.id), `${b.name} kuruldu`)
               }}
-            >
-              Onayla ve kur
-            </button>
+            > {t('panel.4b8759a02d')} </button>
           </div>
         </div>
       )}
@@ -161,17 +159,11 @@ function Row({ b, st, refresh }: { b: CustomBackend; st?: BackendStatus; refresh
           />
           <div className="row" style={{ marginTop: 6, flexWrap: 'wrap' }}>
             <span className="dim small" style={{ flex: 1, minWidth: 240 }}>
-              <code>{'{uv}'}</code> <code>{'{python}'}</code> <code>{'{port}'}</code> <code>{'{repo}'}</code> yer tutucuları doldurulur. Modeller <code>_hf</code> ortak önbelleğine iner. Bu tarifi
-              depoya <code>assetforge.json</code> olarak koyarsanız herkes tek tıkla kurar.
-            </span>
+              <code>{'{uv}'}</code> <code>{'{python}'}</code> <code>{'{port}'}</code> <code>{'{repo}'}</code> {t('panel.abbd490e36')} <code>_hf</code> {t('panel.640b7494bd')} <code>assetforge.json</code> {t('panel.491385856c')} </span>
             {dirty && (
-              <button className="btn ghost" onClick={() => setJson(recipeToJson(b.recipe))}>
-                Geri al
-              </button>
+              <button className="btn ghost" onClick={() => setJson(recipeToJson(b.recipe))}> {t('panel.6b65f1920b')} </button>
             )}
-            <button className="btn" disabled={!dirty || busy === 'save'} onClick={saveRecipe}>
-              Tarifi kaydet
-            </button>
+            <button className="btn" disabled={!dirty || busy === 'save'} onClick={saveRecipe}> {t('panel.4583ec0338')} </button>
           </div>
         </div>
       )}
@@ -192,12 +184,10 @@ function Row({ b, st, refresh }: { b: CustomBackend; st?: BackendStatus; refresh
               }
             }}
           >
-            {busy === 'eps' ? <span className="spinner" /> : <Icon name="list" size={13} />} Uç noktaları göster
-          </button>
+            {busy === 'eps' ? <span className="spinner" /> : <Icon name="list" size={13} />} {t('panel.9264d0bc8d')} </button>
         )}
         <button className="btn ghost" onClick={async () => setLines((await window.forge.backends.logs(b.id)).split(/\r?\n/).slice(-200))}>
-          <Icon name="terminal" size={13} /> Sunucu günlüğü
-        </button>
+          <Icon name="terminal" size={13} /> {t('panel.0b754b0278')} </button>
       </div>
       {eps && <Endpoints list={eps} />}
       {lines.length > 0 && <div className="console">{lines.join('\n')}</div>}
@@ -206,6 +196,8 @@ function Row({ b, st, refresh }: { b: CustomBackend; st?: BackendStatus; refresh
 }
 
 export default function CustomBackends() {
+  const {t} = useLocale()
+
   const { settings, setSettings, toast } = useStore()
   const s = settings!
   const [url, setUrl] = useState('')
@@ -243,7 +235,7 @@ export default function CustomBackends() {
       setNotes(r.notes)
       setUrl('')
       setSettings(await window.forge.settings.get())
-      toast(`${r.backend.name} indirildi; tarifi gözden geçirip “Kur”a basın`, 'ok')
+      toast(message('backend.downloaded', {name:r.backend.name}), 'ok')
     } catch (e) {
       toast(clean(e), 'error')
     } finally {
@@ -258,14 +250,13 @@ export default function CustomBackends() {
         <input
           className="input"
           style={{ flex: 1 }}
-          placeholder="https://github.com/kullanıcı/proje"
+          placeholder={t('panel.bc33a3708a')}
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && url.trim() && add()}
         />
         <button className="btn primary" disabled={!url.trim() || busy === 'add'} onClick={add}>
-          {busy === 'add' ? <span className="spinner" /> : <Icon name="plus" size={13} />} Depodan ekle
-        </button>
+          {busy === 'add' ? <span className="spinner" /> : <Icon name="plus" size={13} />} {t('panel.43e4b33aa8')} </button>
       </div>
       {busy === 'add' && lines.length > 0 && <div className="console">{lines.join('\n')}</div>}
       {notes.length > 0 && (
@@ -286,7 +277,7 @@ export default function CustomBackends() {
         <input
           className="input"
           style={{ flex: 1 }}
-          placeholder="Çalışan bir Gradio uygulamasını incele: http://127.0.0.1:7860 ya da https://…hf.space"
+          placeholder={t('panel.3d57341122')}
           value={probe}
           onChange={(e) => setProbe(e.target.value)}
         />
@@ -305,14 +296,10 @@ export default function CustomBackends() {
             }
           }}
         >
-          {busy === 'probe' ? <span className="spinner" /> : <Icon name="search" size={13} />} İncele
-        </button>
+          {busy === 'probe' ? <span className="spinner" /> : <Icon name="search" size={13} />} {t('panel.cd9db490c5')} </button>
       </div>
       {eps && <Endpoints list={eps} />}
-      <p className="dim small" style={{ marginTop: 8 }}>
-        Kurulan arka uçlar ve adresini bildiğiniz Gradio uygulamaları (Pinokio, başka bir bilgisayar, Hugging Face Space) hatlarda <b>Gradio Uygulaması</b> düğümüyle kullanılır. Depo kodu bu
-        bilgisayarda sizin yetkinizle çalışır; yalnızca güvendiğiniz projeleri kurun.
-      </p>
+      <p className="dim small" style={{ marginTop: 8 }}> {t('panel.265d44131b')} <b> {t('panel.a82f2f3671')} </b> {t('panel.baf24d6f0b')} </p>
     </div>
   )
 }

@@ -1,3 +1,5 @@
+import {message} from '../../../shared/i18n/message'
+import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
 // Ayarlar → Yerel araçlar → ComfyUI sunucuları: bu bilgisayar, ağdaki diğer bilgisayarlar, uzak GPU.
 // Her satırda ad ve adres doğrudan düzenlenir; token şifreli saklanır. Düğümler "Otomatik" ya da bir sunucu seçer.
@@ -12,6 +14,8 @@ const rid = () => `cs_${Math.random().toString(36).slice(2, 8)}`
 const strip = (list: (ComfyServer & { hasToken?: boolean })[]): ComfyServer[] => list.map(({ id, name, url, enabled, managed }) => ({ id, name, url, enabled, managed }))
 
 export default function ComfyServers() {
+  const {t} = useLocale()
+
   const { settings, setSettings, toast } = useStore()
   const s = settings!
   const [states, setStates] = useState<Record<string, ComfyServerState>>({})
@@ -62,7 +66,7 @@ export default function ComfyServers() {
     try {
       const list = await window.forge.comfy.discover()
       setFound(list)
-      if (!list.length) toast('Bu bilgisayarda çalışan ComfyUI bulunamadı (8188, 8000, 8189, 8190, 8001)', 'info')
+      if (!list.length) toast(message('panel.e24b716d14'), 'info')
     } finally {
       setBusy('')
     }
@@ -82,15 +86,15 @@ export default function ComfyServers() {
           <div key={x.id} className="mcp-row">
             <div className="row" style={{ marginBottom: 8 }}>
               <span className="svc" style={{ padding: 0, margin: 0, border: 0, background: 'none' }}>
-                <span className={`led ${led}`} title={st?.online ? 'Açık' : (st?.error ?? 'Kapalı')} />
+                <span className={`led ${led}`} title={st?.online ? t('panel.bbb1132f30') : (st?.error ?? t('comfy.off'))} />
               </span>
-              <input className="input" style={{ width: 200 }} value={x.name} title="Ad" onChange={(e) => edit(x.id, { name: e.target.value })} />
+              <input className="input" style={{ width: 200 }} value={x.name} title={t('surface.name')} onChange={(e) => edit(x.id, { name: e.target.value })} />
               <input
                 className="input"
                 style={{ flex: 1 }}
                 value={x.url}
                 placeholder="http://192.168.1.20:8188"
-                title="Adres"
+                title={t('panel.32c6bebf1c')}
                 onChange={(e) => edit(x.id, { url: e.target.value })}
                 onBlur={(e) => {
                   const v = normalizeComfyUrl(e.target.value)
@@ -101,19 +105,18 @@ export default function ComfyServers() {
                 {busy === `test:${x.id}` ? <span className="spinner" /> : 'Test et'}
               </button>
               {st?.online && (
-                <button className="btn" title="ComfyUI’ın düğüm editörünü tarayıcıda açar" onClick={() => window.forge.comfy.open(x.id)}>
-                  <Icon name="link" size={13} /> Aç
-                </button>
+                <button className="btn" title={t('panel.a2b2a0847b')} onClick={() => window.forge.comfy.open(x.id)}>
+                  <Icon name="link" size={13} /> {t('panel.dcc084f9a2')} </button>
               )}
               {!x.managed && (
-                <button className="btn ghost" title="Sunucuyu kaldır" onClick={() => setServers(s.comfyServers.filter((y) => y.id !== x.id))}>
+                <button className="btn ghost" title={t('panel.3ff47d4e64')} onClick={() => setServers(s.comfyServers.filter((y) => y.id !== x.id))}>
                   <Icon name="trash" size={14} />
                 </button>
               )}
             </div>
             <div className="row">
-              <Toggle value={x.enabled} onChange={(v) => edit(x.id, { enabled: v })} label="Etkin" />
-              {x.managed && <span className="chip">AssetForge kurulumu</span>}
+              <Toggle value={x.enabled} onChange={(v) => edit(x.id, { enabled: v })} label={t('panel.de91313104')} />
+              {x.managed && <span className="chip"> {t('panel.0f446b11bb')} </span>}
               {st?.online ? (
                 <span className="chip ok ellipsis" style={{ maxWidth: 340 }} title={st.info}>
                   {st.info}
@@ -122,7 +125,7 @@ export default function ComfyServers() {
               ) : (
                 st?.error && (
                   <span className={`chip ${x.managed ? '' : 'pink'} ellipsis`} style={{ maxWidth: 340 }} title={st.error}>
-                    {/token|reddetti|ComfyUI değil/.test(st.error) ? st.error : x.managed ? 'kapalı · kuruluysa gerekince kendiliğinden açılır' : 'kapalı / ulaşılamıyor'}
+                    {/token|reddetti|ComfyUI değil/.test(st.error) ? st.error : x.managed ? t('panel.c62801f0e9') : t('panel.21f7d98117')}
                   </span>
                 )
               )}
@@ -130,10 +133,8 @@ export default function ComfyServers() {
               {!x.managed &&
                 (x.hasToken ? (
                   <>
-                    <span className="chip ok">token kayıtlı</span>
-                    <button className="btn ghost" onClick={() => saveToken(x.id, '')}>
-                      Sil
-                    </button>
+                    <span className="chip ok"> {t('panel.62e1011e4e')} </span>
+                    <button className="btn ghost" onClick={() => saveToken(x.id, '')}> {t('panel.f698e9b40f')} </button>
                   </>
                 ) : (
                   <>
@@ -141,14 +142,12 @@ export default function ComfyServers() {
                       className="input"
                       type="password"
                       style={{ width: 200 }}
-                      placeholder="Token (isteğe bağlı)"
-                      title="Sunucu bir parola/token istiyorsa (ters vekil, kiralık GPU). Authorization: Bearer olarak gönderilir."
+                      placeholder={t('panel.224504476b')}
+                      title={t('panel.41510661f9')}
                       value={tokens[x.id] ?? ''}
                       onChange={(e) => setTokens((t) => ({ ...t, [x.id]: e.target.value }))}
                     />
-                    <button className="btn" disabled={!tokens[x.id]?.trim()} onClick={() => saveToken(x.id, tokens[x.id])}>
-                      Kaydet
-                    </button>
+                    <button className="btn" disabled={!tokens[x.id]?.trim()} onClick={() => saveToken(x.id, tokens[x.id])}> {t('panel.c1fe2ecdff')} </button>
                   </>
                 ))}
             </div>
@@ -158,18 +157,16 @@ export default function ComfyServers() {
 
       <div className="row" style={{ flexWrap: 'wrap', margin: '4px 0 10px' }}>
         <button className="btn" onClick={() => add()}>
-          <Icon name="plus" size={13} /> Sunucu ekle
-        </button>
-        <button className="btn" disabled={busy === 'discover'} onClick={discover} title="8188 (ComfyUI), 8000 (ComfyUI Desktop) ve yakın portları dener">
-          {busy === 'discover' ? <span className="spinner" /> : <Icon name="search" size={13} />} Bu bilgisayarda ara
-        </button>
+          <Icon name="plus" size={13} /> {t('panel.06251617d6')} </button>
+        <button className="btn" disabled={busy === 'discover'} onClick={discover} title={t('panel.701930f901')}>
+          {busy === 'discover' ? <span className="spinner" /> : <Icon name="search" size={13} />} {t('panel.f42312b5c1')} </button>
         <span className="spacer" />
-        <span className="dim small">Varsayılan sunucu</span>
+        <span className="dim small"> {t('panel.8617ed5b97')} </span>
         <select className="input" style={{ width: 220 }} value={s.comfyDefaultServer || 'auto'} onChange={(e) => patch({ comfyDefaultServer: e.target.value })}>
-          <option value="auto">Otomatik</option>
+          <option value="auto"> {t('panel.ee1cd50e94')} </option>
           {s.comfyServers.map((x) => (
             <option key={x.id} value={x.id}>
-              {x.enabled ? x.name : `${x.name} (kapalı)`}
+              {x.enabled ? x.name : t('comfy.disabledName', {name:x.name})}
             </option>
           ))}
         </select>
@@ -184,17 +181,16 @@ export default function ComfyServers() {
                 <b>{f.url}</b> <span className="muted small">{f.info}</span>
               </span>
               {f.known ? (
-                <span className="dim small">listede var</span>
+                <span className="dim small"> {t('panel.201d61974b')} </span>
               ) : (
                 <button
                   className="btn"
                   onClick={() => {
-                    add(f.url, f.url.endsWith(':8000') ? 'ComfyUI Desktop' : 'Bu bilgisayar (kendi ComfyUI’ım)')
+                    add(f.url, f.url.endsWith(':8000') ? 'ComfyUI Desktop' : t('panel.980cd6869f'))
                     setFound(found.map((y) => (y.url === f.url ? { ...y, known: true } : y)))
                   }}
                 >
-                  <Icon name="plus" size={13} /> Ekle
-                </button>
+                  <Icon name="plus" size={13} /> {t('panel.f560a85f28')} </button>
               )}
             </div>
           ))}
@@ -202,10 +198,7 @@ export default function ComfyServers() {
       )}
 
       <p className="dim small">
-        <b>Otomatik</b>: açık, workflow’un düğüm ve modelleri kurulu, kuyruğu en kısa sunucu seçilir; uymayanlar iş günlüğünde nedeniyle yazılır. Başka bir bilgisayardaki ComfyUI’ı kullanmak için
-        orada ComfyUI’ı <code>--listen 0.0.0.0</code> ile başlatın ve güvenlik duvarında portuna (ör. 8188) izin verin. ComfyUI’ın kendi parolası yoktur; yalnızca güvendiğiniz ev/ofis ağında açın,
-        internete açacaksanız token isteyen bir vekilin arkasına koyun.
-      </p>
+        <b> {t('panel.ee1cd50e94')} </b> {t('panel.334e66d8e3')} <code>--listen 0.0.0.0</code> {t('panel.2a5249f17f')} </p>
     </div>
   )
 }

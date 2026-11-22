@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { type ReactNode, useState } from 'react'
+import { useLocale } from '../i18n'
 
 export function Field({ label, help, children, wide }: { label: string; help?: string; children: ReactNode; wide?: boolean }) {
   return (
@@ -68,15 +69,16 @@ export function AsyncButton(props: { onClick: () => Promise<unknown>; children: 
 }
 
 export function StatusPill({ status }: { status: string }) {
+  const { t } = useLocale()
   const labels: Record<string, string> = {
-    queued: 'sırada',
-    running: 'çalışıyor',
-    done: 'bitti',
-    failed: 'hata',
-    canceled: 'iptal',
-    skipped: 'atlandı',
-    retrying: 'yeniden',
-    idle: 'bekliyor'
+    queued: t('status.queued'),
+    running: t('status.running'),
+    done: t('status.done'),
+    failed: t('status.failed'),
+    canceled: t('status.canceled'),
+    skipped: t('status.skipped'),
+    retrying: t('status.retrying'),
+    idle: t('status.idle')
   }
   return <span className={`pill s-${status}`}>{labels[status] ?? status}</span>
 }

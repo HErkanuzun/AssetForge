@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { translate } from '../../shared/i18n'
+import { getSettings } from '../settings'
 // Web hesapları: sahip parolası, davet bağlantıları (rol + süre + kullanım sayısı), oturumlar.
 // Parolalar scrypt ile tuzlanmış özet olarak, oturum anahtarları SHA-256 özetiyle saklanır. Davet bağlantıları,
 // sahip yeniden kopyalayabilsin diye bu bilgisayarda açık tutulur; kullanılınca ya da süresi dolunca silinir.
@@ -80,8 +82,8 @@ function checkPassword(u: StoredUser, pw: string): boolean {
 
 function validate(name: string, pw: string): { name: string } {
   const n = name.trim().replace(/\s+/g, ' ')
-  if (n.length < 2 || n.length > 40) throw new Error('Ad 2–40 karakter olmalı')
-  if (pw.length < 8) throw new Error('Parola en az 8 karakter olmalı')
+  if (n.length < 2 || n.length > 40) throw new Error(translate(getSettings().locale, 'web.nameLength'))
+  if (pw.length < 8) throw new Error(translate(getSettings().locale, 'web.passwordLength'))
   return { name: n }
 }
 
@@ -99,7 +101,7 @@ export function setOwner(name: string, pw: string): WebUserPublic {
   const v = validate(name, pw)
   const d = data()
   let u = d.users.find((x) => x.role === 'owner')
-  if (d.users.some((x) => x !== u && x.name.toLowerCase() === v.name.toLowerCase())) throw new Error('Bu ad başka bir hesapta kullanılıyor')
+  if (d.users.some((x) => x !== u && x.name.toLowerCase() === v.name.toLowerCase())) throw new Error(translate(getSettings().locale, 'web.accountNameTaken'))
   const salt = crypto.randomBytes(16).toString('hex')
   if (u) {
     u.name = v.name
@@ -116,7 +118,7 @@ export function setOwner(name: string, pw: string): WebUserPublic {
 }
 
 export function createInvite(role: WebRole, hours = 72, maxUses = 1): StoredInvite {
-  if (role === 'owner') throw new Error('Sahip daveti oluşturulamaz')
+  if (role === 'owner') throw new Error(translate(getSettings().locale, 'web.ownerInvite'))
   const t = token()
   const inv: StoredInvite = { id: sha(t), token: t, role, createdAt: Date.now(), expiresAt: Date.now() + Math.max(1, hours) * 3600_000, uses: 0, maxUses: Math.max(1, Math.round(maxUses)) }
   data().invites.push(inv)
@@ -146,9 +148,9 @@ export function inviteInfo(t: string): { role: WebRole } | null {
 export function join(t: string, name: string, pw: string): WebUserPublic {
   const d = data()
   const inv = d.invites.find((x) => x.id === sha(t))
-  if (!inv || inv.expiresAt < Date.now() || inv.uses >= inv.maxUses) throw new Error('Davet geçersiz ya da süresi dolmuş')
+  if (!inv || inv.expiresAt < Date.now() || inv.uses >= inv.maxUses) throw new Error(translate(getSettings().locale, 'web.inviteExpired'))
   const v = validate(name, pw)
-  if (d.users.some((x) => x.name.toLowerCase() === v.name.toLowerCase())) throw new Error('Bu ad kullanılıyor; başka bir ad seçin')
+  if (d.users.some((x) => x.name.toLowerCase() === v.name.toLowerCase())) throw new Error(translate(getSettings().locale, 'web.nameTaken'))
   const salt = crypto.randomBytes(16).toString('hex')
   const u: StoredUser = { id: `usr_${token().slice(0, 10)}`, name: v.name, role: inv.role, createdAt: Date.now(), salt, hash: hashPassword(pw, salt) }
   inv.uses++

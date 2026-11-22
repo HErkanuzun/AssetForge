@@ -43,6 +43,7 @@ export interface ForgeApi {
   /** Tarayıcıdan (web sunucusu üzerinden) mı açıldı */
   isWeb: boolean
   settings: {
+    onLocale(cb: (locale: import('../shared/i18n').Locale) => void): () => void
     get(): Promise<SettingsPublic>
     set(patch: SettingsPatch): Promise<SettingsPublic>
   }

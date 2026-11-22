@@ -12,6 +12,8 @@ import { allowed, foreignPath, shellEscalation } from '../src/main/web/policy'
 import { currentCaller } from '../src/main/web/caller'
 import { emit } from '../src/main/web/hub'
 import { syncWebServer, webRunning, type Handler } from '../src/main/web/server'
+import { translate } from '../src/shared/i18n'
+import { getSettings, setSettings } from '../src/main/settings'
 
 const tmp = path.join(os.tmpdir(), 'assetforge-test')
 const accessFile = path.join(tmp, 'web-access.json')
@@ -87,10 +89,10 @@ describe('hesaplar ve davetler', () => {
     expect(ed.role).toBe('editor')
     // Tek kullanımlık davet bitti
     expect(inviteInfo(inv.token)).toBeNull()
-    expect(() => join(inv.token, 'Başka', 'parola-xyz')).toThrow(/geçersiz/)
+    expect(() => join(inv.token, 'Başka', 'parola-xyz')).toThrow(translate(getSettings().locale, 'web.inviteExpired'))
     // Aynı ad iki kez alınamaz
     const inv2 = createInvite('viewer', 1, 2)
-    expect(() => join(inv2.token, 'editör ece', 'parola-xyz')).toThrow(/kullanılıyor/)
+    expect(() => join(inv2.token, 'editör ece', 'parola-xyz')).toThrow(translate(getSettings().locale, 'web.nameTaken'))
 
     expect(login('Editör Ece', 'yanlış-parola')).toBeNull()
     expect(login('editör ece', 'ece-parola')?.id).toBe(ed.id)
@@ -212,6 +214,32 @@ describe('web sunucusu (HTTP)', () => {
     const r = await fetch(base + '/', { headers: { Cookie: viewerCookie } })
     expect(r.status).toBe(200)
     expect(await r.text()).toContain('<title>AF</title>')
+  })
+
+  it('localizes authentication pages and validation without changing permissions or CSP', async () => {
+    const previous = getSettings().locale
+    try {
+      for (const locale of ['en', 'zh-CN'] as const) {
+        setSettings({ locale })
+        const loginResponse = await fetch(base + '/login')
+        const html = await loginResponse.text()
+        expect(html).toContain(`lang="${locale}"`)
+        expect(html).toContain(translate(locale, 'web.loginHelp'))
+        expect(html).not.toContain('Giriş yap')
+        expect(loginResponse.headers.get('content-security-policy')).toContain("default-src 'none'")
+        const invite = createInvite('viewer')
+        const inviteHtml = await (await fetch(`${base}/join/${invite.token}`)).text()
+        expect(inviteHtml).toContain(translate(locale, 'web.viewerRole'))
+        const invalid = await fetch(`${base}/join/invalid-link`)
+        expect(invalid.status).toBe(410)
+        expect(await invalid.text()).toContain(translate(locale, 'web.invalidInvite'))
+        const invalidName = await fetch(`${base}/join/${invite.token}`, { method: 'POST', body: new URLSearchParams({ name: '<', password: 'fixture-password' }) })
+        expect(invalidName.status).toBe(400)
+        expect(await invalidName.text()).toContain(translate(locale, 'web.nameLength'))
+      }
+    } finally {
+      setSettings({ locale: previous })
+    }
   })
 
   it('işlem çağrısı rol ile denetlenir ve çağıranı bilir', async () => {

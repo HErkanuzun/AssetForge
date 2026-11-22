@@ -1,3 +1,5 @@
+import {lastSeen,timeLeft} from '../../../shared/i18n/display'
+import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
 // Ayarlar → Web ve paylaşım: tarayıcıdan aynı arayüz, sahip hesabı, davet bağlantıları, kişiler ve roller
 import { useCallback, useEffect, useState } from 'react'
@@ -5,26 +7,6 @@ import type { WebRole, WebStatus } from '../../../shared/types'
 import { useStore } from '../store'
 import { AsyncButton, Field, Select, TextInput, Toggle } from './ui'
 import { Icon } from './icons'
-
-const ROLE: Record<WebRole, string> = { owner: 'Sahip', editor: 'Editör', viewer: 'İzleyici' }
-const ROLE_HELP: Record<WebRole, string> = {
-  owner: 'Her şey, Ayarlar dahil',
-  editor: 'Asset, hat, brief, tasarım düzenler ve üretim başlatır. Ayarlar, anahtarlar, kurulumlar ve Unreal Python’a dokunamaz.',
-  viewer: 'Yalnızca görüntüler'
-}
-
-const ago = (t?: number) => {
-  if (!t) return 'hiç'
-  const m = Math.round((Date.now() - t) / 60_000)
-  if (m < 1) return 'şimdi'
-  if (m < 60) return `${m} dk önce`
-  const h = Math.round(m / 60)
-  return h < 48 ? `${h} sa önce` : `${Math.round(h / 24)} gün önce`
-}
-const left = (t: number) => {
-  const h = Math.max(0, Math.round((t - Date.now()) / 3600_000))
-  return h < 48 ? `${h} sa` : `${Math.round(h / 24)} gün`
-}
 
 function Card({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
@@ -37,6 +19,10 @@ function Card({ title, desc, children }: { title: string; desc?: string; childre
 }
 
 export default function WebSettings() {
+  const {t, locale} = useLocale()
+  const ROLE = { owner:t('role.owner'),editor:t('role.editor'),viewer:t('role.viewer') }
+  const ROLE_HELP = {owner:t('web.roleHelp.owner'),editor:t('web.roleHelp.editor'),viewer:t('web.roleHelp.viewer')}
+
   const { settings, setSettings, toast } = useStore()
   const s = settings!
   const cfg = s.web
@@ -77,27 +63,25 @@ export default function WebSettings() {
   return (
     <>
       <Card
-        title="Web sunucusu"
-        desc="AssetForge’u tarayıcıdan da açın: aynı proje, aynı işler, aynı arayüz. Ekip arkadaşlarınız davet bağlantısıyla katılır; herkesin yaptığı değişiklik diğerlerine anında yansır. Üretim bu bilgisayarda ve bu bilgisayarın anahtarlarıyla yapılır."
+        title={t('panel.b35744103f')}
+        desc={t('panel.990581ffe0')}
       >
         <div className="row" style={{ flexWrap: 'wrap', gap: 18 }}>
-          <Toggle value={cfg.enabled} onChange={(v) => patchWeb({ enabled: v })} label="Sunucu açık" />
-          <Toggle value={cfg.lan} onChange={(v) => patchWeb({ lan: v })} label="Yerel ağa aç (diğer bilgisayarlar)" />
-          <Toggle value={cfg.headless} onChange={(v) => patchWeb({ headless: v })} label="Açılışta pencere açılmasın (yalnızca sunucu)" />
+          <Toggle value={cfg.enabled} onChange={(v) => patchWeb({ enabled: v })} label={t('panel.8583da6400')} />
+          <Toggle value={cfg.lan} onChange={(v) => patchWeb({ lan: v })} label={t('panel.2a603a335d')} />
+          <Toggle value={cfg.headless} onChange={(v) => patchWeb({ headless: v })} label={t('panel.4337798e64')} />
         </div>
         <div className="grid2" style={{ marginTop: 12 }}>
-          <Field label="Port" help="1024–65535. Değiştirince sunucu yeniden başlar.">
+          <Field label={t('panel.72e9a59f5a')} help={t('panel.9b35f4d869')}>
             <div className="row">
               <TextInput value={port} onChange={setPort} />
-              <AsyncButton disabled={!portOk || portNum === cfg.port} onClick={() => patchWeb({ port: portNum })}>
-                Uygula
-              </AsyncButton>
+              <AsyncButton disabled={!portOk || portNum === cfg.port} onClick={() => patchWeb({ port: portNum })}> {t('panel.08a24723d5')} </AsyncButton>
             </div>
           </Field>
-          <Field label="Durum">
+          <Field label={t('surface.status')}>
             <div className="row" style={{ flexWrap: 'wrap' }}>
               <span className={`web-led ${st?.running ? 'on' : st?.error ? 'err' : ''}`} />
-              <span className="small">{st?.running ? `Açık · ${st.online.length} bağlı` : st?.error ? st.error : 'Kapalı'}</span>
+              <span className="small">{st?.running ? t('web.online', {count:st.online.length}) : st?.error ? st.error : t('panel.39ce8f3878')}</span>
             </div>
           </Field>
         </div>
@@ -107,42 +91,38 @@ export default function WebSettings() {
               <div key={u} className="row">
                 <Icon name="link" size={14} />
                 <b className="ellipsis">{u}</b>
-                <span className="muted small">{i === 0 ? 'bu bilgisayar' : 'yerel ağ'}</span>
+                <span className="muted small">{i === 0 ? t('panel.51b0a3ddce') : t('panel.48c9b994b4')}</span>
                 <span className="spacer" />
-                <button className="btn" onClick={() => copy(u)}>
-                  Kopyala
-                </button>
+                <button className="btn" onClick={() => copy(u)}> {t('panel.a8bcca42d9')} </button>
               </div>
             ))}
-            {!cfg.lan && <span className="dim small">Yalnızca bu bilgisayardan açılır. Başkaları katılacaksa “Yerel ağa aç”ı açın ya da aşağıdaki tünel yollarından birini kullanın.</span>}
+            {!cfg.lan && <span className="dim small"> {t('panel.0b7c714d91')} </span>}
           </div>
         )}
         {cfg.enabled && !st?.ownerSet && (
           <div className="set-note">
             <Icon name="x" size={15} />
-            <span>Tarayıcıdan girebilmek için önce aşağıdan sahip hesabını oluşturun.</span>
+            <span> {t('panel.ec962927fa')} </span>
           </div>
         )}
         {!window.forge.isWeb && (
           <div className="row" style={{ marginTop: 10, flexWrap: 'wrap' }}>
             <AsyncButton
               disabled={!st?.running}
-              title="Pencere kapanır; sunucu bildirim alanında (saatin yanında) çalışmaya devam eder. Simgeye tıklayınca pencere geri gelir."
+              title={t('panel.d789b07f5e')}
               onClick={() => run(() => window.forge.web.headless())}
-            >
-              Pencereyi kapat, sunucu çalışsın
-            </AsyncButton>
-            <span className="dim small">Komut satırından: AssetForge.exe --headless</span>
+            > {t('panel.3cb14d8b6f')} </AsyncButton>
+            <span className="dim small"> {t('panel.4197eafbad')} </span>
           </div>
         )}
       </Card>
 
-      <Card title="Sahip hesabı" desc="Tarayıcıdan sizin girişiniz. Sahip her şeyi yapabilir (Ayarlar dahil). Parolayı değiştirmek eski oturumları kapatır.">
+      <Card title={t('panel.33485f74d8')} desc={t('panel.b423d54552')}>
         <div className="grid2">
-          <Field label="Ad">
+          <Field label={t('surface.name')}>
             <TextInput value={owner.name} onChange={(v) => setOwner({ ...owner, name: v })} placeholder={users.find((u) => u.role === 'owner')?.name ?? 'ör. Deniz'} />
           </Field>
-          <Field label="Parola" help="En az 8 karakter">
+          <Field label={t('panel.e3962ceb93')} help={t('panel.a853252458')}>
             <TextInput type="password" value={owner.password} onChange={(v) => setOwner({ ...owner, password: v })} />
           </Field>
         </div>
@@ -155,48 +135,48 @@ export default function WebSettings() {
                 await window.forge.web.setOwner(owner.name, owner.password)
                 setOwner({ name: '', password: '' })
               },
-              st?.ownerSet ? 'Sahip hesabı güncellendi' : 'Sahip hesabı oluşturuldu'
+              st?.ownerSet ? t('panel.e257ea5b74') : t('panel.7366580f62')
             )
           }
         >
-          {st?.ownerSet ? 'Güncelle' : 'Oluştur'}
+          {st?.ownerSet ? t('panel.bf6531d30a') : t('panel.89c75b03b9')}
         </AsyncButton>
       </Card>
 
-      <Card title="Davet bağlantıları" desc="Bağlantıyı açan kişi kendi adını ve parolasını seçip katılır. Bağlantıyı yalnızca güvendiğiniz kişilerle paylaşın.">
+      <Card title={t('panel.e4c0dfec04')} desc={t('panel.384242ca51')}>
         <div className="row" style={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <Field label="Rol" help={ROLE_HELP[inv.role]} wide>
+          <Field label={t('panel.fb9f51fe92')} help={ROLE_HELP[inv.role]} wide>
             <Select
               value={inv.role}
               onChange={(v) => setInv({ ...inv, role: v as WebRole })}
               options={[
-                { value: 'editor', label: 'Editör — üretir ve düzenler' },
-                { value: 'viewer', label: 'İzleyici — yalnızca bakar' }
+                { value: 'editor', label: t('panel.950cc4a742') },
+                { value: 'viewer', label: t('panel.45efaf3a81') }
               ]}
             />
           </Field>
         </div>
         <div className="grid2">
-          <Field label="Geçerlilik">
+          <Field label={t('panel.0f2540d5f3')}>
             <Select
               value={inv.hours}
               onChange={(v) => setInv({ ...inv, hours: v })}
               options={[
-                { value: '1', label: '1 saat' },
-                { value: '24', label: '1 gün' },
-                { value: '72', label: '3 gün' },
-                { value: '168', label: '1 hafta' }
+                { value: '1', label: t('panel.384a906712') },
+                { value: '24', label: t('panel.b90bcde7b2') },
+                { value: '72', label: t('panel.28511bc326') },
+                { value: '168', label: t('panel.ebfa7fc06a') }
               ]}
             />
           </Field>
-          <Field label="Kaç kişi kullanabilir">
+          <Field label={t('panel.02a418f115')}>
             <Select
               value={inv.uses}
               onChange={(v) => setInv({ ...inv, uses: v })}
               options={[
-                { value: '1', label: '1 kişi' },
-                { value: '5', label: '5 kişi' },
-                { value: '20', label: '20 kişi' }
+                { value: '1', label: t('panel.463276e127') },
+                { value: '5', label: t('panel.6827d2bde5') },
+                { value: '20', label: t('panel.b66a2719c7') }
               ]}
             />
           </Field>
@@ -204,26 +184,22 @@ export default function WebSettings() {
         <AsyncButton
           className="primary"
           disabled={!st?.running}
-          title={st?.running ? undefined : 'Önce sunucuyu açın'}
+          title={st?.running ? undefined : t('panel.e157651b7f')}
           onClick={() =>
             run(async () => {
               const link = await window.forge.web.invite(inv.role, Number(inv.hours), Number(inv.uses))
               setLastLink(link)
               await navigator.clipboard.writeText(link).catch(() => undefined)
-            }, 'Davet bağlantısı oluşturuldu ve kopyalandı')
+            }, t('panel.7c03117929'))
           }
-        >
-          Davet oluştur
-        </AsyncButton>
+        > {t('panel.96bc426fd7')} </AsyncButton>
         {lastLink && (
           <div className="set-note ok" style={{ marginTop: 10 }}>
             <Icon name="check" size={15} />
             <b className="ellipsis" style={{ flex: 1 }}>
               {lastLink}
             </b>
-            <button className="btn" onClick={() => copy(lastLink)}>
-              Kopyala
-            </button>
+            <button className="btn" onClick={() => copy(lastLink)}> {t('panel.a8bcca42d9')} </button>
           </div>
         )}
         {!!st?.invites.length && (
@@ -232,31 +208,27 @@ export default function WebSettings() {
               <div key={i.token} className="mcp-row row">
                 <span className="chip">{ROLE[i.role]}</span>
                 <span className="small muted">
-                  {i.uses}/{i.maxUses} kullanıldı · {left(i.expiresAt)} kaldı
+                  {t('web.inviteUsage', {used:i.uses,max:i.maxUses,time:timeLeft(locale,i.expiresAt)})}
                 </span>
                 <span className="spacer" />
-                <button className="btn" onClick={() => copy(i.url)}>
-                  Bağlantıyı kopyala
-                </button>
-                <button className="btn ghost" onClick={() => run(() => window.forge.web.revokeInvite(i.token), 'Davet iptal edildi')}>
-                  İptal
-                </button>
+                <button className="btn" onClick={() => copy(i.url)}> {t('panel.a2bb5f86fa')} </button>
+                <button className="btn ghost" onClick={() => run(() => window.forge.web.revokeInvite(i.token), t('panel.d68eeec498'))}> {t('surface.cancel')} </button>
               </div>
             ))}
           </div>
         )}
       </Card>
 
-      <Card title="Kişiler" desc="Rol değişince ya da kişi kaldırılınca açık bağlantısı kapanır; yeni rolle yeniden bağlanır.">
-        {!users.length && <p className="dim small">Henüz hesap yok.</p>}
+      <Card title={t('panel.9ec02b00cc')} desc={t('panel.c980168c12')}>
+        {!users.length && <p className="dim small"> {t('panel.f152953309')} </p>}
         {users.map((u) => (
           <div key={u.id} className="mcp-row row">
-            <span className={`web-led ${onlineNames.has(u.name) ? 'on' : ''}`} title={onlineNames.has(u.name) ? 'Şu an bağlı' : 'Bağlı değil'} />
+            <span className={`web-led ${onlineNames.has(u.name) ? 'on' : ''}`} title={onlineNames.has(u.name) ? t('panel.96c969056a') : t('panel.a6204fb9ae')} />
             <b>{u.name}</b>
-            <span className="small muted">son görülme: {onlineNames.has(u.name) ? 'şimdi' : ago(u.lastSeen)}</span>
+            <span className="small muted">{t('web.lastSeen', {time:lastSeen(locale,onlineNames.has(u.name)?Date.now():u.lastSeen)})}</span>
             <span className="spacer" />
             {u.role === 'owner' ? (
-              <span className="chip ok">Sahip</span>
+              <span className="chip ok"> {t('panel.4661915f75')} </span>
             ) : (
               <>
                 <select
@@ -265,10 +237,10 @@ export default function WebSettings() {
                   value={u.role}
                   onChange={(e) => run(() => window.forge.web.setRole(u.id, e.target.value as WebRole), `${u.name}: ${ROLE[e.target.value as WebRole]}`)}
                 >
-                  <option value="editor">Editör</option>
-                  <option value="viewer">İzleyici</option>
+                  <option value="editor"> {t('panel.e3948c8c82')} </option>
+                  <option value="viewer"> {t('panel.ec9c1cfbf8')} </option>
                 </select>
-                <button className="btn ghost" title="Hesabı kaldır" onClick={() => confirm(`${u.name} kaldırılsın mı?`) && run(() => window.forge.web.removeUser(u.id), `${u.name} kaldırıldı`)}>
+                <button className="btn ghost" title={t('panel.065c074ce3')} onClick={() => confirm(t('web.removeConfirm', {name:u.name})) && run(() => window.forge.web.removeUser(u.id), t('web.removed', {name:u.name}))}>
                   <Icon name="trash" size={13} />
                 </button>
               </>
@@ -277,23 +249,16 @@ export default function WebSettings() {
         ))}
       </Card>
 
-      <Card title="İnternetten erişim ve güvenlik">
+      <Card title={t('panel.2e0cef85fb')}>
         <ol className="set-steps small">
           <li>
-            <b>Aynı ağ (ofis, ev):</b> “Yerel ağa aç”ı açıp yukarıdaki ağ adresini paylaşın. Windows ilk seferde güvenlik duvarı izni sorar; “Özel ağlar”a izin verin.
-          </li>
+            <b> {t('panel.b916659b94')} </b> {t('panel.88bdecdabc')} </li>
           <li>
-            <b>Tailscale (önerilen):</b> herkes Tailscale’i kurup aynı ağa (tailnet) katılır; adres <code>http://bilgisayar-adı:{cfg.port}</code> olur. Trafik şifrelidir ve dışarıya açık port yoktur.
-          </li>
+            <b> {t('panel.2e376bb0b4')} </b> {t('panel.f758b8a9f1')} <code>http://computer-name:{cfg.port}</code> {t('panel.503999d609')} </li>
           <li>
-            <b>Cloudflare Tunnel:</b> <code>cloudflared tunnel --url http://127.0.0.1:{cfg.port}</code> komutu size bir https adresi verir. “Yerel ağa aç” kapalı kalabilir. Davet bağlantılarındaki
-            adresi tünel adresiyle değiştirin.
-          </li>
+            <b>Cloudflare Tunnel:</b> <code>cloudflared tunnel --url http://127.0.0.1:{cfg.port}</code> {t('panel.b67804e196')} </li>
         </ol>
-        <p className="dim small">
-          Yerel ağda bağlantı şifresiz HTTP’dir; parolalar aynı ağdaki biri tarafından görülebilir. Güvenmediğiniz ağlarda Tailscale ya da tünel kullanın. Editörlerin başlattığı üretimler bu
-          bilgisayardaki API anahtarlarıyla ve kredisiyle yapılır. Editörler proje klasörü dışındaki dosyaları okutamaz, Ayarlar’a ve Unreal Python’a erişemez.
-        </p>
+        <p className="dim small"> {t('panel.195981fd2f')} </p>
       </Card>
     </>
   )

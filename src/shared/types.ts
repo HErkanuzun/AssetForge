@@ -325,6 +325,7 @@ export interface Job {
 }
 
 export interface SettingsPublic {
+  locale: import('./i18n').Locale
   claudeModel: string
   hasKeys: { anthropic: boolean; meshy: boolean; elevenlabs: boolean; huggingface: boolean; comfy: boolean }
   /** Manny/Quinn IK Rig yolu (retarget kaynağı) */
@@ -362,6 +363,7 @@ export interface SettingsPublic {
 }
 
 export interface SettingsPatch {
+  locale?: import('./i18n').Locale
   claudeModel?: string
   comfyServers?: ComfyServer[]
   comfyDefaultServer?: string

@@ -6,6 +6,7 @@ import path from 'node:path'
 const tmp = path.join(os.tmpdir(), 'assetforge-test')
 
 export const app = {
+  getLocale: () => 'en-US',
   getPath: (_name: string) => tmp,
   getAppPath: () => process.cwd(),
   isPackaged: false

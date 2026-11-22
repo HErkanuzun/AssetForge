@@ -1,3 +1,4 @@
+import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
 import {
   addEdge,
@@ -99,6 +100,8 @@ function newPipelineId() {
 }
 
 function Editor({ goJobs }: { goJobs: () => void }) {
+  const {t} = useLocale()
+
   const { project, update, jobs, selectedAssets, saveNow, toast, settings } = useStore()
   const p = project!
   const [pipelineId, setPipelineId] = useState(p.pipelines[0]?.id ?? '')
@@ -230,7 +233,7 @@ function Editor({ goJobs }: { goJobs: () => void }) {
     return [...m.entries()]
   }, [])
 
-  if (!pipeline) return <div className="empty">Pipeline yok</div>
+  if (!pipeline) return <div className="empty"> {t('panel.ec2ef9a2da')} </div>
 
   return (
     <div className="pipeline">
@@ -247,19 +250,15 @@ function Editor({ goJobs }: { goJobs: () => void }) {
           onChange={(v) => v && createFrom(v)}
           options={[
             { value: '', label: '+ Yeni hat…' },
-            { value: 'empty', label: 'Boş hat' },
+            { value: 'empty', label: t('panel.d95b50e050') },
             ...PIPELINE_TEMPLATES.map((t) => ({ value: t.id, label: 'Şablon: ' + t.name })),
-            { value: pipelineId, label: 'Bu hattı kopyala' }
+            { value: pipelineId, label: t('panel.9eb5db7d08') }
           ]}
         />
-        <button className="btn ghost" onClick={removePipeline} disabled={p.pipelines.length <= 1}>
-          Sil
-        </button>
+        <button className="btn ghost" onClick={removePipeline} disabled={p.pipelines.length <= 1}> {t('panel.f698e9b40f')} </button>
         <div className="spacer" />
         {pipelineJobs.length > 0 && <Select value={shownJob?.id ?? ''} onChange={setJobId} options={pipelineJobs.slice(0, 30).map((j) => ({ value: j.id, label: `${j.assetName} — ${j.status}` }))} />}
-        <button className="btn primary" onClick={() => setShowRun(true)}>
-          ▶ Çalıştır
-        </button>
+        <button className="btn primary" onClick={() => setShowRun(true)}> {t('panel.94775a5e2a')} </button>
       </div>
       <p className="pl-desc muted">{pipeline.description}</p>
 
@@ -336,13 +335,11 @@ function Editor({ goJobs }: { goJobs: () => void }) {
             </>
           ) : (
             <div className="muted small">
-              <p>Bir node seçin ya da soldaki listeden ekleyin.</p>
-              <p>
-                Portları sürükleyerek bağlayın. Renkler veri tipini gösterir; uyumsuz portlar bağlanmaz. Silmek için <b>Delete</b>.
+              <p> {t('panel.f1bd5ab113')} </p>
+              <p> {t('panel.50254caf5b')} <b>Delete</b>.
               </p>
               <p>
-                <b>Kalite Kontrol</b> node'u başarısız olursa kendisine en yakın <b>Prompt Motoru</b>na geri bildirim gönderir ve aradaki adımlar yeniden çalışır.
-              </p>
+                <b> {t('panel.f29f27a1a2')} </b> {t('panel.1b2d078ca6')} <b> {t('panel.7d8bab40d3')} </b> {t('panel.6483e3c0d8')} </p>
             </div>
           )}
         </div>
@@ -367,6 +364,8 @@ function Editor({ goJobs }: { goJobs: () => void }) {
 }
 
 function RunDialog({ onClose, onRun, preselected }: { onClose: () => void; onRun: (ids: string[]) => Promise<void>; preselected: string[] }) {
+  const {t} = useLocale()
+
   const { project } = useStore()
   const [q, setQ] = useState('')
   const [ids, setIds] = useState<string[]>(preselected)
@@ -374,8 +373,8 @@ function RunDialog({ onClose, onRun, preselected }: { onClose: () => void; onRun
   return (
     <div className="modal-back" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>Hangi asset(ler) üretilsin?</h2>
-        <input className="input" autoFocus placeholder="Ara…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <h2> {t('panel.1b60eb555b')} </h2>
+        <input className="input" autoFocus placeholder={t('surface.search')} value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="modal-list">
           {assets.map((a) => (
             <label key={a.id} className="modal-row">
@@ -383,17 +382,13 @@ function RunDialog({ onClose, onRun, preselected }: { onClose: () => void; onRun
               <span className="mono">{a.id}</span> {a.name}
             </label>
           ))}
-          {!assets.length && <p className="muted">Asset yok — önce Asset Listesi'nden içe aktarın.</p>}
+          {!assets.length && <p className="muted"> {t('panel.0349858e5f')} </p>}
         </div>
         <div className="row between">
-          <span className="muted">{ids.length} seçili</span>
+          <span className="muted">{ids.length} {t('panel.4d67b1a833')} </span>
           <div className="row">
-            <button className="btn ghost" onClick={onClose}>
-              Vazgeç
-            </button>
-            <AsyncButton className="primary" disabled={!ids.length} onClick={() => onRun(ids)}>
-              ▶ Başlat
-            </AsyncButton>
+            <button className="btn ghost" onClick={onClose}> {t('panel.39a8d28c1c')} </button>
+            <AsyncButton className="primary" disabled={!ids.length} onClick={() => onRun(ids)}> {t('panel.10260b08d7')} </AsyncButton>
           </div>
         </div>
       </div>

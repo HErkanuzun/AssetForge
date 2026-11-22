@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { translate } from '../../shared/i18n'
+import { getSettings } from '../settings'
 // Web sunucusu: masaüstü arayüzünün aynısını tarayıcıya sunar. Arayüzün çağırdığı her işlem (IPC) burada
 // HTTP'den aynı işleyiciye gider; olaylar Server-Sent Events ile akar; dosyalar /files altından okunur.
 // Giriş: sahip parolası ya da davet bağlantısıyla açılan hesaplar. Roller policy.ts'te.
@@ -133,7 +135,7 @@ function readBody(req: http.IncomingMessage, max: number): Promise<Buffer> {
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
 function page(title: string, body: string): string {
-  return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · AssetForge</title>
+  return `<!doctype html><html lang="${getSettings().locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · AssetForge</title>
 <style>
 :root{color-scheme:dark}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0c10;color:#e8e8ec;font:15px/1.5 system-ui,Segoe UI,sans-serif;padding:16px}
 .box{width:100%;max-width:380px;background:#14161c;border:1px solid #262a33;border-radius:16px;padding:28px}
@@ -147,18 +149,18 @@ button{margin-top:18px;width:100%;padding:11px;border:0;border-radius:10px;backg
 
 const loginPage = (err = '') =>
   page(
-    'Giriş',
-    `<h1>Giriş yap</h1><p>Bu AssetForge’u paylaşan kişinin verdiği hesapla girin.</p>${err ? `<div class="err">${esc(err)}</div>` : ''}
-<form method="post" action="/login"><label for="n">Ad</label><input id="n" name="name" autocomplete="username" required autofocus>
-<label for="p">Parola</label><input id="p" name="password" type="password" autocomplete="current-password" required><button type="submit">Giriş</button></form>`
+    translate(getSettings().locale, 'web.loginTitle'),
+    `<h1>${esc(translate(getSettings().locale, 'web.loginHeading'))}</h1><p>${esc(translate(getSettings().locale, 'web.loginHelp'))}</p>${err ? `<div class="err">${esc(err)}</div>` : ''}
+<form method="post" action="/login"><label for="n">${esc(translate(getSettings().locale, 'web.name'))}</label><input id="n" name="name" autocomplete="username" required autofocus>
+<label for="p">${esc(translate(getSettings().locale, 'web.password'))}</label><input id="p" name="password" type="password" autocomplete="current-password" required><button type="submit">${esc(translate(getSettings().locale, 'web.loginTitle'))}</button></form>`
   )
 
 const joinPage = (t: string, role: WebRole, err = '') =>
   page(
-    'Katıl',
-    `<h1>Projeye katıl</h1><p>Rolün: <b>${ROLE_LABEL[role]}</b>${role === 'viewer' ? ' (yalnızca görüntüleme)' : ' (üretebilir ve düzenleyebilirsin)'}. Kendine bir ad ve parola seç.</p>${err ? `<div class="err">${esc(err)}</div>` : ''}
-<form method="post" action="/join/${esc(t)}"><label for="n">Ad</label><input id="n" name="name" autocomplete="username" minlength="2" maxlength="40" required autofocus>
-<label for="p">Parola (en az 8 karakter)</label><input id="p" name="password" type="password" autocomplete="new-password" minlength="8" required><button type="submit">Katıl</button></form>`
+    translate(getSettings().locale, 'web.join'),
+    `<h1>${esc(translate(getSettings().locale, 'web.joinHeading'))}</h1><p>${esc(translate(getSettings().locale, 'web.joinHelp', { role: translate(getSettings().locale, role === 'viewer' ? 'web.viewerRole' : role === 'owner' ? 'role.owner' : 'web.editorRole') }))}</p>${err ? `<div class="err">${esc(err)}</div>` : ''}
+<form method="post" action="/join/${esc(t)}"><label for="n">${esc(translate(getSettings().locale, 'web.name'))}</label><input id="n" name="name" autocomplete="username" minlength="2" maxlength="40" required autofocus>
+<label for="p">${esc(translate(getSettings().locale, 'web.newPassword'))}</label><input id="p" name="password" type="password" autocomplete="new-password" minlength="8" required><button type="submit">${esc(translate(getSettings().locale, 'web.join'))}</button></form>`
   )
 
 const PAGE_CSP = { 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'" }
@@ -232,10 +234,10 @@ async function route(req: http.IncomingMessage, res: http.ServerResponse, deps: 
 
   if (p === '/login' && req.method === 'GET') return send(res, 200, loginPage(), 'text/html; charset=utf-8', PAGE_CSP)
   if (p === '/login' && req.method === 'POST') {
-    if (limited(ip)) return send(res, 429, loginPage('Çok fazla deneme. 10 dakika sonra yeniden deneyin.'), 'text/html; charset=utf-8', PAGE_CSP)
+    if (limited(ip)) return send(res, 429, loginPage(translate(getSettings().locale, 'web.rateLimit')), 'text/html; charset=utf-8', PAGE_CSP)
     const f = new URLSearchParams((await readBody(req, 16_384)).toString())
     const u = login(f.get('name') ?? '', f.get('password') ?? '')
-    if (!u) return send(res, 401, loginPage('Ad ya da parola yanlış'), 'text/html; charset=utf-8', PAGE_CSP)
+    if (!u) return send(res, 401, loginPage(translate(getSettings().locale, 'web.invalidLogin')), 'text/html; charset=utf-8', PAGE_CSP)
     attempts.delete(ip)
     res.writeHead(303, { Location: '/', 'Set-Cookie': sessionCookie(createSession(u.id), secure) })
     return void res.end()
@@ -247,12 +249,15 @@ async function route(req: http.IncomingMessage, res: http.ServerResponse, deps: 
       return send(
         res,
         410,
-        page('Davet', '<h1>Davet geçersiz</h1><p>Bu bağlantının süresi dolmuş ya da kullanılmış. Paylaşan kişiden yeni bir davet isteyin.</p>'),
+        page(
+          translate(getSettings().locale, 'web.invitation'),
+          `<h1>${esc(translate(getSettings().locale, 'web.invalidInvite'))}</h1><p>${esc(translate(getSettings().locale, 'web.invalidInviteHelp'))}</p>`
+        ),
         'text/html; charset=utf-8',
         PAGE_CSP
       )
     if (req.method === 'GET') return send(res, 200, joinPage(jm[1], info.role), 'text/html; charset=utf-8', PAGE_CSP)
-    if (limited(ip)) return send(res, 429, joinPage(jm[1], info.role, 'Çok fazla deneme'), 'text/html; charset=utf-8', PAGE_CSP)
+    if (limited(ip)) return send(res, 429, joinPage(jm[1], info.role, translate(getSettings().locale, 'web.rateLimit')), 'text/html; charset=utf-8', PAGE_CSP)
     const f = new URLSearchParams((await readBody(req, 16_384)).toString())
     try {
       const u = join(jm[1], f.get('name') ?? '', f.get('password') ?? '')

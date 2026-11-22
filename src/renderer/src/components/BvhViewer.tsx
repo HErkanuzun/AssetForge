@@ -1,3 +1,4 @@
+import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
 // Kimodo BVH önizleyici: kemiklere bağlı kapsül "manken" + zemin + yörünge kamera
 import { useEffect, useRef, useState } from 'react'
@@ -7,6 +8,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { Icon } from './icons'
 
 export default function BvhViewer({ url }: { url: string }) {
+  const {t:msg} = useLocale()
+
   const host = useRef<HTMLDivElement>(null)
   const ctl = useRef<{ action?: THREE.AnimationAction; duration: number }>({ duration: 0 })
   const [playing, setPlaying] = useState(true)
@@ -177,8 +180,7 @@ export default function BvhViewer({ url }: { url: string }) {
           }}
         />
         <span className="mono dim">
-          {t.toFixed(2)} / {dur.toFixed(2)} sn
-        </span>
+          {t.toFixed(2)} / {dur.toFixed(2)} {msg('surface.secondsShort')} </span>
       </div>
     </div>
   )

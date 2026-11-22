@@ -1,0 +1,44 @@
+Reviewed the project|查看了项目|Projeye baktı
+Searched the library|搜索了资源库|Kütüphaneyi taradı
+Inspected an asset|检查了资源|Asset’i inceledi
+Viewed previews|查看了预览|Önizlemelere baktı
+Saved an asset|保存了资源|Asset yazdı
+Deleted an asset|删除了资源|Asset sildi
+Read the Project Bible|读取了项目设定集|Proje Kitabı’nı okudu
+Updated the Project Bible|更新了项目设定集|Proje Kitabı’nı güncelledi
+Reviewed pipelines|查看了流水线|Hatlara baktı
+Started production|启动了生产|Üretim başlattı
+Reviewed jobs|查看了任务|İşlere baktı
+Inspected a job|检查了任务|İşi inceledi
+Waited for a job to finish|等待任务完成|İşin bitmesini bekledi
+Canceled a job|取消了任务|İşi iptal etti
+Generated animation|生成了动画|Animasyon üretti
+Reviewed briefs|查看了创作需求|Brief’lere baktı
+Read a brief|读取了创作需求|Brief’i okudu
+Checked Kimodo|检查了 Kimodo|Kimodo’yu kontrol etti
+Checked Unreal|检查了 Unreal|Unreal’ı aradı
+Ran Python in Unreal|在 Unreal 中执行了 Python|Unreal’da Python çalıştırdı
+Searched the web|搜索了网络|Web’de araştırdı
+Review the project and tell me what is missing and what to do next|查看项目，告诉我缺少什么以及接下来该做什么|Projeye bak, eksikleri ve sıradaki adımları söyle
+Generate my selected assets, check the results and fix them|生成我选中的资源，检查结果并修正|Seçtiğim asset’leri üret, sonuçları kontrol edip düzelt
+Create an asset list for a realistic desert town and add it to the library|为写实沙漠小镇创建资源列表并添加到资源库|Gerçekçi bir çöl kasabası için asset listesi çıkar ve kütüphaneye ekle
+Generate a locomotion animation set suitable for motion matching for my character|为我的角色生成适合运动匹配的移动动画集|Karakterim için motion matching’e uygun lokomosyon animasyon seti üret
+Inspect the open Unreal scene and make the lighting realistic|检查 Unreal 当前场景，将光照调整为写实效果|Unreal’da açık sahneyi incele ve ışığı gerçekçi hale getir
+Approve|批准|Onayla
+Reject|拒绝|Reddet
+Input|输入|Girdi
+Result|结果|Sonuç
+Producer|制作助手|Yapımcı
+Conversations|对话列表|Sohbetler
+New conversation|新建对话|Yeni sohbet
+Close (Ctrl+J)|关闭（Ctrl+J）|Kapat (Ctrl+J)
+Model for new conversation|新对话使用的模型|Yeni sohbet modeli
+No conversations yet.|暂无对话。|Henüz sohbet yok.
+Let's build your game together|一起打造你的游戏|Oyununu birlikte yapalım
+I can generate assets, review results, create animation and build Unreal scenes. I ask for approval before any step that spends money or cannot be undone.|我可以生成资源、检查结果、制作动画和搭建 Unreal 场景。任何会产生费用或无法撤销的步骤都会先请求批准。|Asset üretir, sonuçlara bakıp eleştiririm, animasyon çıkarırım, Unreal’da sahne kurarım. Para harcayan ya da geri alınamayan her adımda önce onay isterim.
+Thinking…|正在思考…|Düşünüyor…
+Working…|正在处理…|Çalışıyor…
+Context:|上下文：|Bağlam:
+Add image|添加图像|Görsel ekle
+What should we do?|我们做点什么？|Ne yapalım?
+Drop image here|将图像拖放到这里|Görseli bırak

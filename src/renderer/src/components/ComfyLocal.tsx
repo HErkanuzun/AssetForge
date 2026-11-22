@@ -1,3 +1,4 @@
+import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
 // Ayarlar → Yerel araçlar → ComfyUI: bu bilgisayara kurulum, başlat/durdur ve düğüm editörünü açma
 import { useCallback, useEffect, useState } from 'react'
@@ -6,6 +7,8 @@ import { useStore } from '../store'
 import { Icon } from './icons'
 
 export default function ComfyLocal() {
+  const {t} = useLocale()
+
   const { toast } = useStore()
   const [st, setSt] = useState<ComfyLocalStatus | null>(null)
   const [busy, setBusy] = useState('')
@@ -50,23 +53,19 @@ export default function ComfyLocal() {
       <div className="svc">
         <span className={`led ${led}`} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <b>{st?.healthy ? 'ComfyUI çalışıyor' : st?.running ? 'ComfyUI açılıyor…' : 'ComfyUI kapalı'}</b>
+          <b>{st?.healthy ? t('panel.ddfa4c630d') : st?.running ? t('panel.658bc0d097') : t('panel.f5ae2a887b')}</b>
           <div className="muted small ellipsis">{st?.healthy ? st.info : (st?.error ?? (st?.remote ? `Uzak sunucu: ${st.url}` : `Bu bilgisayarda: ${st?.home ?? '…'}`))}</div>
         </div>
         {st?.healthy && (
-          <button className="btn" onClick={() => window.forge.comfy.open()} title="ComfyUI’ın düğüm editörünü tarayıcıda açar; workflow’larınızı orada kurup Export (API) ile kaydedin">
-            <Icon name="link" size={13} /> Düğüm editörünü aç
-          </button>
+          <button className="btn" onClick={() => window.forge.comfy.open()} title={t('panel.d292c9cc8d')}>
+            <Icon name="link" size={13} /> {t('panel.a191a73c56')} </button>
         )}
         {!st?.remote &&
           (st?.healthy || st?.running ? (
-            <button className="btn" disabled={!!busy} onClick={() => step('stop')}>
-              Durdur
-            </button>
+            <button className="btn" disabled={!!busy} onClick={() => step('stop')}> {t('panel.5769a8f8ae')} </button>
           ) : (
             <button className="btn primary" disabled={!!busy || !installed} onClick={() => step('start')}>
-              {busy === 'start' ? <span className="spinner" /> : <Icon name="play" size={13} />} Başlat
-            </button>
+              {busy === 'start' ? <span className="spinner" /> : <Icon name="play" size={13} />} {t('panel.24fa59605d')} </button>
           ))}
       </div>
       {!st?.remote && (
@@ -90,8 +89,7 @@ export default function ComfyLocal() {
       {(lines.length > 0 || busy) && <div className="console">{lines.join('\n')}</div>}
       {!st?.remote && (
         <button className="btn ghost" style={{ marginTop: 6 }} onClick={async () => setLines((await window.forge.comfy.logs()).split(/\r?\n/).slice(-200))}>
-          <Icon name="terminal" size={14} /> Sunucu günlüğü
-        </button>
+          <Icon name="terminal" size={14} /> {t('panel.0b754b0278')} </button>
       )}
     </div>
   )

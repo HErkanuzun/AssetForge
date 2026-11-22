@@ -1,3 +1,4 @@
+import { useLocale } from '../i18n'
 // SPDX-License-Identifier: AGPL-3.0-only
 import { useState } from 'react'
 import type { Artifact, Job } from '../../../shared/types'
@@ -5,6 +6,8 @@ import { StatusPill } from '../components/ui'
 import { forgeUrl, useStore } from '../store'
 
 function ArtifactView({ a }: { a: Artifact }) {
+  const { t, locale } = useLocale()
+
   switch (a.kind) {
     case 'prompt':
       return (
@@ -12,12 +15,12 @@ function ArtifactView({ a }: { a: Artifact }) {
           <div className="prompt-text">{a.prompt.prompt}</div>
           {a.prompt.texture_prompt && (
             <div className="prompt-text sub">
-              <b>Doku:</b> {a.prompt.texture_prompt}
+              <b> {t('surface.texturePrefix')} </b> {a.prompt.texture_prompt}
             </div>
           )}
           {a.prompt.negative_prompt && (
             <div className="prompt-text sub">
-              <b>Negatif:</b> {a.prompt.negative_prompt}
+              <b> {t('surface.negativePrefix')} </b> {a.prompt.negative_prompt}
             </div>
           )}
           <div className="muted small">{a.prompt.rationale}</div>
@@ -41,9 +44,9 @@ function ArtifactView({ a }: { a: Artifact }) {
           </div>
           {a.stats && (
             <div className="small muted">
-              {a.stats.tris.toLocaleString('tr')} üçgen · {a.stats.dims.join(' × ')} m · UV {a.stats.hasUV ? '✓' : '✗'}
-              {a.stats.decimated ? ' · azaltıldı' : ''}
-              {a.rigged ? ' · riglenmiş' : ''}
+              {a.stats.tris.toLocaleString(locale)} {t('surface.triangles')} · {a.stats.dims.join(' × ')} m · UV {a.stats.hasUV ? '✓' : '✗'}
+              {a.stats.decimated ? t('surface.decimated') : ''}
+              {a.rigged ? t('surface.rigged') : ''}
             </div>
           )}
           <button className="link" onClick={() => window.forge.showItem(a.file)}>
@@ -83,6 +86,8 @@ function ArtifactView({ a }: { a: Artifact }) {
 }
 
 function JobDetail({ job }: { job: Job }) {
+  const { t, locale } = useLocale()
+
   const order = Object.keys(job.nodes)
   return (
     <div className="job-detail">
@@ -90,24 +95,20 @@ function JobDetail({ job }: { job: Job }) {
         <div>
           <h2>{job.assetName}</h2>
           <div className="muted small">
-            {job.pipelineName} · {new Date(job.createdAt).toLocaleString('tr-TR')}
-            {job.finishedAt ? ` · ${Math.round((job.finishedAt - job.createdAt) / 1000)} sn` : ''}
+            {job.pipelineName} · {new Date(job.createdAt).toLocaleString(locale)}
+            {job.finishedAt ? ` · ${Math.round((job.finishedAt - job.createdAt) / 1000)} ${t('surface.secondsShort')}` : ''}
           </div>
         </div>
         <div className="row">
           <StatusPill status={job.status} />
           {(job.status === 'running' || job.status === 'queued') && (
-            <button className="btn danger" onClick={() => window.forge.run.cancel(job.id)}>
-              İptal
-            </button>
+            <button className="btn danger" onClick={() => window.forge.run.cancel(job.id)}> {t('surface.cancel')} </button>
           )}
-          <button className="btn" onClick={() => window.forge.openPath(job.outDir)}>
-            📁 Çıktı klasörü
-          </button>
+          <button className="btn" onClick={() => window.forge.openPath(job.outDir)}> {t('surface.outputFolder')} </button>
         </div>
       </div>
       <div className="cost">
-        Claude ${job.cost.claudeUsd.toFixed(3)} · Meshy {job.cost.meshyCredits} kredi · ElevenLabs {job.cost.audioChars} karakter
+        {t('surface.jobCost', {usd:job.cost.claudeUsd.toFixed(3),credits:job.cost.meshyCredits,chars:job.cost.audioChars})}
       </div>
       {job.error && <div className="error-box">{job.error}</div>}
       {job.warnings.map((w, i) => (
@@ -124,7 +125,7 @@ function JobDetail({ job }: { job: Job }) {
             <summary>
               <StatusPill status={s.status} />
               <b>{id}</b>
-              {s.attempts > 1 && <span className="muted small">deneme {s.attempts}</span>}
+              {s.attempts > 1 && <span className="muted small">{t('surface.attempt', {count:s.attempts})}</span>}
               {s.status === 'running' && (
                 <span className="progress inline">
                   <span style={{ width: `${s.progress}%` }} />
@@ -149,6 +150,8 @@ function JobDetail({ job }: { job: Job }) {
 }
 
 export default function JobsPage() {
+  const { t, locale } = useLocale()
+
   const { jobs, refreshJobs } = useStore()
   const [sel, setSel] = useState<string>('')
   const job = jobs.find((j) => j.id === sel) ?? jobs[0]
@@ -158,15 +161,15 @@ export default function JobsPage() {
     <div className="page split">
       <div className="jobs-list">
         <div className="row between">
-          <h1>Üretim İşleri</h1>
-          <button className="icon-btn" onClick={refreshJobs} title="Yenile">
+          <h1> {t('surface.jobs')} </h1>
+          <button className="icon-btn" onClick={refreshJobs} title={t('surface.refresh')}>
             ⟳
           </button>
         </div>
         <div className="muted small">
-          Toplam: Claude ${totals.usd.toFixed(2)} · Meshy {totals.credits} kredi
+          {t('surface.totalCost', {usd:totals.usd.toFixed(2),credits:totals.credits})}
         </div>
-        {jobs.length === 0 && <p className="muted">Henüz iş yok. Asset Listesi'nden seçip "Üret"e basın.</p>}
+        {jobs.length === 0 && <p className="muted"> {t('surface.noJobs')} </p>}
         {jobs.map((j) => {
           const nodes = Object.values(j.nodes)
           const done = nodes.filter((n) => n.status === 'done').length
@@ -177,13 +180,13 @@ export default function JobsPage() {
                 <StatusPill status={j.status} />
               </div>
               <div className="muted small ellipsis">
-                {j.pipelineName} · {done}/{nodes.length} adım
+                {j.pipelineName} · {t('surface.steps', {done,total:nodes.length})}
               </div>
             </button>
           )
         })}
       </div>
-      <div className="split-main">{job ? <JobDetail job={job} /> : <div className="empty">İş seçin</div>}</div>
+      <div className="split-main">{job ? <JobDetail job={job} /> : <div className="empty"> {t('surface.selectJob')} </div>}</div>
     </div>
   )
 }

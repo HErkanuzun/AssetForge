@@ -1,0 +1,116 @@
+Agents using your subscription|使用订阅的智能代理|Aboneliğinle çalışan ajanlar
+Agent Task, Assembly and Motion Rig, and Game Design steps can use Claude Code or Codex CLI installed on this computer instead of an API key. Open the CLI in a terminal and sign in once before using it.|代理任务、装配与运动绑定及游戏设计步骤可使用本机安装的 Claude Code 或 Codex CLI，无需 API 密钥。使用前请先在终端中打开并登录一次。|Ajan Görevi, Montaj ve Hareket Rigi ve Oyun Tasarımı adımları API anahtarı yerine bilgisayarında kurulu Claude Code ya da Codex CLI ile de çalışabilir. Kullanmadan önce bir kez terminalde açıp giriş yapman yeterli.
+not found|未找到|bulunamadı
+Install ↗|安装 ↗|Kurulum ↗
+Scan again|重新扫描|Yeniden tara
+Quick connect|快速连接|Hızlı bağlantı
+Click Connect to open the service in your browser. Sign in and copy the key: AssetForge reads it from the clipboard, validates it and stores it encrypted. If it is not detected, click Try clipboard or paste it into the fields below.|点击“连接”在浏览器中打开服务。登录并复制密钥，AssetForge 会从剪贴板读取、验证并加密保存。若未检测到，请点击“尝试剪贴板”或粘贴到下方字段。|“Bağlan”a basın: servisin sayfası tarayıcıda açılır. Giriş yapıp anahtarı kopyalamanız yeterli (sayfadaki Kopyala düğmesi de Ctrl+C de olur) — AssetForge panodan yakalar, doğrular ve şifreli kaydeder. Yakalanmazsa “Panodakini dene”ye basın ya da aşağıdaki alanlara elle yapıştırın.
+✓ connected|✓ 已连接|✓ bağlı
+not connected|未连接|bağlı değil
+Try clipboard|尝试剪贴板|Panodakini dene
+Validate the current clipboard text if the copied key was not detected|未检测到复制的密钥时，立即验证剪贴板中的文本|Anahtarı kopyaladınız ama yakalanmadıysa panodaki metni şimdi doğrular
+Connect|连接|Bağlan
+Opening browser…|正在打开浏览器…|Tarayıcı açılıyor…
+Prompt engine, brief chat, quality checks|提示词引擎、需求对话、质量检查|Prompt motoru, brief sohbeti, kalite kontrol
+3D models, textures, rigging|3D 模型、纹理、骨骼绑定|3D model, doku, rig
+Sound effects, engine audio|音效、引擎声音|Ses efektleri, motor sesi
+Kimodo animation (requires Llama-3 license)|Kimodo 动画（需接受 Llama-3 许可）|Kimodo animasyon (Llama-3 lisansı gerekir)
+Hundreds of models with one account (optional)|一个账户访问数百种模型（可选）|Yüzlerce model tek hesapla (isteğe bağlı)
+Sign in → “Create Key” → Copy|登录 → “Create Key” → 复制|Giriş yap → “Create Key” → Kopyala
+Sign in → “Create API Key” → Copy|登录 → “Create API Key” → 复制|Giriş yap → “Create API Key” → Kopyala
+Sign in → “Create API key” → Copy|登录 → “Create API key” → 复制|Giriş yap → “Create API key” → Kopyala
+Sign in → “Create token” → Copy|登录 → “Create token” → 复制|Giriş yap → “Create token” → Kopyala
+Sign in → “Authorize” — no key needed|登录 → “Authorize”，无需密钥|Giriş yap → “Authorize” — anahtar gerekmez
+Accept the Llama-3 license ↗|接受 Llama-3 许可 ↗|Llama-3 lisansını kabul et ↗
+ComfyUI is running|ComfyUI 正在运行|ComfyUI çalışıyor
+ComfyUI is starting…|ComfyUI 正在启动…|ComfyUI açılıyor…
+ComfyUI is stopped|ComfyUI 已停止|ComfyUI kapalı
+Opens the ComfyUI node editor in your browser; build workflows there and save with Export (API)|在浏览器中打开 ComfyUI 节点编辑器；在其中搭建工作流并通过 Export (API) 保存|ComfyUI’ın düğüm editörünü tarayıcıda açar; workflow’larınızı orada kurup Export (API) ile kaydedin
+Open node editor|打开节点编辑器|Düğüm editörünü aç
+Stop|停止|Durdur
+Start|启动|Başlat
+Server log|服务器日志|Sunucu günlüğü
+No local ComfyUI found (8188, 8000, 8189, 8190, 8001)|未找到本机 ComfyUI（8188、8000、8189、8190、8001）|Bu bilgisayarda çalışan ComfyUI bulunamadı (8188, 8000, 8189, 8190, 8001)
+On|已开启|Açık
+Off|已关闭|Kapalı
+Address|地址|Adres
+Opens the ComfyUI node editor in your browser|在浏览器中打开 ComfyUI 节点编辑器|ComfyUI’ın düğüm editörünü tarayıcıda açar
+Open|打开|Aç
+Remove server|移除服务器|Sunucuyu kaldır
+Enabled|已启用|Etkin
+AssetForge installation|AssetForge 安装|AssetForge kurulumu
+stopped · starts automatically when needed if installed|已停止 · 已安装时按需自动启动|kapalı · kuruluysa gerekince kendiliğinden açılır
+stopped / unreachable|已停止 / 无法连接|kapalı / ulaşılamıyor
+token saved|令牌已保存|token kayıtlı
+Delete|删除|Sil
+Token (optional)|令牌（可选）|Token (isteğe bağlı)
+If the server requires a password/token (reverse proxy, rented GPU). Sent as Authorization: Bearer.|若服务器需要密码或令牌（反向代理、租用 GPU），将通过 Authorization: Bearer 发送。|Sunucu bir parola/token istiyorsa (ters vekil, kiralık GPU). Authorization: Bearer olarak gönderilir.
+Save|保存|Kaydet
+Add server|添加服务器|Sunucu ekle
+Tries 8188 (ComfyUI), 8000 (ComfyUI Desktop) and nearby ports|尝试 8188（ComfyUI）、8000（ComfyUI Desktop）及相邻端口|8188 (ComfyUI), 8000 (ComfyUI Desktop) ve yakın portları dener
+Find on this computer|搜索本机|Bu bilgisayarda ara
+Default server|默认服务器|Varsayılan sunucu
+Automatic|自动|Otomatik
+already listed|列表中已有|listede var
+This computer (my ComfyUI)|本机（我的 ComfyUI）|Bu bilgisayar (kendi ComfyUI’ım)
+Add|添加|Ekle
+: selects a running server with the workflow nodes and models installed and the shortest queue; skipped servers and reasons appear in the job log. To use ComfyUI on another computer, start it there with|：选择已运行、已安装工作流节点与模型且队列最短的服务器；跳过的服务器及原因会写入任务日志。如需使用其他电脑上的 ComfyUI，请在该电脑上使用以下参数启动|: açık, workflow’un düğüm ve modelleri kurulu, kuyruğu en kısa sunucu seçilir; uymayanlar iş günlüğünde nedeniyle yazılır. Başka bir bilgisayardaki ComfyUI’ı kullanmak için orada ComfyUI’ı
+and allow its port (e.g. 8188) through the firewall. ComfyUI has no built-in password; use a trusted home/office network. For internet access, put it behind a proxy requiring a token.|并在防火墙放行对应端口（例如 8188）。ComfyUI 没有内置密码，请在可信的家庭或办公网络中使用；通过互联网访问时应置于要求令牌的代理之后。|ile başlatın ve güvenlik duvarında portuna (ör. 8188) izin verin. ComfyUI’ın kendi parolası yoktur; yalnızca güvendiğiniz ev/ofis ağında açın, internete açacaksanız token isteyen bir vekilin arkasına koyun.
+Install missing items using ComfyUI Manager on that computer (Install Missing Custom Nodes / Model Manager).|请通过该电脑上的 ComfyUI Manager 安装缺失项（Install Missing Custom Nodes / Model Manager）。|Eksikleri o bilgisayardaki ComfyUI Manager’dan kurun (Install Missing Custom Nodes / Model Manager).
+Only .json workflow files can be added|只能添加 .json 工作流文件|Yalnızca .json workflow dosyaları eklenebilir
+Add from file…|从文件添加…|Dosyadan ekle…
+Paste JSON|粘贴 JSON|JSON yapıştır
+or drag .json files here|或将 .json 文件拖到这里|ya da .json dosyalarını buraya sürükleyin
+Default|默认|Varsayılan
+Built-in SDXL template|内置 SDXL 模板|Yerleşik SDXL şablonu
+Name (e.g. TRELLIS.2 image to 3D)|名称（例如 TRELLIS.2 图像转 3D）|Ad (ör. TRELLIS.2 görselden 3D)
+Cancel|取消|Vazgeç
+No workflows yet. Build your workflow in ComfyUI, save using|暂无工作流。请在 ComfyUI 中搭建工作流，通过以下方式保存|Henüz workflow yok. ComfyUI’da workflow’unuzu kurun,
+and add it here. You can title nodes that AssetForge should fill as|然后添加到这里。可将需要 AssetForge 填充的节点命名为|ile kaydedip buraya ekleyin. AssetForge’un dolduracağı düğümlerin başlığını
+…; otherwise it will infer them.|等；否则将自动推断。|… yapabilirsiniz; yoksa tahmin eder.
+Which server should preferably run this workflow? Can also be selected on the node.|优先使用哪个服务器运行此工作流？也可在节点中选择。|Bu workflow’u tercihen hangi sunucu çalıştırsın? Düğümde ayrıca seçilebilir.
+Server: node / Settings selection|服务器：按节点 / 设置选择|Sunucu: düğümün / Ayarlar’ın seçimi
+Server: Automatic|服务器：自动|Sunucu: Otomatik
+Server:|服务器：|Sunucu:
+Save node not recognized; output types are inferred from file extensions|未识别保存节点，将根据文件扩展名推断输出类型|Kaydetme düğümü tanınmadı; çıktılar dosya uzantısından anlaşılır
+output: ?|输出：？|çıktı: ?
+Inputs AssetForge can fill|AssetForge 可填充的输入|AssetForge’un doldurabildiği girişler
+inputs:|输入：|girişler:
+node type|节点类型|düğüm türü
+model|模型|model
+Are the workflow nodes and models installed on each server?|每台服务器是否都已安装此工作流的节点与模型？|Her sunucuda bu workflow’un düğümleri ve modelleri kurulu mu?
+Check servers|检查服务器|Sunucularda denetle
+Replace with a file re-exported from ComfyUI|使用从 ComfyUI 重新导出的文件替换|ComfyUI’da yeniden dışa aktardığınız dosyayla değiştir
+Create a copy|创建副本|Kopyasını oluştur
+Show file in folder|在文件夹中显示|Dosyayı klasörde göster
+Delete from library|从库中删除|Kitaplıktan sil
+duration|时长|süre
+image|图像|görsel
+No API endpoint available.|没有可用的 API 端点。|API’ye açık uç nokta yok.
+no inputs|没有输入|giriş yok
+Arrows such as “← prompt” show what AssetForge fills in. Other inputs use defaults, which you can override with “Fixed values (JSON)” on the node.|“← prompt”等箭头表示 AssetForge 将填入的内容。其余输入使用默认值，可在节点的“固定值（JSON）”中覆盖。|“← prompt” gibi oklar AssetForge’un o girişe ne yazacağını gösterir; diğerleri varsayılanla gider. Düğümdeki “Sabit değerler (JSON)” ile değiştirebilirsiniz.
+starting…|正在启动…|açılıyor…
+recipe changed: reinstall|配方已更改：请重新安装|tarif değişti: yeniden kurun
+installed · stopped|已安装 · 已停止|kurulu · kapalı
+downloaded · not installed|已下载 · 未安装|indirildi · kurulmadı
+Open application in browser|在浏览器中打开应用|Uygulamayı tarayıcıda aç
+Save the recipe first|请先保存配方|Önce tarifi kaydedin
+Recipe|配方|Tarif
+Open folder|打开文件夹|Klasörü aç
+Uninstall (deletes the folder and downloaded files)|卸载（删除文件夹及下载的文件）|Kaldır (klasörü ve indirilen dosyaları siler)
+These commands run with your permissions in the repository folder:|以下命令将以你的权限在仓库文件夹中运行：|Bu komutlar bilgisayarınızda, deponun klasöründe tam yetkiyle çalışacak:
+Install only repositories you trust. Installation may take a while depending on download size.|仅安装你信任的仓库。安装所需时间取决于下载大小。|Yalnızca güvendiğiniz depoları kurun. Kurulum indirme boyutuna göre uzun sürebilir.
+Confirm and install|确认并安装|Onayla ve kur
+placeholders are filled in. Models are downloaded into the shared|占位符将被填充。模型将下载至共享的|yer tutucuları doldurulur. Modeller
+cache. Save this recipe in the repository as|缓存中。将此配方以以下文件名保存到仓库|ortak önbelleğine iner. Bu tarifi depoya
+to enable installation with one click.|即可支持一键安装。|olarak koyarsanız herkes tek tıkla kurar.
+Revert|还原|Geri al
+Save recipe|保存配方|Tarifi kaydet
+Show endpoints|显示端点|Uç noktaları göster
+https://github.com/user/project|https://github.com/user/project|https://github.com/kullanıcı/proje
+Add from repository|从仓库添加|Depodan ekle
+Inspect a running Gradio app: http://127.0.0.1:7860 or https://…hf.space|检查运行中的 Gradio 应用：http://127.0.0.1:7860 或 https://…hf.space|Çalışan bir Gradio uygulamasını incele: http://127.0.0.1:7860 ya da https://…hf.space
+Inspect|检查|İncele
+Installed backends and Gradio apps with known addresses (Pinokio, another computer, Hugging Face Space) can be used in pipelines with the|已安装的后端以及地址已知的 Gradio 应用（Pinokio、其他电脑、Hugging Face Space）可在流水线中通过以下节点使用|Kurulan arka uçlar ve adresini bildiğiniz Gradio uygulamaları (Pinokio, başka bir bilgisayar, Hugging Face Space) hatlarda
+Gradio Application|Gradio 应用|Gradio Uygulaması
+node. Repository code runs with your permissions on this computer; install only projects you trust.|节点。仓库代码将在本机以你的权限运行，请仅安装可信项目。|düğümüyle kullanılır. Depo kodu bu bilgisayarda sizin yetkinizle çalışır; yalnızca güvendiğiniz projeleri kurun.
