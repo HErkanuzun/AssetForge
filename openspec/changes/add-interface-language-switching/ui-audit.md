@@ -67,7 +67,7 @@
 | Jobs | jobs、feedback、logs、qa | queued/running/done/failed/canceled 五种详情；外部日志原样，失败应用错误双语；费用/时间显示 | 真实输出预览、取消/重试、所有 QA 产物交互 |
 | Design | design、panelLabel、flowLabels | 五个 tab；fixture 含机制、循环节点、故事幕/人物、屏幕及组件；记录下拉与辅助属性 | 节点/边选择、删除/覆盖确认、导出和所有嵌套操作 |
 | Bible | bible、panelLabel | 三语页面及默认字段；源码字段/选项覆盖测试 | 空/有规则色板材质全组合、PDF 提取失败 |
-| Settings 公共/连接 | settings、language、feedback | 双语九分类；零搜索结果仍可切换；真实 selector 保存与失败回滚；缺 key 自动分类入口独立于分类内容 | 全部 API key 测试/删除/重连过程 |
+| Settings 公共/连接 | settings、language、feedback | 双语十分类；语言作为普通分类在右侧设置；本地化标题及三种语言自称搜索、无匹配后清空恢复分类；selector 保存与失败回滚 | 全部 API key 测试/删除/重连过程 |
 | models、AgentClis、MCP | panelLabel、appErrors | 双语面板及选项属性快照，fixture 含 CLI/MCP 状态；参数不变测试 | 全预设、服务连接断开/审批与失败组合 |
 | project、tools、ComfyServers | setup、comfy、metadata | 双语面板，本地默认名与自定义服务器，路径/格式选项；默认名与自定义名保护测试 | 目录取消、安装/启动/停止/移动实际操作 |
 | ComfyLibrary、CustomBackends | comfy、backend、panelLabel | 有工作流/配方面板快照；本地服务路由与兼容性回归；recipe 推断消息描述测试 | 复制/替换/删除、全部无效配方和空态 |
@@ -85,3 +85,11 @@
 最终本地检查：typecheck、lint、format:check、audit:interface、build、notices:check 通过；Vitest 23 个测试文件通过、6 个跳过，共 461 项通过、10 项跳过。跳过项需要外部集成环境；没有将跳过计为通过。
 
 OpenSpec 未归档。涉及完整逐项人工/原生验收的任务保持未勾选，源码迁移和本地自动验证不等于已经获得完整发布验收。
+
+## 语言设置布局调整（2026-11-22）
+
+沿用本变更，更新 proposal/design/spec/tasks：侧栏末尾增加普通“界面语言”分类，选择器仅在右侧内容区显示。使用原有分类选中样式和搜索，三语选项、即时保存及失败保留原语言继续复用原逻辑。
+
+更新 verify-interface.mjs 并运行本地隔离 Edge fixture：24 个三语页面、零 renderer 异常；中英文均验证语言分类点击、右侧选择器、三语自称搜索、无匹配及清空恢复、切换后保留面板、保存失败回滚。查看中英文设置截图，分类与现有列表一致，右侧选择器完整可见；草稿、运行任务、已有 toast 和项目数据保护断言通过。
+
+本次检查：typecheck、lint、修改文件 Prettier 检查、build、OpenSpec strict validate 通过；i18n/localeSettings/localeMetadata 三组测试共 37 项通过。浏览器与单测首次受沙箱进程限制，获准在沙箱外重跑后通过。本次未重新执行其他尚未勾选的完整人工/原生验收。

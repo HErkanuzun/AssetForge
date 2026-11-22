@@ -17,7 +17,7 @@ import WebSettings from '../components/WebSettings'
 import { LANGUAGE_NAMES, LOCALES, type Locale, type PlainMessageKey } from '../../../shared/i18n'
 import { useLocale } from '../i18n'
 
-type Section = 'connect' | 'models' | 'project' | 'tools' | 'anim' | 'unreal' | 'mcp' | 'web' | 'about'
+type Section = 'connect' | 'models' | 'project' | 'tools' | 'anim' | 'unreal' | 'mcp' | 'web' | 'about' | 'language'
 
 const SECTIONS: { id: Section; label: string; icon: IconName; desc: string; keywords: string }[] = [
   {
@@ -59,7 +59,8 @@ const SECTIONS: { id: Section; label: string; icon: IconName; desc: string; keyw
     desc: 'Tarayıcıdan erişim, ekip davetleri ve roller, yalnızca sunucu modu',
     keywords: 'web tarayıcı browser paylaş ekip davet katıl rol editör izleyici sahip parola sunucu headless pencere tailscale cloudflare tünel ağ lan'
   },
-  { id: 'about', label: 'Hakkında', icon: 'gauge', desc: 'Sürüm, lisans, destek ve tanılama', keywords: 'sürüm versiyon hakkında lisans github hata bildir destek tanılama günlük log sorun' }
+  { id: 'about', label: 'Hakkında', icon: 'gauge', desc: 'Sürüm, lisans, destek ve tanılama', keywords: 'sürüm versiyon hakkında lisans github hata bildir destek tanılama günlük log sorun' },
+  { id: 'language', label: '', icon: 'globe', desc: '', keywords: `language locale ${LOCALES.map((value) => LANGUAGE_NAMES[value]).join(' ')} dil` }
 ]
 
 const AUDIO = [
@@ -140,6 +141,7 @@ export default function SettingsPage() {
   const [q, setQ] = useState('')
   const sections = useMemo(() => {
     const keys: Partial<Record<Section, [PlainMessageKey, PlainMessageKey]>> = {
+      language: ['language.label', 'language.help'],
       connect: ['settings.connect', 'settings.connectDesc'],
       models: ['settings.models', 'settings.modelsDesc'],
       project: ['settings.project', 'settings.projectDesc'],
@@ -179,6 +181,38 @@ export default function SettingsPage() {
   const current = sections.find((x) => x.id === section)!
   let body: ReactNode
   switch (section) {
+    case 'language':
+      body = (
+        <Card title={t('language.label')}>
+          <Field label={t('language.label')} help={t('language.help')}>
+            <select
+              id="interface-language"
+              className="input"
+              aria-label={t('language.label')}
+              value={locale}
+              disabled={savingLocale}
+              onChange={async (e) => {
+                const next = e.target.value as Locale
+                setSavingLocale(true)
+                try {
+                  await patch({ locale: next })
+                } catch (error) {
+                  toast(message('language.saveFailed', { detail: errorMessage(error) }), 'error')
+                } finally {
+                  setSavingLocale(false)
+                }
+              }}
+            >
+              {LOCALES.map((value) => (
+                <option key={value} value={value}>
+                  {LANGUAGE_NAMES[value]}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </Card>
+      )
+      break
     case 'connect':
       body = (
         <>
@@ -439,30 +473,6 @@ export default function SettingsPage() {
     <div className="page split set-page">
       <nav className="set-nav" aria-label={t('settings.categories')}>
         <h1>{t('app.settings')}</h1>
-        <Field label={t('language.label')} help={t('language.help')}>
-          <select
-            className="input"
-            value={locale}
-            disabled={savingLocale}
-            onChange={async (e) => {
-              const next = e.target.value as Locale
-              setSavingLocale(true)
-              try {
-                await patch({ locale: next })
-              } catch (error) {
-                toast(message('language.saveFailed', { detail: errorMessage(error) }), 'error')
-              } finally {
-                setSavingLocale(false)
-              }
-            }}
-          >
-            {LOCALES.map((value) => (
-              <option key={value} value={value}>
-                {LANGUAGE_NAMES[value]}
-              </option>
-            ))}
-          </select>
-        </Field>
         <div className="set-search">
           <Icon name="search" size={14} />
           <input

@@ -388,14 +388,37 @@ try {
           `(()=>{const input=document.querySelector('.set-search input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'no-results-fixture-xyz');input.dispatchEvent(new Event('input',{bubbles:true}));})()`
         )
         await delay(80)
-        assert(await evaluate("!!document.querySelector('.set-nav select') && document.querySelectorAll('.set-item').length===0"), 'Language selector disappeared with empty search')
+        assert(await evaluate("!document.querySelector('.set-nav select') && document.querySelectorAll('.set-item').length===0"), 'Empty search or category-only language layout regressed')
+        const search = async (value) => {
+          await evaluate(
+            `(()=>{const input=document.querySelector('.set-search input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`
+          )
+          await delay(80)
+        }
+        await search(locale === 'en' ? 'Interface language' : '界面语言')
+        assert.equal(await evaluate("document.querySelectorAll('.set-item').length"), 1, 'Localized language search failed')
+        await evaluate("document.querySelector('.set-item').click()")
+        await waitFor("!!document.querySelector('.set-main #interface-language')")
+        assert(await evaluate("!!document.querySelector('.set-item.active[aria-current=page]') && !document.querySelector('.set-nav select')"), 'Language category did not use the existing navigation')
+        assert.equal(await evaluate("document.querySelector('#interface-language').options.length"), 3)
+        for (const name of ['English', '简体中文', 'Türkçe']) {
+          await search(name)
+          assert(await evaluate("Array.from(document.querySelectorAll('.set-item')).some(el=>el.classList.contains('active'))"), 'Self-named language search failed: ' + name)
+        }
+        await search('')
+        assert.equal(await evaluate("document.querySelectorAll('.set-item').length"), count, 'Clearing search did not restore categories')
         const other = locale === 'en' ? 'zh-CN' : 'en'
-        await evaluate(`(()=>{const el=document.querySelector('.set-nav select');el.value=${JSON.stringify(other)};el.dispatchEvent(new Event('change',{bubbles:true}));})()`)
+        await evaluate(`(()=>{const el=document.querySelector('#interface-language');el.value=${JSON.stringify(other)};el.dispatchEvent(new Event('change',{bubbles:true}));})()`)
         await waitFor(`document.documentElement.lang===${JSON.stringify(other)}`)
-        await evaluate(`(()=>{const el=document.querySelector('.set-nav select');el.value=${JSON.stringify(locale)};el.dispatchEvent(new Event('change',{bubbles:true}));})()`)
+        assert(
+          await evaluate("!!document.querySelector('.set-main #interface-language') && !!document.querySelector('.set-item.active[aria-current=page]')"),
+          'Switching locale left the language panel'
+        )
+        report.surfaces.push({ locale: other, page: 'settings/language', ...(await capture()) })
+        await evaluate(`(()=>{const el=document.querySelector('#interface-language');el.value=${JSON.stringify(locale)};el.dispatchEvent(new Event('change',{bubbles:true}));})()`)
         await waitFor(`document.documentElement.lang===${JSON.stringify(locale)}`)
         failNextSettings = true
-        await evaluate(`(()=>{const el=document.querySelector('.set-nav select');el.value=${JSON.stringify(other)};el.dispatchEvent(new Event('change',{bubbles:true}));})()`)
+        await evaluate(`(()=>{const el=document.querySelector('#interface-language');el.value=${JSON.stringify(other)};el.dispatchEvent(new Event('change',{bubbles:true}));})()`)
         await waitFor("!!document.querySelector('.toast.error')")
         assert.equal(await evaluate('document.documentElement.lang'), locale, 'Failed save changed the active language')
         report.saveRollback = true

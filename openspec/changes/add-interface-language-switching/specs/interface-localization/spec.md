@@ -7,7 +7,7 @@
 ## ADDED Requirements
 
 ### Requirement: Discoverable language selection
-The application SHALL expose a labelled interface-language selector in Settings, outside the category-specific content and search filtering, with the self-named options English, 简体中文, and Türkçe. Successful selection SHALL update mounted application-owned interface text without restarting, losing edits, navigating away, or restarting active jobs. Save failure SHALL retain the prior locale and display a localized error.
+Settings SHALL include a searchable interface-language category using existing navigation styling. Its right-hand panel SHALL offer English, 简体中文, and Türkçe in a labelled selector; the navigation SHALL NOT contain a standalone selector. Successful saves SHALL update mounted interface text immediately while preserving edits, navigation and jobs. Failed saves SHALL retain the prior locale and show a localized error.
 
 #### Scenario: Switch while editing
 - **WHEN** the owner selects 简体中文 while a project has pending edits and a running job
@@ -15,8 +15,9 @@ The application SHALL expose a labelled interface-language selector in Settings,
 - **AND** pending edits, selected items, active page and jobs are preserved
 
 #### Scenario: Language remains discoverable
-- **WHEN** the owner changes the Settings category or enters a search matching no categories
-- **THEN** the labelled language selector remains available with all self-named language options
+- **WHEN** the owner selects the interface-language category, directly or through a matching localized search
+- **THEN** the category uses the existing selected-item styling and the right-hand panel shows all self-named language options
+- **AND** clearing a search matching no categories restores access to the language category, including when API keys are missing
 
 #### Scenario: Failed save
 - **WHEN** persisting a language selection fails
