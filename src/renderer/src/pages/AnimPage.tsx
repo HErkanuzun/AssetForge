@@ -1,4 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { errorMessage, errorEnvelope } from '../../../shared/i18n/errors'
+import { assetStatus, panelLabel } from '../../../shared/i18n/display'
+import { message, renderMessage, type UiMessage } from '../../../shared/i18n/message'
+import { useLocale } from '../i18n'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AnimSegment, AssetSpec, KimodoStatus } from '../../../shared/types'
 import { useNav } from '../App'
@@ -47,11 +51,13 @@ function draftFrom(a: AssetSpec): Draft {
 }
 
 function KimodoPanel() {
+  const { t, locale } = useLocale()
+
   const { settings, toast } = useStore()
   const nav = useNav()
   const [st, setSt] = useState<KimodoStatus | null>(null)
   const [busyStep, setBusyStep] = useState('')
-  const [lines, setLines] = useState<string[]>([])
+  const [lines, setLines] = useState<UiMessage[]>([])
 
   const refresh = useCallback(
     () =>
@@ -61,7 +67,8 @@ function KimodoPanel() {
           steps: [],
           running: false,
           healthy: false,
-          error: e.message
+          error: e.message,
+          uiError: errorEnvelope(e).uiMessage
         })
       ),
     []
@@ -81,9 +88,9 @@ function KimodoPanel() {
     setLines((x) => [...x, `▶ ${id}`])
     try {
       await window.forge.kimodo.step(id)
-      toast(`Kimodo: ${id} tamam`, 'ok')
+      toast(message('anim.stepDone', { id }), 'ok')
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     } finally {
       setBusyStep('')
       refresh()
@@ -98,7 +105,7 @@ function KimodoPanel() {
         <Icon name="cube" size={16} />
         <h3>NVIDIA Kimodo</h3>
         <span className="spacer" />
-        <span className="chip">{st?.backend === 'wsl' ? 'WSL2 + Docker' : 'Yerel Windows'}</span>
+        <span className="chip">{st?.backend === 'wsl' ? 'WSL2 + Docker' : t('panel.02d45832f7')}</span>
         <button className="btn ghost" style={{ height: 28, padding: '0 6px' }} onClick={refresh}>
           <Icon name="refresh" size={14} />
         </button>
@@ -107,18 +114,21 @@ function KimodoPanel() {
         <div className="svc">
           <span className={`led ${led}`} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <b>{st?.healthy ? 'Servis hazır' : st?.running ? 'Servis açılıyor…' : 'Servis kapalı'}</b>
+            <b>{st?.healthy ? t('panel.f524acbd22') : st?.running ? t('panel.aa1a41ea85') : t('panel.798c8e2663')}</b>
             <div className="muted small ellipsis">
-              {st?.healthy ? `${st.model ?? 'Kimodo'} · ${st.device ?? ''}${st.busy ? ' · üretiyor' : ''}` : (st?.error ?? 'Metinden hareket üretimi (yerel GPU)')}
+              {st?.healthy
+                ? `${st.model ?? 'Kimodo'} · ${st.device ?? ''}${st.busy ? t('panel.de9d9695cb') : ''}`
+                : renderMessage(locale, st?.uiError ?? st?.error ?? panelLabel(locale, 'Metinden hareket üretimi (yerel GPU)'))}
             </div>
           </div>
           {st?.healthy || st?.running ? (
             <button className="btn" disabled={!!busyStep} onClick={() => step('stop')}>
-              Durdur
+              {' '}
+              {t('panel.5769a8f8ae')}{' '}
             </button>
           ) : (
             <button className="btn primary" disabled={!!busyStep || (st?.steps.some((s) => s.id !== 'start' && !s.done) ?? true)} onClick={() => step('start')}>
-              <Icon name="play" size={13} /> Başlat
+              <Icon name="play" size={13} /> {t('panel.24fa59605d')}{' '}
             </button>
           )}
         </div>
@@ -127,16 +137,17 @@ function KimodoPanel() {
             <div key={s.id} className={`step ${s.done ? 'done' : ''}`}>
               <span className="dot">{s.done ? <Icon name="check" size={11} strokeWidth={3} /> : i + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div>{s.label}</div>
-                {s.hint && <div className="dim small">{s.hint}</div>}
+                <div>{panelLabel(locale, s.label)}</div>
+                {s.hint && <div className="dim small">{panelLabel(locale, s.hint)}</div>}
               </div>
               {s.id === 'token' && !settings?.hasKeys.huggingface ? (
                 <button className="btn" onClick={() => nav.go('settings')}>
-                  Anahtar
+                  {' '}
+                  {t('panel.748f306924')}{' '}
                 </button>
               ) : (
                 <button className={`btn ${next?.id === s.id ? 'primary' : ''}`} disabled={!!busyStep} onClick={() => step(s.id)} style={{ height: 28 }}>
-                  {busyStep === s.id ? <span className="spinner" /> : s.done ? 'Tekrar' : 'Kur'}
+                  {busyStep === s.id ? <span className="spinner" /> : s.done ? t('panel.5da57b457b') : t('backend.install')}
                 </button>
               )}
             </div>
@@ -144,12 +155,13 @@ function KimodoPanel() {
         </div>
         {st?.backend === 'wsl' && st.virtualization === false && (
           <p className="small" style={{ color: 'var(--warn)', marginTop: 10 }}>
-            BIOS’ta sanallaştırma (SVM / VT-x) kapalı. WSL yolu için açılmalı — ya da Ayarlar’dan “Yerel Windows” arka ucunu seç.
+            {' '}
+            {t('panel.662b30d776')}{' '}
           </p>
         )}
-        <div className="console">{lines.length ? lines.join('\n') : 'Kurulum çıktısı burada görünecek.'}</div>
+        <div className="console">{lines.length ? lines.map((line) => renderMessage(locale, line)).join('\n') : t('panel.88490cdac7')}</div>
         <button className="btn ghost" style={{ marginTop: 6 }} onClick={async () => setLines((await window.forge.kimodo.logs()).split(/\r?\n/).slice(-200))}>
-          <Icon name="terminal" size={14} /> Servis günlüğü
+          <Icon name="terminal" size={14} /> {t('panel.334a93a950')}{' '}
         </button>
       </div>
     </section>
@@ -157,6 +169,8 @@ function KimodoPanel() {
 }
 
 export default function AnimPage() {
+  const { t, locale } = useLocale()
+
   const { project, jobs, update, toast, startRun } = useStore()
   const nav = useNav()
   const p = project!
@@ -207,7 +221,7 @@ export default function AnimPage() {
         rootMotion: r.loop ? 'inplace' : cur.rootMotion
       }))
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     } finally {
       setSuggesting(false)
     }
@@ -216,7 +230,7 @@ export default function AnimPage() {
   const produce = async () => {
     if (!char) return
     const segs = d.segments.length ? d.segments : d.idea.trim() ? [{ text: d.idea.trim(), seconds: 4 }] : []
-    if (!segs.length) return toast('Önce ne yapacağını yaz', 'error')
+    if (!segs.length) return toast(message('panel.24b00c07d9'), 'error')
     const used = new Set(p.assets.map((a) => a.id))
     let id = d.id
     if (!id) {
@@ -257,9 +271,9 @@ export default function AnimPage() {
     const charBusy = jobs.some((j) => j.assetId === char.id && (j.status === 'running' || j.status === 'queued'))
     try {
       await startRun(PIPELINE, [id], charBusy ? char.id : undefined)
-      toast(charBusy ? 'Karakter üretimi bitince animasyon başlayacak' : 'Kimodo üretimi başladı', 'ok')
+      toast(charBusy ? message('panel.1527c39f36') : message('panel.b86ded88ab'), 'ok')
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     }
   }
 
@@ -273,10 +287,10 @@ export default function AnimPage() {
     return (
       <div className="stage-empty" style={{ position: 'relative', flex: 1 }}>
         <div>
-          <h2>Henüz karakter yok</h2>
-          <p className="muted">Kimodo insan iskeletiyle (SOMA → Manny) çalışır. Önce Atölye’de bir karakter üret.</p>
+          <h2> {t('panel.da562bc382')} </h2>
+          <p className="muted"> {t('panel.4b0cb5ace5')} </p>
           <button className="btn primary" onClick={() => nav.go('home')}>
-            <Icon name="spark" size={15} /> Karakter üret
+            <Icon name="spark" size={15} /> {t('panel.7b265e9963')}{' '}
           </button>
         </div>
       </div>
@@ -286,13 +300,13 @@ export default function AnimPage() {
     <div className="anim-tabs">
       <div className="seg">
         <button className={mode === 'systems' ? 'on' : ''} onClick={() => setMode('systems')}>
-          <Icon name="grid" size={13} /> Sistemler <span className="n">{(p.animSystems ?? []).length}</span>
+          <Icon name="grid" size={13} /> {t('panel.2bf49aac2e')} <span className="n">{(p.animSystems ?? []).length}</span>
         </button>
         <button className={mode === 'clips' ? 'on' : ''} onClick={() => setMode('clips')}>
-          <Icon name="anim" size={13} /> Tek klipler
+          <Icon name="anim" size={13} /> {t('panel.7ebf74f2e5')}{' '}
         </button>
       </div>
-      <span className="dim small">{mode === 'systems' ? 'Blend Space, Montage, Aim Offset, durum makinesi, Motion Matching — senkron klip setleri' : 'Serbest tarifle tek animasyon üret'}</span>
+      <span className="dim small">{mode === 'systems' ? t('panel.df7b7b73c5') : t('panel.415feb46dc')}</span>
     </div>
   )
 
@@ -311,7 +325,7 @@ export default function AnimPage() {
         <section className="panel">
           <div className="panel-head">
             <Icon name="anim" size={16} />
-            <h3>Karakterler</h3>
+            <h3> {t('panel.2536871f10')} </h3>
           </div>
           <div className="panel-body">
             {characters.map((c) => (
@@ -324,15 +338,15 @@ export default function AnimPage() {
                     {c.name}
                   </b>
                   <span className="muted small">
-                    {p.assets.filter((a) => a.kind === 'animation' && a.parentId === c.id).length} klip · {c.status || 'bekliyor'}
+                    {p.assets.filter((a) => a.kind === 'animation' && a.parentId === c.id).length} {t('anim.clips')} · {c.status ? assetStatus(locale, c.status) : t('surface.waiting')}
                   </span>
                 </div>
               </div>
             ))}
             <div className="section-title" style={{ margin: '18px 4px 8px', fontSize: 12.5 }}>
-              Klipler
-              <span className="spacer" />
-              <button className="btn ghost" style={{ height: 26, padding: '0 6px' }} onClick={() => setD(EMPTY)} title="Yeni klip">
+              {' '}
+              {t('panel.80e7cdb5ca')} <span className="spacer" />
+              <button className="btn ghost" style={{ height: 26, padding: '0 6px' }} onClick={() => setD(EMPTY)} title={t('panel.d053be492a')}>
                 <Icon name="plus" size={14} />
               </button>
             </div>
@@ -349,18 +363,18 @@ export default function AnimPage() {
                         .split(',')
                         .filter(Boolean)
                         .reduce((s, x) => s + Number(x), 0) || '?'}{' '}
-                      sn
+                      {t('surface.secondsShort')}{' '}
                     </span>
                     <span>
                       {j
                         ? {
-                            queued: 'sırada',
+                            queued: t('status.queued'),
                             running: `%${jobProgress(j)}`,
-                            done: 'hazır',
-                            failed: 'hata',
-                            canceled: 'iptal'
+                            done: t('status.done'),
+                            failed: t('status.failed'),
+                            canceled: t('status.canceled')
                           }[j.status]
-                        : 'üretilmedi'}
+                        : t('panel.3f3e0c4810')}
                     </span>
                   </div>
                 </div>
@@ -368,7 +382,8 @@ export default function AnimPage() {
             })}
             {!clips.length && (
               <p className="dim small" style={{ padding: '0 4px' }}>
-                Bu karakterin henüz klibi yok.
+                {' '}
+                {t('panel.92312a8405')}{' '}
               </p>
             )}
           </div>
@@ -382,37 +397,32 @@ export default function AnimPage() {
               <div className="stage-empty">
                 <div>
                   <Icon name="anim" size={42} style={{ color: '#ff4f9a' }} />
-                  <h2 style={{ marginTop: 10 }}>Hareketi tarif et</h2>
-                  <p className="muted">“Yorgun adımlarla yürür, durur ve etrafına bakınır” gibi. Üretilen hareket burada 3B oynar.</p>
+                  <h2 style={{ marginTop: 10 }}> {t('panel.54ac1c3a9e')} </h2>
+                  <p className="muted"> {t('panel.03636a0de1')} </p>
                 </div>
               </div>
             </div>
           )}
           <div style={{ padding: 14, borderTop: '1px solid var(--line)' }}>
             <div className="row" style={{ marginBottom: 8 }}>
-              <input className="input" style={{ flex: 1 }} placeholder="Klip adı (ör. Yürüyüş döngüsü)" value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} />
+              <input className="input" style={{ flex: 1 }} placeholder={t('panel.c0bf145548')} value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} />
               <div style={{ width: 160 }}>
                 <Select
                   value={d.rootMotion}
                   onChange={(v) => setD({ ...d, rootMotion: v })}
                   options={[
-                    { value: 'root', label: 'Root motion' },
-                    { value: 'inplace', label: 'Yerinde' },
-                    { value: 'raw', label: 'Ham' }
+                    { value: 'root', label: t('anim.rootMotion') },
+                    { value: 'inplace', label: t('panel.3212d4915d') },
+                    { value: 'raw', label: t('panel.887faf457a') }
                   ]}
                 />
               </div>
-              <Toggle value={d.loop} onChange={(v) => setD({ ...d, loop: v })} label="Döngü" />
+              <Toggle value={d.loop} onChange={(v) => setD({ ...d, loop: v })} label={t('panel.7df9aed372')} />
             </div>
             <div className="composer" style={{ maxWidth: 'none' }}>
-              <textarea
-                rows={2}
-                placeholder="Ne yapsın? Türkçe yazabilirsin — Claude Kimodo’nun anlayacağı segmentlere çevirir."
-                value={d.idea}
-                onChange={(e) => setD({ ...d, idea: e.target.value })}
-              />
-              <button className="btn" disabled={suggesting || !d.idea.trim()} onClick={suggest} title="Claude ile segmentlere çevir">
-                {suggesting ? <span className="spinner" /> : <Icon name="wand" size={15} />} Segmentle
+              <textarea rows={2} placeholder={t('panel.22b593fd9a')} value={d.idea} onChange={(e) => setD({ ...d, idea: e.target.value })} />
+              <button className="btn" disabled={suggesting || !d.idea.trim()} onClick={suggest} title={t('panel.9f45efb790')}>
+                {suggesting ? <span className="spinner" /> : <Icon name="wand" size={15} />} {t('panel.a099c9ba3e')}{' '}
               </button>
             </div>
             {d.segments.length > 0 && (
@@ -421,7 +431,7 @@ export default function AnimPage() {
                   {d.segments.map((s, i) => (
                     <div key={i} className="seg-block" style={{ flex: s.seconds }} title={s.text}>
                       <b>
-                        {i + 1} · {s.seconds} sn
+                        {i + 1} · {s.seconds} {t('surface.secondsShort')}{' '}
                       </b>
                       <span className="ellipsis" style={{ display: 'block' }}>
                         {s.text}
@@ -469,29 +479,29 @@ export default function AnimPage() {
                       })
                     }
                   >
-                    <Icon name="plus" size={13} /> Segment ekle
+                    <Icon name="plus" size={13} /> {t('panel.caf50f35a3')}{' '}
                   </button>
                 </div>
               </>
             )}
             <div className="row" style={{ marginTop: 12 }}>
               <span className="muted small">
-                {d.segments.length ? `${d.segments.length} segment · ${total.toFixed(1)} sn` : 'Segment yoksa açıklama tek parça kullanılır'} · {char?.name} iskeletine otomatik retarget
+                {d.segments.length ? t('anim.segments', { count: d.segments.length, seconds: total.toFixed(1) }) : t('panel.37e38914f7')} · {char?.name} {t('panel.90c7785118')}{' '}
               </span>
               <span className="spacer" />
               {curJob && (curJob.status === 'running' || curJob.status === 'queued') ? (
                 <span className="chip accent">
-                  <span className="pulse" /> üretiliyor %{jobProgress(curJob)}
+                  <span className="pulse" /> {t('panel.a320681412')} {jobProgress(curJob)}
                 </span>
               ) : (
                 <button className="btn primary big" disabled={!d.idea.trim() && !d.segments.length} onClick={produce}>
-                  <Icon name="bolt" size={16} /> {d.id ? 'Yeniden üret' : 'Üret'}
+                  <Icon name="bolt" size={16} /> {d.id ? t('panel.987b9baf05') : t('surface.generate')}
                 </button>
               )}
             </div>
             {curJob?.status === 'failed' && (
               <p className="small" style={{ color: 'var(--err)', marginTop: 8 }}>
-                {curJob.error}
+                {renderMessage(locale, curJob.uiError ?? curJob.error!)}
               </p>
             )}
           </div>

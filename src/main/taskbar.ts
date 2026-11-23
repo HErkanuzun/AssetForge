@@ -2,6 +2,8 @@
 // Windows görev çubuğu: sağ tık kısayolları (jump list), üretim ilerleme çubuğu ve bitince yanıp sönme.
 import { app, type BrowserWindow } from 'electron'
 import type { Job } from '../shared/types'
+import { translate, type Locale, type PlainMessageKey } from '../shared/i18n'
+import { getSettings } from './settings'
 
 export const JUMP_PAGES = [
   { page: 'home', title: 'Atölye', description: 'Brief sohbetini aç' },
@@ -12,6 +14,18 @@ export const JUMP_PAGES = [
 ] as const
 
 const PAGES = new Set<string>([...JUMP_PAGES.map((p) => p.page), 'pipeline', 'bible', 'design'])
+
+/** Construct captions on demand so changing the language also updates installed tasks. */
+export function localizedJumpPages(locale: Locale) {
+  const keys: Record<(typeof JUMP_PAGES)[number]['page'], [PlainMessageKey, PlainMessageKey]> = {
+    home: ['app.workshop', 'native.workshopHelp'],
+    library: ['app.library', 'native.libraryHelp'],
+    anim: ['app.animationStudio', 'native.animHelp'],
+    jobs: ['app.queue', 'native.jobsHelp'],
+    settings: ['app.settings', 'native.settingsHelp']
+  }
+  return JUMP_PAGES.map((p) => ({ ...p, title: translate(locale, keys[p.page][0]), description: translate(locale, keys[p.page][1]) }))
+}
 
 /** Komut satırındaki --page=<ad> (jump list ve ikinci açılış) */
 export function pageFromArgv(argv: string[]): string | null {
@@ -38,7 +52,7 @@ export function jobsProgress(jobs: Iterable<Job>): number | null {
 export function setupJumpList(): void {
   if (process.platform !== 'win32' || !app.isPackaged) return
   app.setUserTasks(
-    JUMP_PAGES.map((p) => ({
+    localizedJumpPages(getSettings().locale).map((p) => ({
       program: process.execPath,
       arguments: `--page=${p.page}`,
       iconPath: process.execPath,

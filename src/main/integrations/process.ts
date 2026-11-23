@@ -2,7 +2,7 @@
 // Dış programları çalıştırır; çıktıyı satır satır akıtır (Kimodo, ComfyUI kurulumu, terminal ajanları).
 import { spawn } from 'node:child_process'
 
-export type LogFn = (line: string) => void
+export type LogFn = (line: string, uiMessage?: import('../../shared/i18n/message').MessageDescriptor) => void
 
 export interface RunOptions {
   env?: Record<string, string>

@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { pipelineText } from '../../../shared/i18n/metadata'
+import { errorMessage } from '../../../shared/i18n/errors'
+import { message } from '../../../shared/i18n/message'
+import { assetStatus } from '../../../shared/i18n/display'
+import { useLocale } from '../i18n'
 import { useMemo, useState } from 'react'
 import type { AssetKind, AssetSpec } from '../../../shared/types'
 import { AsyncButton, Field, NumberInput, Select, TextArea, TextInput } from '../components/ui'
@@ -20,7 +25,10 @@ export const KIND_LABEL: Record<AssetKind, string> = {
 }
 
 export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs: () => void }) {
+  const { t, locale } = useLocale()
+
   const { project, update, toast, selectedAssets, setSelectedAssets, saveNow } = useStore()
+  const kindLabels = Object.fromEntries((Object.keys(KIND_LABEL) as AssetKind[]).map((kind) => [kind, t(`kind.${kind}`)])) as Record<AssetKind, string>
   const p = project!
   const [q, setQ] = useState('')
   const [kind, setKind] = useState('')
@@ -32,15 +40,15 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
   const priorities = useMemo(() => [...new Set(p.assets.map((a) => a.priority).filter(Boolean))].sort(), [p.assets])
   const statuses = useMemo(() => [...new Set(p.assets.map((a) => a.status).filter(Boolean))].sort(), [p.assets])
   const filtered = useMemo(() => {
-    const needle = q.toLocaleLowerCase('tr')
+    const needle = q.toLocaleLowerCase(locale)
     return p.assets.filter(
       (a) =>
         (!kind || a.kind === kind) &&
         (!prio || a.priority === prio) &&
         (!status || a.status === status) &&
-        (!needle || `${a.id} ${a.name} ${a.description} ${a.category} ${a.subcategory}`.toLocaleLowerCase('tr').includes(needle))
+        (!needle || `${a.id} ${a.name} ${a.description} ${a.category} ${a.subcategory}`.toLocaleLowerCase(locale).includes(needle))
     )
-  }, [p.assets, q, kind, prio, status])
+  }, [p.assets, q, kind, prio, status, locale])
 
   const selected = new Set(selectedAssets)
   const toggle = (id: string) => setSelectedAssets(selected.has(id) ? selectedAssets.filter((x) => x !== id) : [...selectedAssets, id])
@@ -58,7 +66,7 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
   const runPipeline = pipelineId || suggested
 
   const importFile = async () => {
-    const [file] = await window.forge.pickFiles([{ name: 'Asset listesi', extensions: ['xlsx', 'csv', 'tsv'] }])
+    const [file] = await window.forge.pickFiles([{ name: t('surface.assetFilter'), extensions: ['xlsx', 'csv', 'tsv'] }])
     if (!file) return
     try {
       const r = await window.forge.importAssets(file)
@@ -82,16 +90,16 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
         .filter((s) => s.rows)
         .map((s) => `${s.name}: ${s.rows}`)
         .join(' · ')
-      toast(`İçe aktarıldı — ${summary}`, 'ok')
+      toast(message('surface.imported', { summary }), 'ok')
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     }
   }
 
   const run = async () => {
     await saveNow()
     const jobs = await window.forge.run.start(runPipeline, selectedAssets)
-    toast(`${jobs.length} iş kuyruğa eklendi`, 'ok')
+    toast(message('surface.queued', { count: jobs.length }), 'ok')
     goJobs()
   }
 
@@ -100,47 +108,47 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
       <div className="split-main">
         <header className="page-head">
           <div>
-            <h1>Asset Listesi</h1>
-            <p className="muted">
-              {p.assets.length} asset · {filtered.length} gösteriliyor · {selectedAssets.length} seçili
-            </p>
+            <h1> {t('surface.assetList')} </h1>
+            <p className="muted">{t('surface.counts', { total: p.assets.length, visible: filtered.length, selected: selectedAssets.length })}</p>
           </div>
           <div className="row">
-            <AsyncButton onClick={importFile}>📥 Excel / CSV içe aktar</AsyncButton>
+            <AsyncButton onClick={importFile}> {t('surface.importExcel')} </AsyncButton>
           </div>
         </header>
 
         <div className="toolbar">
-          <input className="input search" placeholder="Ara: ID, ad, açıklama…" value={q} onChange={(e) => setQ(e.target.value)} />
-          <Select value={kind} onChange={setKind} options={[{ value: '', label: 'Tüm türler' }, ...Object.entries(KIND_LABEL).map(([value, label]) => ({ value, label }))]} />
-          <Select value={prio} onChange={setPrio} options={[{ value: '', label: 'Tüm öncelikler' }, ...priorities.map((x) => ({ value: x, label: x }))]} />
-          <Select value={status} onChange={setStatus} options={[{ value: '', label: 'Tüm durumlar' }, ...statuses.map((x) => ({ value: x, label: x }))]} />
+          <input className="input search" placeholder={t('surface.searchAssets')} value={q} onChange={(e) => setQ(e.target.value)} />
+          <Select value={kind} onChange={setKind} options={[{ value: '', label: t('surface.allKinds') }, ...Object.entries(kindLabels).map(([value, label]) => ({ value, label }))]} />
+          <Select value={prio} onChange={setPrio} options={[{ value: '', label: t('surface.allPriorities') }, ...priorities.map((x) => ({ value: x, label: assetStatus(locale, x) }))]} />
+          <Select value={status} onChange={setStatus} options={[{ value: '', label: t('surface.allStatuses') }, ...statuses.map((x) => ({ value: x, label: x }))]} />
         </div>
 
         {selectedAssets.length > 0 && (
           <div className="runbar">
-            <span>
-              <b>{selectedAssets.length}</b> asset seçili
-            </span>
-            <Select value={runPipeline} onChange={setPipelineId} options={p.pipelines.map((pl) => ({ value: pl.id, label: pl.name + (pl.id === suggested ? ' (önerilen)' : '') }))} />
+            <span>{t('surface.selected', { count: selectedAssets.length })}</span>
+            <Select
+              value={runPipeline}
+              onChange={setPipelineId}
+              options={p.pipelines.map((pl) => ({ value: pl.id, label: pipelineText(locale, pl) + (pl.id === suggested ? t('surface.recommendedSuffix') : '') }))}
+            />
             <AsyncButton className="primary" onClick={run} disabled={!runPipeline}>
-              ▶ Üret
+              {' '}
+              {t('surface.generateArrow')}{' '}
             </AsyncButton>
             <button className="btn ghost" onClick={() => setSelectedAssets([])}>
-              Seçimi temizle
+              {' '}
+              {t('surface.clearSelection')}{' '}
             </button>
           </div>
         )}
 
         {p.assets.length === 0 ? (
           <div className="empty-card">
-            <h3>Henüz asset yok</h3>
-            <p className="muted">
-              Asset listenizi (ör. <span className="mono">Oyun_Asset_Listesi.xlsx</span>) içe aktarın. Modeller, Sesler, Karakterler, Yaratıklar sayfaları asset olarak; Palet ve Malzemeler sayfaları
-              Proje Kitabına aktarılır.
-            </p>
+            <h3> {t('surface.noAssets')} </h3>
+            <p className="muted">{t('surface.importHelp')}</p>
             <AsyncButton className="primary" onClick={importFile}>
-              📥 İçe aktar
+              {' '}
+              {t('surface.import')}{' '}
             </AsyncButton>
           </div>
         ) : (
@@ -158,13 +166,13 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
                     />
                   </th>
                   <th style={{ width: 100 }}>ID</th>
-                  <th>Ad</th>
-                  <th style={{ width: 90 }}>Tür</th>
-                  <th style={{ width: 80 }}>Kategori</th>
-                  <th style={{ width: 110 }}>Boyut</th>
-                  <th style={{ width: 80 }}>Bütçe</th>
-                  <th style={{ width: 60 }}>Önc.</th>
-                  <th style={{ width: 100 }}>Durum</th>
+                  <th> {t('surface.name')} </th>
+                  <th style={{ width: 90 }}> {t('surface.type')} </th>
+                  <th style={{ width: 80 }}> {t('surface.category')} </th>
+                  <th style={{ width: 110 }}> {t('surface.size')} </th>
+                  <th style={{ width: 80 }}> {t('surface.budget')} </th>
+                  <th style={{ width: 60 }}> {t('surface.priorityShort')} </th>
+                  <th style={{ width: 100 }}> {t('surface.status')} </th>
                 </tr>
               </thead>
               <tbody>
@@ -179,20 +187,20 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
                       <div className="muted small ellipsis">{a.description}</div>
                     </td>
                     <td>
-                      <span className={`kind k-${a.kind}`}>{KIND_LABEL[a.kind]}</span>
+                      <span className={`kind k-${a.kind}`}>{kindLabels[a.kind]}</span>
                     </td>
                     <td>{a.category}</td>
                     <td className="small">{a.size}</td>
                     <td className="small">{a.triBudget || ''}</td>
                     <td>{a.priority}</td>
                     <td>
-                      <span className={`status ${a.status === 'Üretildi' ? 'ok' : ''}`}>{a.status}</span>
+                      <span className={`status ${a.status === 'Üretildi' ? 'ok' : ''}`}>{assetStatus(locale, a.status)}</span>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {filtered.length > 600 && <p className="muted center">İlk 600 satır gösteriliyor — filtreyi daraltın.</p>}
+            {filtered.length > 600 && <p className="muted center"> {t('surface.limitRows')} </p>}
           </div>
         )}
       </div>
@@ -205,45 +213,45 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
               ✕
             </button>
           </div>
-          <Field label="Ad">
+          <Field label={t('surface.name')}>
             <TextInput value={open.name} onChange={(v) => edit(open.id, { name: v })} />
           </Field>
-          <Field label="Tür">
-            <Select value={open.kind} onChange={(v) => edit(open.id, { kind: v as AssetKind })} options={Object.entries(KIND_LABEL).map(([value, label]) => ({ value, label }))} />
+          <Field label={t('surface.type')}>
+            <Select value={open.kind} onChange={(v) => edit(open.id, { kind: v as AssetKind })} options={Object.entries(kindLabels).map(([value, label]) => ({ value, label }))} />
           </Field>
           <div className="grid2">
-            <Field label="Kategori">
+            <Field label={t('surface.category')}>
               <TextInput value={open.category} onChange={(v) => edit(open.id, { category: v })} />
             </Field>
-            <Field label="Alt kategori">
+            <Field label={t('surface.subcategory')}>
               <TextInput value={open.subcategory} onChange={(v) => edit(open.id, { subcategory: v })} />
             </Field>
           </div>
-          <Field label="Tasarım notu / açıklama">
+          <Field label={t('surface.designNotes')}>
             <TextArea rows={5} value={open.description} onChange={(v) => edit(open.id, { description: v })} />
           </Field>
           <div className="grid2">
-            <Field label="Boyut (m)" help="ör. 4x4x0.3 — Blender bu boyuta ölçekler">
+            <Field label={t('surface.sizeM')} help={t('surface.sizeHelp')}>
               <TextInput value={open.size} onChange={(v) => edit(open.id, { size: v })} />
             </Field>
-            <Field label="Üçgen bütçesi" help={open.budgetNote}>
+            <Field label={t('surface.triangleBudget')} help={open.budgetNote}>
               <NumberInput value={open.triBudget} onChange={(v) => edit(open.id, { triBudget: v })} />
             </Field>
           </div>
-          <Field label="Renk / malzeme">
+          <Field label={t('surface.colorMaterial')}>
             <TextInput value={open.materials} onChange={(v) => edit(open.id, { materials: v })} />
           </Field>
           <div className="grid2">
-            <Field label="Öncelik">
+            <Field label={t('surface.priority')}>
               <TextInput value={open.priority} onChange={(v) => edit(open.id, { priority: v })} />
             </Field>
-            <Field label="Durum">
+            <Field label={t('surface.status')}>
               <TextInput value={open.status} onChange={(v) => edit(open.id, { status: v })} />
             </Field>
           </div>
           {Object.keys(open.extra).length > 0 && (
             <div className="extra">
-              <div className="field-label">Diğer sütunlar (prompt motoru bunları da okur)</div>
+              <div className="field-label"> {t('surface.otherColumns')} </div>
               {Object.entries(open.extra).map(([k, v]) => (
                 <div key={k} className="kv">
                   <span>{k}</span>
@@ -252,7 +260,7 @@ export default function AssetsPage({ goJobs }: { goPipeline: () => void; goJobs:
               ))}
             </div>
           )}
-          <div className="muted small">Kaynak sayfa: {open.source}</div>
+          <div className="muted small">{t('surface.source', { source: open.source })}</div>
         </aside>
       )}
     </div>

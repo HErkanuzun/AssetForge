@@ -23,8 +23,8 @@
   --radius-lg: 20px;
   --grad: linear-gradient(135deg, #ffb547 0%, #ff6a2b 45%, #e2235f 100%);
   --shadow: 0 18px 50px -20px rgba(0, 0, 0, 0.8);
-  --font: 'Segoe UI Variable Text', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
-  --font-display: 'Segoe UI Variable Display', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  --font: 'Segoe UI Variable Text', 'Segoe UI Variable', 'Segoe UI', 'Microsoft YaHei UI', 'PingFang SC', 'Noto Sans CJK SC', system-ui, sans-serif;
+  --font-display: 'Segoe UI Variable Display', 'Segoe UI Variable', 'Segoe UI', 'Microsoft YaHei UI', 'PingFang SC', 'Noto Sans CJK SC', system-ui, sans-serif;
   color-scheme: dark;
 }
 

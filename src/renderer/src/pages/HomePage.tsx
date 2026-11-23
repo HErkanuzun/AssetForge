@@ -1,31 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { renderMessage } from '../../../shared/i18n/message'
+import { pipelineTitle } from '../../../shared/i18n/metadata'
+import { errorMessage } from '../../../shared/i18n/errors'
 import { useEffect, useRef, useState } from 'react'
 import type { AssetKind, Brief } from '../../../shared/types'
 import { useNav } from '../App'
 import { Icon } from '../components/icons'
-import KindArt, { KIND_THEME } from '../components/KindArt'
+import KindArt from '../components/KindArt'
 import { ago, jobProgress } from '../components/Thumb'
 import { useStore } from '../store'
+import { useLocale } from '../i18n'
 
-const TILES: { kind: AssetKind; hint: string; start: string }[] = [
-  { kind: 'character', hint: 'Rig + LOD + Manny', start: 'Oyunum için bir karakter tasarlamak istiyorum.' },
-  { kind: 'vehicle', hint: 'Gövde, ses, toz, hasar', start: 'Oyunum için sürülebilir bir araç üretmek istiyorum.' },
-  { kind: 'creature', hint: 'Yaratık / hayvan', start: 'Oyunum için bir yaratık tasarlamak istiyorum.' },
-  { kind: 'weapon', hint: 'Silah + sesleri', start: 'Oyunum için bir silah üretmek istiyorum.' },
-  { kind: 'model', hint: 'Prop, yapı, çevre', start: 'Oyun dünyam için bir prop / yapı üretmek istiyorum.' },
-  { kind: 'texture', hint: 'Zemin, PBR, tileable', start: 'Oyun dünyam için bir zemin dokusu üretmek istiyorum.' },
-  { kind: 'sfx', hint: 'Dinamik motor, efekt', start: 'Oyunum için ses efektleri üretmek istiyorum.' },
-  { kind: 'vfx', hint: 'Duman, toz, kıvılcım', start: 'Oyunum için bir görsel efekt (VFX) üretmek istiyorum.' },
-  { kind: 'animation', hint: 'Metinden hareket', start: 'Karakterim için animasyon seti üretmek istiyorum.' },
-  { kind: 'music', hint: 'Döngü, ambiyans', start: 'Oyunum için müzik / ambiyans üretmek istiyorum.' }
-]
-
-const QUICK = [
-  'Çölde giden paslı bir pikap — toz, motor sesi, çarpışma',
-  'Low poly, sevimli bir köy çiftçisi karakteri',
-  'Sci-fi koridor için modüler duvar seti',
-  'Ormanda gezen kurt — yürüyüş ve uluma'
-]
+const TILES = ['character', 'vehicle', 'creature', 'weapon', 'model', 'texture', 'sfx', 'vfx', 'animation', 'music'] as const
 
 function HeroArt() {
   return (
@@ -87,6 +73,9 @@ function HeroArt() {
 }
 
 export default function HomePage() {
+  const { locale, t } = useLocale()
+  const tiles = TILES.map((kind) => ({ kind, hint: t(`home.${kind}Hint`), start: t(`home.${kind}Start`) }))
+  const quick = (['home.quick0', 'home.quick1', 'home.quick2', 'home.quick3'] as const).map((key) => t(key))
   const { jobs, toast, project } = useStore()
   const nav = useNav()
   const [text, setText] = useState('')
@@ -95,7 +84,7 @@ export default function HomePage() {
   const ta = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    window.forge.brief.list().then(setBriefs, (e: Error) => toast(e.message, 'error'))
+    window.forge.brief.list().then(setBriefs, (e: Error) => toast(errorMessage(e), 'error'))
   }, [toast])
 
   const start = async (msg: string, kind?: AssetKind) => {
@@ -106,7 +95,7 @@ export default function HomePage() {
       const b = await window.forge.brief.create({ title: m.length > 48 ? m.slice(0, 46) + '…' : m, kind })
       nav.openBrief(b.id, m)
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
       setBusy(false)
     }
   }
@@ -120,22 +109,20 @@ export default function HomePage() {
         <HeroArt />
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div className="hero-kicker">
-            <Icon name="bolt" size={14} /> Asset fabrikası · {project?.bible.projectName || 'Yeni proje'}
+            <Icon name="bolt" size={14} /> {t('home.factory')} · {project?.bible.projectName || t('home.newProject')}
           </div>
           <h1>
-            Ne üretelim?
+            {t('home.heading')}
             <br />
-            <span className="grad-text">Anlat, gerisini fabrika yapsın.</span>
+            <span className="grad-text">{t('home.tagline')}</span>
           </h1>
-          <p>
-            Fikrini yaz ya da bir görsel bırak. Yönetmen sana birkaç soru sorar: stil, renk, poligon bütçesi, oyun dünyası. Sonra modelden sese, tozdan animasyona kadar bütün seti tek seferde üretir.
-          </p>
+          <p>{t('home.description')}</p>
           <div className="composer">
             <textarea
               ref={ta}
               rows={1}
               value={text}
-              placeholder="ör. Kumlu çölde giden, paslı ama sevimli bir pikap…"
+              placeholder={t('home.placeholder')}
               onChange={(e) => {
                 setText(e.target.value)
                 e.target.style.height = 'auto'
@@ -150,11 +137,11 @@ export default function HomePage() {
             />
             <button className="btn primary big" disabled={!text.trim() || busy} onClick={() => start(text)}>
               {busy ? <span className="spinner" /> : <Icon name="send" size={17} />}
-              Başla
+              {t('home.start')}
             </button>
           </div>
           <div className="quick">
-            {QUICK.map((q) => (
+            {quick.map((q) => (
               <button key={q} onClick={() => start(q)}>
                 {q}
               </button>
@@ -164,15 +151,16 @@ export default function HomePage() {
       </section>
 
       <div className="section-title">
-        Ne tür bir şey? <span className="muted">Bir karoya tıkla, yönetmen oradan başlasın</span>
+        {t('home.whatKind')}
+        <span className="muted">{t('home.tileHelp')}</span>
       </div>
       <div className="tiles">
-        {TILES.map((t, i) => (
-          <div key={t.kind} className="tile" onClick={() => start(t.start, t.kind)}>
-            <KindArt kind={t.kind} seed={i} />
+        {tiles.map((tile, i) => (
+          <div key={tile.kind} className="tile" onClick={() => start(tile.start, tile.kind)}>
+            <KindArt kind={tile.kind} seed={i} />
             <div className="tile-label">
-              <b>{KIND_THEME[t.kind].label}</b>
-              <span>{t.hint}</span>
+              <b>{t(`kind.${tile.kind}`)}</b>
+              <span title={tile.hint}>{tile.hint}</span>
             </div>
           </div>
         ))}
@@ -181,7 +169,8 @@ export default function HomePage() {
       {briefs.length > 0 && (
         <>
           <div className="section-title">
-            Brief'ler <span className="muted">{briefs.length} tasarım konuşması</span>
+            {t('home.briefs')}
+            <span className="muted">{t('home.conversations', { count: briefs.length })}</span>
           </div>
           <div className="cards-row">
             {briefs.slice(0, 9).map((b, i) => (
@@ -193,13 +182,13 @@ export default function HomePage() {
                   <b className="ellipsis" style={{ display: 'block' }}>
                     {b.spec.name || b.title}
                   </b>
-                  <div className="muted small ellipsis">{b.spec.style || b.spec.description || 'Tasarım konuşması'}</div>
+                  <div className="muted small ellipsis">{b.spec.style || b.spec.description || t('home.conversation')}</div>
                   <div className="row" style={{ marginTop: 8 }}>
                     <span className={`chip ${b.status === 'committed' ? 'ok' : b.status === 'ready' ? 'accent' : ''}`}>
-                      {b.status === 'committed' ? 'Üretime gitti' : b.status === 'ready' ? 'Hazır' : 'Taslak'}
+                      {b.status === 'committed' ? t('home.committed') : b.status === 'ready' ? t('home.ready') : t('home.draft')}
                     </span>
-                    {b.kit.length > 0 && <span className="chip">{b.kit.filter((k) => k.include).length} parça</span>}
-                    <span className="dim small">{ago(b.updatedAt)}</span>
+                    {b.kit.length > 0 && <span className="chip">{t('home.parts', { count: b.kit.filter((k) => k.include).length })}</span>}
+                    <span className="dim small">{ago(b.updatedAt, locale)}</span>
                   </div>
                 </div>
               </div>
@@ -211,10 +200,12 @@ export default function HomePage() {
       {recent.length > 0 && (
         <>
           <div className="section-title">
-            Üretim bandı <span className="muted">{active.length ? `${active.length} iş sürüyor` : 'son işler'}</span>
+            {t('home.production')}
+            <span className="muted">{active.length ? t('home.active', { count: active.length }) : t('home.recentJobs')}</span>
             <span className="spacer" />
             <button className="btn ghost" onClick={() => nav.go('jobs')}>
-              Tümü <Icon name="chevron" size={14} />
+              {t('home.all')}
+              <Icon name="chevron" size={14} />
             </button>
           </div>
           <div className="job-strip">
@@ -222,11 +213,9 @@ export default function HomePage() {
               <div key={j.id} className="job-mini">
                 <div className="row between">
                   <b className="ellipsis">{j.assetName}</b>
-                  <span className={`chip ${j.status === 'done' ? 'ok' : j.status === 'failed' ? 'pink' : j.status === 'running' ? 'accent' : ''}`}>
-                    {{ queued: 'sırada', running: 'üretiliyor', done: 'hazır', failed: 'hata', canceled: 'iptal' }[j.status]}
-                  </span>
+                  <span className={`chip ${j.status === 'done' ? 'ok' : j.status === 'failed' ? 'pink' : j.status === 'running' ? 'accent' : ''}`}>{t(`status.${j.status}`)}</span>
                 </div>
-                <div className="muted small ellipsis">{j.pipelineName}</div>
+                <div className="muted small ellipsis">{renderMessage(locale, pipelineTitle(j.pipelineId, j.pipelineName))}</div>
                 <div className="bar">
                   <div style={{ width: `${jobProgress(j)}%` }} />
                 </div>

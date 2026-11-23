@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { message, renderMessage, type MessageDescriptor } from './i18n/message'
 // Ses kalite kontrolü: WAV dosyasından sessizlik, kırpılma, seviye, baştaki boşluk, süre ve döngü dikişi.
 // Servis gerektirmez; "Kalite Kontrol" düğümü kötü sonuçta prompt motoruna geri bildirim gönderir.
 
@@ -122,58 +123,70 @@ export interface AudioTargets {
 export interface AudioQa {
   score: number
   issues: string[]
+  uiIssues?: MessageDescriptor[]
   /** ElevenLabs promptuna eklenecek İngilizce düzeltme */
   fixes: string[]
   technical: string[]
+  uiTechnical?: MessageDescriptor[]
 }
 
 /** Tek bir dosyanın değerlendirmesi */
 export function judgeAudio(name: string, m: AudioMetrics, t: AudioTargets = {}): AudioQa {
   const issues: string[] = []
+  const uiIssues: MessageDescriptor[] = []
+  const issue = (value: MessageDescriptor) => {
+    uiIssues.push(value)
+    issues.push(renderMessage('tr', value))
+  }
   const fixes: string[] = []
   let score = 10
   const technical = [
     `${name}: ${m.seconds} sn · tepe ${m.peakDb} dBFS · ortalama ${m.rmsDb} dBFS · kırpılma %${Math.round(m.clipped * 10000) / 100} · baş/son sessizlik ${m.leadingSilence}/${m.trailingSilence} sn${t.loop ? ` · dikiş ${m.seamJump}, ${m.seamLevelDb} dB` : ''}`
   ]
+  const uiTechnical = [
+    message('qa.audioMetrics', { name, seconds: m.seconds, peak: m.peakDb, rms: m.rmsDb, clipped: Math.round(m.clipped * 10000) / 100, lead: m.leadingSilence, trail: m.trailingSilence }),
+    ...(t.loop ? [message('qa.audioSeam', { jump: m.seamJump, level: m.seamLevelDb })] : [])
+  ]
   if (m.peakDb < -45) {
-    return { score: 0, issues: [`${name}: dosya neredeyse tamamen sessiz`], fixes: ['clearly audible, present sound'], technical }
+    issue(message('qa.silent', { name }))
+    return { score: 0, issues, uiIssues, fixes: ['clearly audible, present sound'], technical, uiTechnical }
   }
   if (m.clipped > 0.005) {
     score -= 3
-    issues.push(`${name}: kırpılma / distorsiyon var (örneklerin %${Math.round(m.clipped * 1000) / 10}'i tam ölçekte)`)
+    issue(message('qa.clipping', { name, value: Math.round(m.clipped * 1000) / 10 }))
     fixes.push('clean, undistorted sound without clipping')
   } else if (m.clipped > 0.0005) {
     score -= 1
-    issues.push(`${name}: hafif kırpılma`)
+    issue(message('qa.clippingMild', { name }))
   }
   if (m.rmsDb < -38) {
     score -= 2
-    issues.push(`${name}: çok kısık (ortalama ${m.rmsDb} dBFS)`)
+    issue(message('qa.quiet', { name, value: m.rmsDb }))
     fixes.push('louder and more present, close-miked')
   }
   if (m.leadingSilence > 0.4) {
     score -= 1
-    issues.push(`${name}: başında ${m.leadingSilence} sn sessizlik var`)
+    issue(message('qa.leadingSilence', { name, value: m.leadingSilence }))
     fixes.push('the sound starts immediately')
   }
   if (t.seconds && t.seconds > 0) {
     const diff = Math.abs(m.seconds - t.seconds)
     if (diff > Math.max(0.6, t.seconds * 0.3)) {
       score -= 2
-      issues.push(`${name}: süre ${m.seconds} sn, istenen ${t.seconds} sn`)
+      issue(message('qa.duration', { name, got: m.seconds, want: t.seconds }))
     }
   }
   if (t.loop) {
     if (m.seamJump > 0.25 || m.seamLevelDb > 6) {
       score -= 2
-      issues.push(`${name}: döngü dikişinde ${m.seamJump > 0.25 ? 'tık sesi' : `seviye sıçraması (${m.seamLevelDb} dB)`} olabilir`)
+      issue(m.seamJump > 0.25 ? message('qa.seamClick', { name }) : message('qa.seamLevel', { name, value: m.seamLevelDb }))
       fixes.push('a seamless, steady loop with constant level from start to end')
     }
     if (m.leadingSilence > 0.15 || m.trailingSilence > 0.3) {
       score -= 1
-      issues.push(`${name}: döngü sesinde baş/son boşluğu var`)
+      issue(message('qa.loopGap', { name }))
       fixes.push('continuous sound with no gaps')
     }
   }
-  return { score: Math.max(0, score), issues, fixes, technical }
+  return { score: Math.max(0, score), issues, uiIssues, fixes, technical, uiTechnical }
 }

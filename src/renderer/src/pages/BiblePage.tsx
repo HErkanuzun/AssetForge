@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { errorMessage } from '../../../shared/i18n/errors'
+import { message } from '../../../shared/i18n/message'
+import { useLocale } from '../i18n'
 import type { Bible, CategoryRule, TextureRes } from '../../../shared/types'
 import { AsyncButton, Field, NumberInput, Select, TextArea, TextInput, Toggle } from '../components/ui'
 import { useStore } from '../store'
@@ -17,6 +20,8 @@ const list = (s: string) =>
     .filter(Boolean)
 
 export default function BiblePage() {
+  const { t } = useLocale()
+
   const { project, update, toast } = useStore()
   const b = project!.bible
   const set = (patch: Partial<Bible>) => update((p) => ({ ...p, bible: { ...p.bible, ...patch } }))
@@ -28,13 +33,13 @@ export default function BiblePage() {
   const extract = async () => {
     const pdfs = await window.forge.pickFiles([{ name: 'PDF', extensions: ['pdf'] }], true)
     if (!pdfs.length) return
-    toast(`Claude ${pdfs.length} belgeyi okuyor… (1-3 dk sürebilir)`)
+    toast(message('surface.readingPdf', { count: pdfs.length }))
     try {
       const { data, usd } = await window.forge.extractBible(pdfs, b, usedCategories.join(', '))
       set({ ...data, technical: { ...b.technical, ...data.technical } })
-      toast(`Proje Kitabı güncellendi ($${usd.toFixed(3)})`, 'ok')
+      toast(message('surface.bibleUpdated', { usd: usd.toFixed(3) }), 'ok')
     } catch (e) {
-      toast((e as Error).message, 'error')
+      toast(errorMessage(e), 'error')
     }
   }
 
@@ -48,69 +53,70 @@ export default function BiblePage() {
     <div className="page">
       <header className="page-head">
         <div>
-          <h1>Proje Kitabı</h1>
-          <p className="muted">Prompt motoru ve kalite kontrol her üretimde bu bilgileri kullanır. Ne kadar net olursa çıktı o kadar tutarlı olur.</p>
+          <h1> {t('surface.bible')} </h1>
+          <p className="muted"> {t('surface.bibleHelp')} </p>
         </div>
         <div className="row">
-          <AsyncButton className="primary" onClick={extract} title="Evren el kitabı / GDD PDF'lerini seç">
-            📄 PDF'lerden doldur (Claude)
+          <AsyncButton className="primary" onClick={extract} title={t('surface.pickPdf')}>
+            {' '}
+            {t('surface.fillPdf')}{' '}
           </AsyncButton>
         </div>
       </header>
 
       <section className="card">
-        <h2>Kimlik ve atmosfer</h2>
+        <h2> {t('surface.identity')} </h2>
         <div className="grid2">
-          <Field label="Proje adı">
+          <Field label={t('surface.projectName')}>
             <TextInput value={b.projectName} onChange={(v) => set({ projectName: v })} />
           </Field>
-          <Field label="Tür">
-            <TextInput value={b.genre} onChange={(v) => set({ genre: v })} placeholder="Coop TPS hayatta kalma" />
+          <Field label={t('surface.type')}>
+            <TextInput value={b.genre} onChange={(v) => set({ genre: v })} placeholder={t('surface.genreExample')} />
           </Field>
-          <Field label="Mekân / dönem" wide>
+          <Field label={t('surface.setting')} wide>
             <TextArea value={b.setting} onChange={(v) => set({ setting: v })} />
           </Field>
-          <Field label="Lore özeti (görsel/işitsel tasarımı etkileyen)" wide>
+          <Field label={t('surface.lore')} wide>
             <TextArea rows={5} value={b.loreSummary} onChange={(v) => set({ loreSummary: v })} />
           </Field>
-          <Field label="Sanat yönü (İngilizce önerilir)" wide help="Şekil dili, yapım mantığı, yıpranma, ışık atmosferi, referanslar">
+          <Field label={t('surface.artDirection')} wide help={t('surface.artHelp')}>
             <TextArea rows={5} value={b.artDirection} onChange={(v) => set({ artDirection: v })} />
           </Field>
-          <Field label="Gerçekçilik seviyesi">
+          <Field label={t('surface.realism')}>
             <TextInput value={b.realism} onChange={(v) => set({ realism: v })} />
           </Field>
-          <Field label="Atmosfer kelimeleri" help="Virgülle ayırın">
+          <Field label={t('surface.mood')} help={t('surface.commaHelp')}>
             <TextInput value={b.moodKeywords.join(', ')} onChange={(v) => set({ moodKeywords: list(v) })} />
           </Field>
-          <Field label="Yasaklar" help="Asla görünmemesi gerekenler, virgülle">
+          <Field label={t('surface.forbidden')} help={t('surface.forbiddenHelp')}>
             <TextInput value={b.forbidden.join(', ')} onChange={(v) => set({ forbidden: list(v) })} />
           </Field>
-          <Field label="Ses yönü">
+          <Field label={t('surface.audioDirection')}>
             <TextArea value={b.audioDirection} onChange={(v) => set({ audioDirection: v })} />
           </Field>
         </div>
       </section>
 
       <section className="card">
-        <h2>Teknik kurallar</h2>
+        <h2> {t('surface.technical')} </h2>
         <div className="grid4">
-          <Field label="Varsayılan üçgen bütçesi">
+          <Field label={t('surface.defaultBudget')}>
             <NumberInput value={b.technical.defaultTriBudget} onChange={(v) => setTech({ defaultTriBudget: v })} />
           </Field>
-          <Field label="Doku çözünürlüğü">
+          <Field label={t('surface.textureResolution')}>
             <Select value={b.technical.textureRes} onChange={(v) => setTech({ textureRes: v as TextureRes })} options={RES} />
           </Field>
           <Field label="PBR">
             <Toggle value={b.technical.pbr} onChange={(v) => setTech({ pbr: v })} />
           </Field>
-          <Field label="UE içerik kökü">
+          <Field label={t('surface.ueRoot')}>
             <TextInput value={b.technical.ueContentRoot} onChange={(v) => setTech({ ueContentRoot: v })} />
           </Field>
-          <Field label="Master materyal (opsiyonel)" help="Doluysa her model için MI_ oluşturulur. Parametre adları: BaseColor, Normal, Roughness, Metallic">
+          <Field label={t('surface.masterMaterial')} help={t('surface.masterHelp')}>
             <TextInput value={b.technical.masterMaterial} onChange={(v) => setTech({ masterMaterial: v })} placeholder="/Game/Materials/M_Master" />
           </Field>
           {(Object.keys(b.technical.naming) as (keyof Bible['technical']['naming'])[]).map((k) => (
-            <Field key={k} label={`Önek: ${{ staticMesh: 'Static mesh', skeletalMesh: 'Skeletal mesh', texture: 'Doku', materialInstance: 'Materyal inst.', sound: 'Ses' }[k]}`}>
+            <Field key={k} label={t('surface.prefix', { name: t(`naming.${k}`) })}>
               <TextInput value={b.technical.naming[k]} onChange={(v) => setTech({ naming: { ...b.technical.naming, [k]: v } })} />
             </Field>
           ))}
@@ -119,22 +125,23 @@ export default function BiblePage() {
 
       <section className="card">
         <div className="row between">
-          <h2>Kategori kuralları</h2>
+          <h2> {t('surface.categoryRules')} </h2>
           <button className="btn" onClick={addMissingCategories} disabled={!usedCategories.length}>
-            + Asset listesindeki kategorileri ekle
+            {' '}
+            {t('surface.addCategories')}{' '}
           </button>
         </div>
         {b.categories.length === 0 ? (
-          <p className="muted">Henüz kategori yok. Asset listesini içe aktarıp yukarıdaki butona basın ya da PDF'lerden doldurun.</p>
+          <p className="muted"> {t('surface.noCategories')} </p>
         ) : (
           <table className="table">
             <thead>
               <tr>
-                <th style={{ width: 80 }}>Kod</th>
-                <th style={{ width: 180 }}>Ad</th>
-                <th>Stil notları (İngilizce önerilir)</th>
-                <th style={{ width: 110 }}>Üçgen</th>
-                <th style={{ width: 80 }}>Doku</th>
+                <th style={{ width: 80 }}> {t('surface.code')} </th>
+                <th style={{ width: 180 }}> {t('surface.name')} </th>
+                <th> {t('surface.styleNotes')} </th>
+                <th style={{ width: 110 }}> {t('surface.triangles')} </th>
+                <th style={{ width: 80 }}> {t('surface.texture')} </th>
                 <th style={{ width: 36 }} />
               </tr>
             </thead>
@@ -169,9 +176,9 @@ export default function BiblePage() {
       </section>
 
       <section className="card">
-        <h2>Palet ({b.palette.length})</h2>
+        <h2>{t('surface.paletteCount', { count: b.palette.length })}</h2>
         {b.palette.length === 0 ? (
-          <p className="muted">Asset listesi Excel'inde "Palet" sayfası varsa içe aktarırken otomatik dolar.</p>
+          <p className="muted"> {t('surface.paletteHelp')} </p>
         ) : (
           <div className="swatches">
             {b.palette.map((p) => (
@@ -188,18 +195,18 @@ export default function BiblePage() {
       </section>
 
       <section className="card">
-        <h2>Malzeme kütüphanesi ({b.materials.length})</h2>
+        <h2>{t('surface.materialCount', { count: b.materials.length })}</h2>
         {b.materials.length === 0 ? (
-          <p className="muted">Excel'deki "Malzemeler" sayfasından otomatik dolar.</p>
+          <p className="muted"> {t('surface.materialsHelp')} </p>
         ) : (
           <table className="table compact">
             <thead>
               <tr>
-                <th>Materyal</th>
-                <th>Açıklama</th>
-                <th>Palet</th>
-                <th>Not</th>
-                <th>Öncelik</th>
+                <th> {t('surface.material')} </th>
+                <th> {t('surface.description')} </th>
+                <th> {t('surface.palette')} </th>
+                <th> {t('surface.note')} </th>
+                <th> {t('surface.priority')} </th>
               </tr>
             </thead>
             <tbody>

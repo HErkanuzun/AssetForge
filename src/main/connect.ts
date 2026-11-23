@@ -2,6 +2,9 @@
 // Hızlı bağlantı: servisin giriş / anahtar sayfasını tarayıcıda açar.
 // - OpenRouter: gerçek "giriş yap → onayla" akışı (OAuth PKCE), anahtar kendiliğinden gelir.
 // - Diğerleri: kullanıcı sayfada anahtarı kopyalar, panodan yakalanır, API'ye sorularak doğrulanır, kaydedilir.
+import { message, renderMessage, type MessageDescriptor } from '../shared/i18n/message'
+import { UiError, errorMessage, errorEnvelope } from '../shared/i18n/errors'
+import { translate } from '../shared/i18n'
 import { clipboard, shell } from 'electron'
 import http from 'node:http'
 import crypto from 'node:crypto'
@@ -11,6 +14,9 @@ import { writeLog } from './log'
 import { getSettings, setSettings } from './settings'
 
 export type KeyService = Exclude<ConnectService, 'openrouter'>
+
+const localized = (uiMessage: MessageDescriptor) => ({ message: renderMessage('tr', uiMessage), uiMessage })
+const text = <K extends import('../shared/i18n').MessageKey>(key: K, ...args: import('../shared/i18n').MessageArgs<K>) => translate(getSettings().locale, key, ...args)
 
 const TIMEOUT_MS = 10 * 60 * 1000
 
@@ -44,7 +50,7 @@ export function plausibleToken(text: string): boolean {
 }
 
 /** Servis anahtarı açıkça reddetti (ağ hatasından farklı: aynı anahtar bir daha denenmez) */
-class KeyRejected extends Error {}
+class KeyRejected extends UiError {}
 
 const log = (service: ConnectService, text: string) => writeLog('info', `[connect] ${service}: ${text}`)
 
@@ -89,7 +95,7 @@ async function startClipboard(service: KeyService, emit: (e: ConnectEvent) => vo
   const stop = (canceled = true) => {
     clearInterval(timer)
     clearTimeout(deadline)
-    if (canceled) emit({ service, phase: 'canceled', message: 'İptal edildi' })
+    if (canceled) emit({ service, phase: 'canceled', ...localized(message('connect.canceled')) })
   }
   const finish = () => {
     if (active === me) active = null
@@ -109,19 +115,17 @@ async function startClipboard(service: KeyService, emit: (e: ConnectEvent) => vo
       emit({
         service,
         phase: 'waiting',
-        message: raw
-          ? `Kopyalanan metin ${page.name} anahtarına benzemiyor (“${page.hint}” ile başlar). Anahtarın kendisini kopyalayın; emin değilseniz “Panodakini dene”ye basın.`
-          : 'Pano boş. Sayfadaki anahtarı kopyalayıp tekrar deneyin.'
+        ...localized(raw ? message('connect.keyFormat', { name: page.name, hint: page.hint }) : message('connect.emptyClipboard'))
       })
       return
     }
     if (!manual && tried.has(key)) {
-      emit({ service, phase: 'error', pending: true, message: `Bu anahtarı ${page.name} az önce reddetti. Yeni bir anahtar oluşturup onu kopyalayın.` })
+      emit({ service, phase: 'error', pending: true, ...localized(message('connect.rejectedBefore', { name: page.name })) })
       return
     }
     checking = true
     log(service, `anahtar yakalandı (${manual ? 'elle' : 'otomatik'}), doğrulanıyor`)
-    emit({ service, phase: 'checking', message: 'Anahtar yakalandı, doğrulanıyor…' })
+    emit({ service, phase: 'checking', ...localized(message('connect.checkingKey')) })
     try {
       const info = await verifyKey(service, key)
       if (active !== me) return
@@ -130,13 +134,13 @@ async function startClipboard(service: KeyService, emit: (e: ConnectEvent) => vo
       if ((await clipboard.readText()).includes(key)) clipboard.clear()
       log(service, 'bağlandı')
       finish()
-      emit({ service, phase: 'done', message: info })
+      emit({ service, phase: 'done', ...localized(info) })
       onDone()
     } catch (e) {
       // Ağ hatasında aynı anahtar tekrar kopyalanınca yeniden denenir
       if (e instanceof KeyRejected) tried.add(key)
       log(service, `doğrulanamadı: ${(e as Error).message}`)
-      if (active === me) emit({ service, phase: 'error', pending: true, message: `${(e as Error).message} — başka bir anahtar kopyalayabilirsiniz, beklemeye devam ediyorum.` })
+      if (active === me) emit({ service, phase: 'error', pending: true, ...localized(message('connect.retryKey', { detail: errorMessage(e) })) })
     } finally {
       checking = false
     }
@@ -157,7 +161,7 @@ async function startClipboard(service: KeyService, emit: (e: ConnectEvent) => vo
   last = await clipboard.readText().catch(() => '')
   log(service, 'anahtar sayfası açılıyor, pano izleniyor')
   await shell.openExternal(page.url)
-  emit({ service, phase: 'waiting', message: 'Tarayıcıda giriş yapın, yeni anahtar oluşturup Kopyala’ya basın — AssetForge otomatik yakalar.' })
+  emit({ service, phase: 'waiting', ...localized(message('connect.waitKey')) })
   if (findKey(service, last.trim())) void check(last)
 
   timer = setInterval(async () => {
@@ -170,44 +174,46 @@ async function startClipboard(service: KeyService, emit: (e: ConnectEvent) => vo
   deadline = setTimeout(() => {
     if (active !== me) return
     finish()
-    emit({ service, phase: 'error', message: 'Süre doldu (10 dk). Tekrar “Bağlan”a basın ya da anahtarı elle yapıştırın.' })
+    emit({ service, phase: 'error', ...localized(message('connect.timeoutKey')) })
   }, TIMEOUT_MS)
 }
 
-async function verifyKey(service: KeyService, key: string): Promise<string> {
+async function verifyKey(service: KeyService, key: string): Promise<MessageDescriptor> {
   const get = (url: string, headers: Record<string, string>) => fetch(url, { headers, signal: AbortSignal.timeout(15000) })
   const fail = async (r: Response) => {
     const body = await r.text().catch(() => '')
-    return r.status === 401 || r.status === 403 ? new KeyRejected('Anahtar reddedildi') : new Error(`Servis yanıtı ${r.status} ${body.slice(0, 120)}`)
+    return r.status === 401 || r.status === 403
+      ? new KeyRejected(message('connect.keyRejected'))
+      : new UiError(message('connect.response', { name: service, status: r.status, detail: body.slice(0, 120) }))
   }
   switch (service) {
     case 'anthropic': {
       const r = await get('https://api.anthropic.com/v1/models?limit=1', { 'x-api-key': key, 'anthropic-version': '2023-06-01' })
       if (!r.ok) throw await fail(r)
-      return 'Claude bağlandı'
+      return message('connect.connected', { name: 'Claude', detail: '' })
     }
     case 'meshy': {
       const r = await get('https://api.meshy.ai/openapi/v1/balance', { Authorization: `Bearer ${key}` })
       if (!r.ok) throw await fail(r)
       const j = (await r.json()) as { balance?: number }
-      return `Meshy bağlandı · ${j.balance ?? '?'} kredi`
+      return message('connect.meshyBalance', { balance: j.balance ?? '?' })
     }
     case 'elevenlabs': {
       const r = await get('https://api.elevenlabs.io/v1/user/subscription', { 'xi-api-key': key })
       if (r.ok) {
         const j = (await r.json()) as { tier?: string }
-        return `ElevenLabs bağlandı${j.tier ? ` · ${j.tier}` : ''}`
+        return message('connect.connected', { name: 'ElevenLabs', detail: j.tier ? ` · ${j.tier}` : '' })
       }
       // Kısıtlı anahtar: geçerli ama abonelik okuma izni yok
       const body = await r.text().catch(() => '')
-      if (body.includes('missing_permissions')) return 'ElevenLabs bağlandı (kısıtlı anahtar)'
-      throw r.status === 401 ? new KeyRejected('Anahtar reddedildi') : new Error(`Servis yanıtı ${r.status}`)
+      if (body.includes('missing_permissions')) return message('connect.limitedKey')
+      throw r.status === 401 ? new KeyRejected(message('connect.keyRejected')) : new UiError(message('connect.response', { name: service, status: r.status, detail: '' }))
     }
     case 'huggingface': {
       const r = await get('https://huggingface.co/api/whoami-v2', { Authorization: `Bearer ${key}` })
       if (!r.ok) throw await fail(r)
       const j = (await r.json()) as { name?: string }
-      return `Hugging Face bağlandı${j.name ? ` · ${j.name}` : ''}`
+      return message('connect.connected', { name: 'Hugging Face', detail: j.name ? ` · ${j.name}` : '' })
     }
   }
 }
@@ -216,12 +222,14 @@ async function verifyKey(service: KeyService, key: string): Promise<string> {
 
 const b64url = (b: Buffer) => b.toString('base64url')
 
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
+
 function page(title: string, text: string, ok: boolean): string {
-  return `<!doctype html><meta charset="utf-8"><title>AssetForge</title>
+  return `<!doctype html><html lang="${getSettings().locale}"><meta charset="utf-8"><title>AssetForge</title>
 <body style="margin:0;height:100vh;display:grid;place-items:center;background:#07080c;color:#eef0f5;font-family:Segoe UI,system-ui,sans-serif">
 <div style="text-align:center;max-width:420px;padding:24px">
 <div style="font-size:44px;color:${ok ? '#34d399' : '#e2235f'}">${ok ? '✓' : '✕'}</div>
-<h2 style="margin:8px 0">${title}</h2><p style="color:#8a91a3">${text}</p></div></body>`
+<h2 style="margin:8px 0">${escapeHtml(title)}</h2><p style="color:#8a91a3">${escapeHtml(text)}</p></div></body></html>`
 }
 
 async function startOAuth(emit: (e: ConnectEvent) => void, onDone: () => void): Promise<void> {
@@ -241,7 +249,7 @@ async function startOAuth(emit: (e: ConnectEvent) => void, onDone: () => void): 
     service,
     stop: () => {
       close()
-      emit({ service, phase: 'canceled', message: 'İptal edildi' })
+      emit({ service, phase: 'canceled', ...localized(message('connect.canceled')) })
     }
   }
   const finish = () => {
@@ -258,12 +266,12 @@ async function startOAuth(emit: (e: ConnectEvent) => void, onDone: () => void): 
     const reply = (status: number, html: string) => res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', Connection: 'close' }).end(html)
     const code = url.searchParams.get('code')
     if (!code || url.searchParams.get('state') !== state) {
-      reply(400, page('Bağlantı onaylanmadı', 'Bu pencereyi kapatıp AssetForge’da tekrar deneyebilirsiniz.', false))
+      reply(400, page(text('connect.notApproved'), text('connect.closeRetry'), false))
       finish()
-      emit({ service, phase: 'error', message: 'OpenRouter onayı alınamadı (reddedildi ya da geçersiz yanıt).' })
+      emit({ service, phase: 'error', ...localized(message('connect.oauthRejected')) })
       return
     }
-    emit({ service, phase: 'checking', message: 'Onay alındı, anahtar oluşturuluyor…' })
+    emit({ service, phase: 'checking', ...localized(message('connect.creatingKey')) })
     try {
       const r = await fetch('https://openrouter.ai/api/v1/auth/keys', {
         method: 'POST',
@@ -271,18 +279,18 @@ async function startOAuth(emit: (e: ConnectEvent) => void, onDone: () => void): 
         body: JSON.stringify({ code, code_verifier: verifier, code_challenge_method: 'S256' }),
         signal: AbortSignal.timeout(20000)
       })
-      if (!r.ok) throw new Error(`OpenRouter yanıtı ${r.status}`)
+      if (!r.ok) throw new UiError(message('connect.response', { name: 'OpenRouter', status: r.status, detail: '' }))
       const { key } = (await r.json()) as { key?: string }
-      if (!key) throw new Error('OpenRouter anahtar döndürmedi')
+      if (!key) throw new UiError(message('connect.noKey'))
       saveOpenRouterKey(key)
-      reply(200, page('AssetForge bağlandı', 'OpenRouter hesabınız bağlandı. Bu sekmeyi kapatıp uygulamaya dönebilirsiniz.', true))
+      reply(200, page(text('connect.appConnected'), text('connect.closeDone'), true))
       finish()
-      emit({ service, phase: 'done', message: 'OpenRouter bağlandı — Görev atamalarından kullanabilirsiniz.' })
+      emit({ service, phase: 'done', ...localized(message('connect.routerDone')) })
       onDone()
     } catch (e) {
-      reply(500, page('Bir sorun oldu', (e as Error).message, false))
+      reply(500, page(text('connect.problem'), renderMessage(getSettings().locale, errorMessage(e)), false))
       finish()
-      emit({ service, phase: 'error', message: (e as Error).message })
+      emit({ service, phase: 'error', message: (e as Error).message, uiMessage: errorEnvelope(e).uiMessage })
     }
   })
 
@@ -299,11 +307,11 @@ async function startOAuth(emit: (e: ConnectEvent) => void, onDone: () => void): 
   auth.searchParams.set('state', state)
   auth.searchParams.set('key_label', 'AssetForge')
   await shell.openExternal(auth.toString())
-  emit({ service, phase: 'waiting', message: 'Tarayıcıda OpenRouter’a giriş yapıp “Authorize”a basın — gerisi otomatik.' })
+  emit({ service, phase: 'waiting', ...localized(message('connect.waitRouter')) })
   deadline = setTimeout(() => {
     if (active !== me) return
     finish()
-    emit({ service, phase: 'error', message: 'Süre doldu (10 dk). Tekrar deneyin.' })
+    emit({ service, phase: 'error', ...localized(message('connect.timeout')) })
   }, TIMEOUT_MS)
 }
 

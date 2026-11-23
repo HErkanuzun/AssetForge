@@ -2,6 +2,7 @@
 import type { AssetKind, Job } from '../../../shared/types'
 import { forgeUrl, useStore } from '../store'
 import KindArt from './KindArt'
+import { formatRelativeTime, type Locale } from '../../../shared/i18n'
 
 /** Asset önizlemesi: üretilmiş görsel varsa o, yoksa türün illüstrasyonu */
 export function AssetThumb({ id, kind, seed = 0 }: { id?: string; kind: AssetKind; seed?: number }) {
@@ -24,10 +25,10 @@ export function hashSeed(s: string): number {
   return Math.abs(h)
 }
 
-export function ago(t: number): string {
+export function ago(t: number, locale: Locale): string {
   const s = Math.max(0, (Date.now() - t) / 1000)
-  if (s < 60) return 'az önce'
-  if (s < 3600) return `${Math.floor(s / 60)} dk önce`
-  if (s < 86400) return `${Math.floor(s / 3600)} sa önce`
-  return `${Math.floor(s / 86400)} gün önce`
+  if (s < 60) return formatRelativeTime(locale, 0, 'second')
+  if (s < 3600) return formatRelativeTime(locale, -Math.floor(s / 60), 'minute')
+  if (s < 86400) return formatRelativeTime(locale, -Math.floor(s / 3600), 'hour')
+  return formatRelativeTime(locale, -Math.floor(s / 86400), 'day')
 }

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { translate } from '../shared/i18n'
 // Tanılama dosyası: sürümler, sistem, ayar özeti (anahtar değerleri olmadan), Kimodo durumu ve son günlük satırları.
 // Hata bildirirken GitHub issue'ya eklenmek üzere tasarlandı; tüm metin redact() ile temizlenir.
 import { app, BrowserWindow, dialog } from 'electron'
@@ -97,7 +98,12 @@ export async function buildDiagnostics(): Promise<string> {
 export async function saveDiagnostics(win: BrowserWindow | null): Promise<string | null> {
   const text = await buildDiagnostics()
   const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '')
-  const opts = { title: 'Tanılama dosyasını kaydet', defaultPath: path.join(app.getPath('desktop'), `AssetForge-tanilama-${stamp}.txt`), filters: [{ name: 'Metin', extensions: ['txt'] }] }
+  const locale = getSettings().locale
+  const opts = {
+    title: translate(locale, 'native.saveDiagnostics'),
+    defaultPath: path.join(app.getPath('desktop'), `AssetForge-tanilama-${stamp}.txt`),
+    filters: [{ name: translate(locale, 'native.textFiles'), extensions: ['txt'] }]
+  }
   const r = win ? await dialog.showSaveDialog(win, opts) : await dialog.showSaveDialog(opts)
   if (r.canceled || !r.filePath) return null
   fs.writeFileSync(r.filePath, text)

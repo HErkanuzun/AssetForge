@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message, type MessageDescriptor } from '../../shared/i18n/message'
 // Meshy REST API istemcisi (https://docs.meshy.ai)
 import path from 'node:path'
 import type { MeshyResource } from '../../shared/types'
@@ -34,18 +36,18 @@ export interface MeshyTask {
   preceding_tasks?: number
 }
 
-const ERRORS: Record<number, string> = {
-  400: 'Geçersiz istek',
-  401: 'Meshy API anahtarı geçersiz veya eksik',
-  402: 'Meshy kredisi yetersiz (veya ücretsiz plan API desteklemiyor)',
-  403: 'Bu işlem için yetki yok',
-  404: 'Görev bulunamadı',
-  429: 'Meshy istek sınırı aşıldı'
-}
+const ERRORS = {
+  400: 'provider.invalidRequest',
+  401: 'provider.invalidKey',
+  402: 'provider.noCredit',
+  403: 'provider.forbidden',
+  404: 'provider.notFound',
+  429: 'provider.rateLimit'
+} as const
 
 async function request<T>(method: string, url: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const key = getSecret('meshy')
-  if (!key) throw new Error('Meshy API anahtarı yok (Ayarlar)')
+  if (!key) throw new UiError(message('error.51df629f9b'))
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(BASE + url, {
       method,
@@ -60,7 +62,7 @@ async function request<T>(method: string, url: string, body?: unknown, signal?: 
       continue
     }
     const detail = await res.text().catch(() => '')
-    throw new Error(`${ERRORS[res.status] ?? 'Meshy hatası'} (${res.status}) ${detail.slice(0, 300)}`)
+    throw new UiError(message('provider.error', { provider: 'Meshy', hint: message(ERRORS[res.status as keyof typeof ERRORS] ?? 'provider.failed'), status: res.status, detail: detail.slice(0, 300) }))
   }
 }
 
@@ -74,16 +76,26 @@ export function getTask(resource: MeshyResource, id: string, signal?: AbortSigna
   return request<MeshyTask>('GET', `/openapi/${VERSION[resource]}/${resource}/${id}`, undefined, signal)
 }
 
-export async function waitTask(resource: MeshyResource, id: string, onProgress: (p: number, note: string) => void, signal?: AbortSignal, timeoutMs = 40 * 60 * 1000): Promise<MeshyTask> {
+export async function waitTask(
+  resource: MeshyResource,
+  id: string,
+  onProgress: (p: number, note: string, descriptor?: MessageDescriptor) => void,
+  signal?: AbortSignal,
+  timeoutMs = 40 * 60 * 1000
+): Promise<MeshyTask> {
   const start = Date.now()
   for (;;) {
     const t = await getTask(resource, id, signal)
     if (t.status === 'SUCCEEDED') return t
     if (t.status === 'FAILED' || t.status === 'CANCELED') {
-      throw new Error(`Meshy görevi ${t.status === 'FAILED' ? 'başarısız' : 'iptal'}: ${t.task_error?.message ?? 'bilinmeyen hata'}`)
+      throw new UiError(message('error.57ec37d6f7', { p0: message(t.status === 'FAILED' ? 'status.failed' : 'status.canceled'), p1: t.task_error?.message ?? message('provider.unknownError') }))
     }
-    onProgress(t.progress ?? 0, t.status === 'PENDING' ? `sırada (${t.preceding_tasks ?? '?'} görev önde)` : 'işleniyor')
-    if (Date.now() - start > timeoutMs) throw new Error(`Meshy görevi zaman aşımına uğradı (${id})`)
+    onProgress(
+      t.progress ?? 0,
+      t.status === 'PENDING' ? `sırada (${t.preceding_tasks ?? '?'} görev önde)` : 'işleniyor',
+      t.status === 'PENDING' ? message('meshy.queued', { count: t.preceding_tasks ?? '?' }) : message('status.running')
+    )
+    if (Date.now() - start > timeoutMs) throw new UiError(message('error.c4b4beb00e', { p0: String(id) }))
     await sleep(5000, signal)
   }
 }

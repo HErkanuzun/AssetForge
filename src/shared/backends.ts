@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from './i18n/errors'
+import { message, renderMessage, type MessageDescriptor } from './i18n/message'
 // Özel arka uçlar: git deposundan kurulan yapay zekâ projeleri (Gradio demosu ya da HTTP sunucusu).
 // Kurulum tarifi (assetforge.json) deponun kökünde olabilir; yoksa AssetForge dosyalara bakıp bir taslak önerir.
 // Bu modül saf: tarifi okur, denetler, yer tutucuları doldurur, taslak çıkarır (Electron'a bağlı değil).
@@ -38,22 +40,22 @@ export function parseRecipe(input: string | object, repoFallback = ''): BackendR
     try {
       o = JSON.parse(input.replace(/^﻿/, '')) as Record<string, unknown>
     } catch (e) {
-      throw new Error(`Tarif JSON okunamadı: ${(e as Error).message}`, { cause: e })
+      throw new UiError(message('error.2fa7479d96', { p0: String((e as Error).message) }), { cause: e })
     }
   } else o = input as Record<string, unknown>
-  if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error('Tarif bir JSON nesnesi olmalı')
+  if (!o || typeof o !== 'object' || Array.isArray(o)) throw new UiError(message('error.24b57090d1'))
   const str = (k: string) => (typeof o[k] === 'string' ? (o[k] as string).trim() : '')
   const repo = str('repo') || repoFallback
-  if (!repo || !isGitUrl(repo)) throw new Error('Tarifte geçerli bir "repo" (https git adresi) yok')
+  if (!repo || !isGitUrl(repo)) throw new UiError(message('error.8c39657e41'))
   const install = Array.isArray(o.install) ? o.install.map((x) => String(x).trim()).filter(Boolean) : typeof o.install === 'string' ? [o.install.trim()].filter(Boolean) : []
   const start = str('start')
-  if (!start) throw new Error('Tarifte "start" (başlatma komutu) yok')
+  if (!start) throw new UiError(message('error.a955c0f3ba'))
   const port = Number(o.port ?? 7860)
-  if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('"port" 1024–65535 arasında bir sayı olmalı')
+  if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new UiError(message('error.dac1f55433'))
   const api = str('api') || 'gradio'
-  if (api !== 'gradio' && api !== 'http') throw new Error('"api" gradio ya da http olmalı')
+  if (api !== 'gradio' && api !== 'http') throw new UiError(message('error.a2689fb329'))
   const python = str('python')
-  if (python && !/^3\.\d{1,2}$/.test(python)) throw new Error('"python" 3.10, 3.11, 3.12 gibi bir sürüm olmalı (boş = sanal ortam yok)')
+  if (python && !/^3\.\d{1,2}$/.test(python)) throw new UiError(message('error.7c6ac7bd11'))
   const env: Record<string, string> = {}
   if (o.env && typeof o.env === 'object' && !Array.isArray(o.env)) for (const [k, v] of Object.entries(o.env)) if (/^[A-Z_][A-Z0-9_]*$/i.test(k)) env[k] = String(v)
   const produces = Array.isArray(o.produces) ? (o.produces.filter((k) => KINDS.includes(k as ComfyOutputKind)) as ComfyOutputKind[]) : []
@@ -101,8 +103,13 @@ export interface RepoProbe {
 const ENTRY_CANDIDATES = ['app.py', 'gradio_app.py', 'demo.py', 'webui.py', 'app_gradio.py', 'run_gradio.py', 'server.py', 'api.py', 'main.py']
 
 /** Deponun dosyalarına bakarak bir tarif taslağı önerir; kullanıcı kurmadan önce görür ve düzenler */
-export function guessRecipe(repo: string, p: RepoProbe): { recipe: BackendRecipe; notes: string[] } {
+export function guessRecipe(repo: string, p: RepoProbe): { recipe: BackendRecipe; notes: string[]; uiNotes: MessageDescriptor[] } {
   const notes: string[] = []
+  const uiNotes: MessageDescriptor[] = []
+  const note = (value: MessageDescriptor) => {
+    uiNotes.push(value)
+    notes.push(renderMessage('tr', value))
+  }
   const files = new Set(p.files.map((f) => f.toLowerCase()))
   const req = p.requirements ?? ''
   const entry = ENTRY_CANDIDATES.find((f) => files.has(f))
@@ -112,18 +119,17 @@ export function guessRecipe(repo: string, p: RepoProbe): { recipe: BackendRecipe
   const install: string[] = []
   if (/^torch\b|\btorch[=<>~! ]|\btorch$/im.test(req)) {
     install.push('{uv} pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128')
-    notes.push('PyTorch CUDA 12.8 sürümüyle kurulur; depo başka bir sürüm istiyorsa bu satırı değiştirin.')
+    note(message('backend.noteTorch'))
   }
   if (files.has('requirements.txt')) install.push('{uv} pip install -r requirements.txt')
   else if (files.has('pyproject.toml') || files.has('setup.py')) install.push('{uv} pip install -e .')
-  else notes.push('requirements.txt / pyproject.toml bulunamadı: kurulum komutlarını README’ye bakarak yazın.')
+  else note(message('backend.noteRequirements'))
   if (gradio && !/gradio/i.test(req)) install.push('{uv} pip install gradio')
   let start = ''
   if (entry) start = `{python} ${entry}${gradio ? '' : ' --port {port}'}`
-  else notes.push('Başlatma dosyası bulunamadı (app.py, demo.py …): "start" komutunu README’ye bakarak yazın.')
-  if (!gradio && !fastapi) notes.push('Gradio ya da HTTP sunucusu görünmüyor: proje yalnızca komut satırından çalışıyorsa önce küçük bir sunucu sarmalayıcı gerekir.')
-  if (entry && gradio && !/server_port|GRADIO_SERVER_PORT/.test(entryText))
-    notes.push('Gradio portu GRADIO_SERVER_PORT ortam değişkeniyle verilir; uygulama kendi portunu sabitliyorsa "port" alanını ona göre değiştirin.')
+  else note(message('backend.noteStart'))
+  if (!gradio && !fastapi) note(message('backend.noteServer'))
+  if (entry && gradio && !/server_port|GRADIO_SERVER_PORT/.test(entryText)) note(message('backend.notePort'))
   return {
     recipe: {
       name: slugFromRepo(repo),
@@ -138,7 +144,8 @@ export function guessRecipe(repo: string, p: RepoProbe): { recipe: BackendRecipe
       startTimeout: 600,
       produces: []
     },
-    notes
+    notes,
+    uiNotes
   }
 }
 

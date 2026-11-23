@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from './i18n/errors'
+import { message } from './i18n/message'
 // BVH okuyucu ve ileri kinematik: eklem dönüşlerinden her karedeki dünya konumlarını hesaplar.
 // Kalite kontrolü (ayak kayması, zemine girme, titreme) ve önizleme için kullanılır. Bağımlılık yok.
 
@@ -27,10 +29,10 @@ export function parseBvh(text: string): Bvh {
   const next = () => tokens[i++]
   const num = () => {
     const v = Number(next())
-    if (!Number.isFinite(v)) throw new Error(`BVH: sayı bekleniyordu (${tokens[i - 1]})`)
+    if (!Number.isFinite(v)) throw new UiError(message('error.f82fde6a4e', { p0: String(tokens[i - 1]) }))
     return v
   }
-  if (next() !== 'HIERARCHY') throw new Error('BVH: HIERARCHY ile başlamıyor')
+  if (next() !== 'HIERARCHY') throw new UiError(message('error.96e4567b41'))
   const joints: BvhJoint[] = []
   const stack: number[] = []
   let col = 0
@@ -40,7 +42,7 @@ export function parseBvh(text: string): Bvh {
       const end = t === 'End'
       const name = end ? `${joints[stack[stack.length - 1]]?.name ?? 'root'}_end` : next()
       if (end) next() // "Site"
-      if (next() !== '{') throw new Error(`BVH: ${name} için { bekleniyordu`)
+      if (next() !== '{') throw new UiError(message('error.ecf976cc65', { p0: String(name) }))
       joints.push({ name, parent: stack.length ? stack[stack.length - 1] : -1, offset: [0, 0, 0], channels: [], start: col, end })
       stack.push(joints.length - 1)
     } else if (t === 'OFFSET') {
@@ -56,12 +58,12 @@ export function parseBvh(text: string): Bvh {
     } else if (t === 'MOTION') {
       break
     } else {
-      throw new Error(`BVH: beklenmeyen "${t}"`)
+      throw new UiError(message('error.6d4283ce13', { p0: String(t) }))
     }
   }
-  if (next() !== 'Frames:') throw new Error('BVH: "Frames:" yok')
+  if (next() !== 'Frames:') throw new UiError(message('error.d3fda3edda'))
   const frames = num()
-  if (next() !== 'Frame' || next() !== 'Time:') throw new Error('BVH: "Frame Time:" yok')
+  if (next() !== 'Frame' || next() !== 'Time:') throw new UiError(message('error.302667c8eb'))
   const frameTime = num()
   const data: Float64Array[] = []
   for (let f = 0; f < frames; f++) {

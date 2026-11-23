@@ -1,4 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { panelLabel } from '../../../shared/i18n/display'
+import { nodeDefinition, pipelineText, serverText } from '../../../shared/i18n/metadata'
+import { translate, type Locale } from '../../../shared/i18n'
+import { message } from '../../../shared/i18n/message'
+import { flowLabels } from '../components/flowLabels'
+import { useLocale } from '../i18n'
 import {
   addEdge,
   applyEdgeChanges,
@@ -40,58 +46,59 @@ function toRFEdge(e: PipelineEdge, nodes: PipelineNode[]): Edge {
 }
 
 /** Seçenekleri ayarlardan gelen parametreler (LLM sağlayıcıları, MCP sunucuları, ComfyUI kitaplığı ve sunucuları) */
-function paramOptions(pd: ParamDef, settings: SettingsPublic | null, current = ''): { value: string; label: string }[] {
+export function paramOptions(pd: ParamDef, settings: SettingsPublic | null, current = '', locale: Locale = 'en'): { value: string; label: string }[] {
+  const t = <K extends import('../../../shared/i18n').MessageKey>(key: K, ...args: import('../../../shared/i18n').MessageArgs<K>) => translate(locale, key, ...args)
   if (pd.source === 'comfyWorkflow') {
     const lib = settings?.comfyWorkflows ?? []
     const def = lib.find((w) => w.id === settings?.comfyDefaultWorkflow)
     const list = [
-      { value: '', label: `Varsayılan (${def?.name ?? 'yerleşik SDXL'})` },
-      ...lib.map((w) => ({ value: w.id, label: w.produces.length ? `${w.name} · ${w.produces.map((k) => KIND_LABEL[k]).join(', ')}` : w.name }))
+      { value: '', label: t('pipeline.defaultWorkflow', { name: def?.name ?? panelLabel(locale, 'yerleşik SDXL') }) },
+      ...lib.map((w) => ({ value: w.id, label: w.produces.length ? `${w.name} · ${w.produces.map((k) => panelLabel(locale, KIND_LABEL[k])).join(', ')}` : w.name }))
     ]
     // Eski sürümlerde yazılmış dosya yolu ya da silinmiş bir workflow
-    if (current && !lib.some((w) => w.id === current)) list.push({ value: current, label: /[\\/]/.test(current) ? `Dosya: ${current}` : `(silinmiş workflow)` })
+    if (current && !lib.some((w) => w.id === current)) list.push({ value: current, label: /[\\/]/.test(current) ? t('pipeline.file', { file: current }) : t('pipeline.deletedWorkflow') })
     return list
   }
   if (pd.source === 'openaiProvider') {
     // Kimlik alanı her sağlayıcının anahtarını kullanabilir; görsel/ses düğümleri yalnızca OpenAI uyumluları
     const all = (settings?.llmProviders ?? []).filter((l) => !l.builtin && (pd.id === 'auth' || l.kind === 'openai'))
     return [
-      { value: '', label: pd.id === 'auth' ? 'Kimlik yok' : all.length ? `İlk OpenAI uyumlu (${all[0].name})` : 'Yok — Ayarlar → Yapay zeka modelleri’nden ekleyin' },
-      ...all.map((l) => ({ value: l.id, label: `${l.name}${l.baseUrl ? ` · ${l.baseUrl.replace(/^https?:\/\//, '').slice(0, 40)}` : ''}${l.hasKey ? '' : ' (anahtarsız)'}` })),
-      ...(current && !all.some((l) => l.id === current) ? [{ value: current, label: '(silinmiş sağlayıcı)' }] : [])
+      { value: '', label: pd.id === 'auth' ? t('pipeline.noAuth') : all.length ? t('pipeline.firstProvider', { name: all[0].name }) : t('pipeline.noProvider') },
+      ...all.map((l) => ({ value: l.id, label: `${l.name}${l.baseUrl ? ` · ${l.baseUrl.replace(/^https?:\/\//, '').slice(0, 40)}` : ''}${l.hasKey ? '' : panelLabel(locale, ' (anahtarsız)')}` })),
+      ...(current && !all.some((l) => l.id === current) ? [{ value: current, label: panelLabel(locale, '(silinmiş sağlayıcı)') }] : [])
     ]
   }
   if (pd.source === 'backend') {
     const list = settings?.customBackends ?? []
     return [
-      { value: '', label: 'Yok (adresi aşağıya yazın)' },
+      { value: '', label: panelLabel(locale, 'Yok (adresi aşağıya yazın)') },
       ...list.map((b) => ({ value: b.id, label: `${b.name} · ${b.recipe.api === 'gradio' ? 'Gradio' : 'HTTP'}` })),
-      ...(current && !list.some((b) => b.id === current) ? [{ value: current, label: '(kaldırılmış arka uç)' }] : [])
+      ...(current && !list.some((b) => b.id === current) ? [{ value: current, label: panelLabel(locale, '(kaldırılmış arka uç)') }] : [])
     ]
   }
   if (pd.source === 'comfyServer') {
     const servers = settings?.comfyServers ?? []
     const def = servers.find((x) => x.id === settings?.comfyDefaultServer)
     return [
-      { value: '', label: `Workflow’un / Ayarlar’ın seçimi (${def?.name ?? 'Otomatik'})` },
-      { value: 'auto', label: 'Otomatik' },
-      ...servers.map((x) => ({ value: x.id, label: x.enabled ? x.name : `${x.name} (kapalı)` })),
-      ...(current && current !== 'auto' && !servers.some((x) => x.id === current) ? [{ value: current, label: '(silinmiş sunucu → Otomatik)' }] : [])
+      { value: '', label: t('pipeline.serverDefault', { name: def ? serverText(locale, def.id, def.name) : panelLabel(locale, 'Otomatik') }) },
+      { value: 'auto', label: panelLabel(locale, 'Otomatik') },
+      ...servers.map((x) => ({ value: x.id, label: x.enabled ? serverText(locale, x.id, x.name) : t('comfy.disabledName', { name: serverText(locale, x.id, x.name) }) })),
+      ...(current && current !== 'auto' && !servers.some((x) => x.id === current) ? [{ value: current, label: panelLabel(locale, '(silinmiş sunucu → Otomatik)') }] : [])
     ]
   }
   if (pd.source === 'llm')
     return [
-      { value: '', label: 'Yapımcı asistanının modeli' },
+      { value: '', label: panelLabel(locale, 'Yapımcı asistanının modeli') },
       { value: 'claude', label: 'Claude (Anthropic)' },
       ...(settings?.llmProviders ?? []).map((l) => ({ value: l.id, label: `${l.name} · ${l.model}` }))
     ]
   if (pd.source === 'mcp')
     return [
-      { value: '', label: 'Tüm etkin sunucular' },
-      { value: 'none', label: 'Hiçbiri' },
-      ...(settings?.mcpServers ?? []).map((m) => ({ value: m.id, label: m.enabled ? m.name : `${m.name} (kapalı)` }))
+      { value: '', label: panelLabel(locale, 'Tüm etkin sunucular') },
+      { value: 'none', label: panelLabel(locale, 'Hiçbiri') },
+      ...(settings?.mcpServers ?? []).map((m) => ({ value: m.id, label: m.enabled ? m.name : t('comfy.disabledName', { name: m.name }) }))
     ]
-  return pd.options ?? []
+  return (pd.options ?? []).map((option) => ({ ...option, label: panelLabel(locale, option.label) }))
 }
 
 function newPipelineId() {
@@ -99,6 +106,8 @@ function newPipelineId() {
 }
 
 function Editor({ goJobs }: { goJobs: () => void }) {
+  const { t, locale } = useLocale()
+
   const { project, update, jobs, selectedAssets, saveNow, toast, settings } = useStore()
   const p = project!
   const [pipelineId, setPipelineId] = useState(p.pipelines[0]?.id ?? '')
@@ -206,8 +215,8 @@ function Editor({ goJobs }: { goJobs: () => void }) {
   const createFrom = (tplId: string) => {
     const tpl = tplId === 'empty' ? null : (PIPELINE_TEMPLATES.find((t) => t.id === tplId) ?? p.pipelines.find((t) => t.id === tplId))
     const pl: Pipeline = tpl
-      ? { ...structuredClone(tpl), id: newPipelineId(), name: tpl.name + ' (kopya)' }
-      : { id: newPipelineId(), name: 'Yeni hat', description: '', nodes: [{ id: 'asset', type: 'asset.input', position: { x: 40, y: 150 }, params: {} }], edges: [] }
+      ? { ...structuredClone(tpl), id: newPipelineId(), name: t('pipeline.copy', { name: pipelineText(locale, tpl) }), description: pipelineText(locale, tpl, 'description') }
+      : { id: newPipelineId(), name: t('pipeline.newName'), description: '', nodes: [{ id: 'asset', type: 'asset.input', position: { x: 40, y: 150 }, params: {} }], edges: [] }
     update((pr) => ({ ...pr, pipelines: [...pr.pipelines, pl] }))
     setPipelineId(pl.id)
   }
@@ -222,7 +231,7 @@ function Editor({ goJobs }: { goJobs: () => void }) {
   const shownJob = pipelineJobs.find((j) => j.id === jobId) ?? pipelineJobs[0]
   const runState = useMemo(() => shownJob?.nodes ?? {}, [shownJob])
   const sel = nodes.find((n) => n.id === selId)
-  const selDef = sel ? NODE_DEF_MAP[sel.data.defType] : undefined
+  const selDef = sel ? nodeDefinition(locale, sel.data.defType) : undefined
 
   const grouped = useMemo(() => {
     const m = new Map<NodeCategory, typeof NODE_DEFS>()
@@ -230,49 +239,53 @@ function Editor({ goJobs }: { goJobs: () => void }) {
     return [...m.entries()]
   }, [])
 
-  if (!pipeline) return <div className="empty">Pipeline yok</div>
+  if (!pipeline) return <div className="empty"> {t('panel.ec2ef9a2da')} </div>
 
   return (
     <div className="pipeline">
       <div className="pl-toolbar">
-        <Select value={pipelineId} onChange={setPipelineId} options={p.pipelines.map((pl) => ({ value: pl.id, label: pl.name }))} />
+        <Select value={pipelineId} onChange={setPipelineId} options={p.pipelines.map((pl) => ({ value: pl.id, label: pipelineText(locale, pl) }))} />
         <input
           className="input"
           style={{ width: 240 }}
-          value={pipeline.name}
+          value={pipelineText(locale, pipeline)}
           onChange={(e) => update((pr) => ({ ...pr, pipelines: pr.pipelines.map((pl) => (pl.id === pipelineId ? { ...pl, name: e.target.value } : pl)) }))}
         />
         <Select
           value=""
           onChange={(v) => v && createFrom(v)}
           options={[
-            { value: '', label: '+ Yeni hat…' },
-            { value: 'empty', label: 'Boş hat' },
-            ...PIPELINE_TEMPLATES.map((t) => ({ value: t.id, label: 'Şablon: ' + t.name })),
-            { value: pipelineId, label: 'Bu hattı kopyala' }
+            { value: '', label: t('pipeline.new') },
+            { value: 'empty', label: t('panel.d95b50e050') },
+            ...PIPELINE_TEMPLATES.map((t) => ({ value: t.id, label: translate(locale, 'pipeline.template', { name: pipelineText(locale, t) }) })),
+            { value: pipelineId, label: t('panel.9eb5db7d08') }
           ]}
         />
         <button className="btn ghost" onClick={removePipeline} disabled={p.pipelines.length <= 1}>
-          Sil
+          {' '}
+          {t('panel.f698e9b40f')}{' '}
         </button>
         <div className="spacer" />
-        {pipelineJobs.length > 0 && <Select value={shownJob?.id ?? ''} onChange={setJobId} options={pipelineJobs.slice(0, 30).map((j) => ({ value: j.id, label: `${j.assetName} — ${j.status}` }))} />}
+        {pipelineJobs.length > 0 && (
+          <Select value={shownJob?.id ?? ''} onChange={setJobId} options={pipelineJobs.slice(0, 30).map((j) => ({ value: j.id, label: `${j.assetName} — ${t(`status.${j.status}`)}` }))} />
+        )}
         <button className="btn primary" onClick={() => setShowRun(true)}>
-          ▶ Çalıştır
+          {' '}
+          {t('panel.94775a5e2a')}{' '}
         </button>
       </div>
-      <p className="pl-desc muted">{pipeline.description}</p>
+      <p className="pl-desc muted">{pipelineText(locale, pipeline, 'description')}</p>
 
       <div className="pl-body">
         <div className="palette">
           {grouped.map(([cat, defs]) => (
             <div key={cat} className="palette-group">
               <div className="palette-title" style={{ color: CATEGORY_META[cat].color }}>
-                {CATEGORY_META[cat].label}
+                {panelLabel(locale, CATEGORY_META[cat].label)}
               </div>
               {defs.map((d) => (
-                <button key={d.type} className="palette-item" title={d.description} onClick={() => addNode(d.type)}>
-                  {d.label}
+                <button key={d.type} className="palette-item" title={panelLabel(locale, d.description)} onClick={() => addNode(d.type)}>
+                  {panelLabel(locale, d.label)}
                 </button>
               ))}
             </div>
@@ -282,6 +295,7 @@ function Editor({ goJobs }: { goJobs: () => void }) {
         <div className="canvas">
           <RunStateCtx.Provider value={runState}>
             <ReactFlow
+              ariaLabelConfig={flowLabels(locale)}
               nodes={nodes}
               edges={edges}
               nodeTypes={nodeTypes}
@@ -313,7 +327,7 @@ function Editor({ goJobs }: { goJobs: () => void }) {
                 return (
                   <Field key={pd.id} label={pd.label} help={pd.help}>
                     {pd.type === 'select' ? (
-                      <Select value={String(v)} onChange={(x) => setParam(pd.id, x)} options={paramOptions(pd, settings, String(v))} />
+                      <Select value={String(v)} onChange={(x) => setParam(pd.id, x)} options={paramOptions(pd, settings, String(v), locale)} />
                     ) : pd.type === 'bool' ? (
                       <Toggle value={v === true} onChange={(x) => setParam(pd.id, x)} />
                     ) : pd.type === 'number' ? (
@@ -336,12 +350,13 @@ function Editor({ goJobs }: { goJobs: () => void }) {
             </>
           ) : (
             <div className="muted small">
-              <p>Bir node seçin ya da soldaki listeden ekleyin.</p>
+              <p> {t('panel.f1bd5ab113')} </p>
               <p>
-                Portları sürükleyerek bağlayın. Renkler veri tipini gösterir; uyumsuz portlar bağlanmaz. Silmek için <b>Delete</b>.
+                {' '}
+                {t('panel.50254caf5b')} <b>Delete</b>.
               </p>
               <p>
-                <b>Kalite Kontrol</b> node'u başarısız olursa kendisine en yakın <b>Prompt Motoru</b>na geri bildirim gönderir ve aradaki adımlar yeniden çalışır.
+                <b> {t('panel.f29f27a1a2')} </b> {t('panel.1b2d078ca6')} <b> {t('panel.7d8bab40d3')} </b> {t('panel.6483e3c0d8')}{' '}
               </p>
             </div>
           )}
@@ -355,7 +370,7 @@ function Editor({ goJobs }: { goJobs: () => void }) {
           onRun={async (ids) => {
             await saveNow()
             const started = await window.forge.run.start(pipelineId, ids)
-            toast(`${started.length} iş başladı`, 'ok')
+            toast(message('surface.started', { count: started.length }), 'ok')
             setJobId(started[0]?.id ?? '')
             setShowRun(false)
             if (started.length > 1) goJobs()
@@ -367,15 +382,17 @@ function Editor({ goJobs }: { goJobs: () => void }) {
 }
 
 function RunDialog({ onClose, onRun, preselected }: { onClose: () => void; onRun: (ids: string[]) => Promise<void>; preselected: string[] }) {
+  const { t, locale } = useLocale()
+
   const { project } = useStore()
   const [q, setQ] = useState('')
   const [ids, setIds] = useState<string[]>(preselected)
-  const assets = project!.assets.filter((a) => !q || `${a.id} ${a.name}`.toLocaleLowerCase('tr').includes(q.toLocaleLowerCase('tr'))).slice(0, 200)
+  const assets = project!.assets.filter((a) => !q || `${a.id} ${a.name}`.toLocaleLowerCase(locale).includes(q.toLocaleLowerCase(locale))).slice(0, 200)
   return (
     <div className="modal-back" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>Hangi asset(ler) üretilsin?</h2>
-        <input className="input" autoFocus placeholder="Ara…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <h2> {t('panel.1b60eb555b')} </h2>
+        <input className="input" autoFocus placeholder={t('surface.search')} value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="modal-list">
           {assets.map((a) => (
             <label key={a.id} className="modal-row">
@@ -383,16 +400,20 @@ function RunDialog({ onClose, onRun, preselected }: { onClose: () => void; onRun
               <span className="mono">{a.id}</span> {a.name}
             </label>
           ))}
-          {!assets.length && <p className="muted">Asset yok — önce Asset Listesi'nden içe aktarın.</p>}
+          {!assets.length && <p className="muted"> {t('panel.0349858e5f')} </p>}
         </div>
         <div className="row between">
-          <span className="muted">{ids.length} seçili</span>
+          <span className="muted">
+            {ids.length} {t('panel.4d67b1a833')}{' '}
+          </span>
           <div className="row">
             <button className="btn ghost" onClick={onClose}>
-              Vazgeç
+              {' '}
+              {t('panel.39a8d28c1c')}{' '}
             </button>
             <AsyncButton className="primary" disabled={!ids.length} onClick={() => onRun(ids)}>
-              ▶ Başlat
+              {' '}
+              {t('panel.10260b08d7')}{' '}
             </AsyncButton>
           </div>
         </div>

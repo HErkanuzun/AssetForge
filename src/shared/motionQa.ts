@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { message, renderMessage, type MessageDescriptor } from './i18n/message'
 // Animasyon kalite kontrolü: BVH'den ayak kayması, zemine girme, titreme ve hedeflere uyum.
 // Servis gerektirmez; hat içindeki "Kalite Kontrol" düğümü bunu kullanır ve sonuç kötüyse
 // Kimodo düğümüne geri bildirim gönderip yeniden ürettirir.
@@ -44,10 +45,12 @@ export interface MotionQa {
   pass: boolean
   /** Sorunlar (Türkçe, kullanıcıya) */
   issues: string[]
+  uiIssues?: MessageDescriptor[]
   /** Kimodo promptuna eklenecek İngilizce düzeltme */
   promptFix: string
   /** Rapor satırları */
   technical: string[]
+  uiTechnical?: MessageDescriptor[]
 }
 
 export const QA_LIMITS = {
@@ -170,6 +173,11 @@ export function judgeMotion(m: MotionMetrics, targets: MotionTargets = {}, minSc
   // Hata seviyesindeki her sorun tek başına klibi kaldırır (-4); uyarılar ve hedef sapmaları birikir
   const L = QA_LIMITS
   const issues: string[] = []
+  const uiIssues: MessageDescriptor[] = []
+  const issue = (value: MessageDescriptor) => {
+    uiIssues.push(value)
+    issues.push(renderMessage('tr', value))
+  }
   const fixes: string[] = []
   let score = 10
   const technical = [
@@ -179,35 +187,42 @@ export function judgeMotion(m: MotionMetrics, targets: MotionTargets = {}, minSc
     `Titreme: ${m.jitter} m/sn³ (uyarı ${L.jitterWarn}, hata ${L.jitterFail}) · kopukluk ${Math.round(m.pop * 100)} cm`,
     `Ayak yerde: karelerin %${Math.round(m.contactRatio * 100)}'i`
   ]
+  const uiTechnical: MessageDescriptor[] = [
+    message('qa.motionDuration', { seconds: m.seconds, frames: m.frames, fps: m.fps }),
+    message('qa.skateMeasure', { speed: m.footSkate, ratio: Math.round(m.skateRatio * 100), warn: L.skateWarn, fail: L.skateFail }),
+    message('qa.penetrationMeasure', { value: Math.round(m.penetration * 100), warn: L.penetrationWarn * 100, fail: L.penetrationFail * 100 }),
+    message('qa.jitterMeasure', { value: m.jitter, warn: L.jitterWarn, fail: L.jitterFail, pop: Math.round(m.pop * 100) }),
+    message('qa.contactMeasure', { ratio: Math.round(m.contactRatio * 100) })
+  ]
 
   if (m.footSkate > L.skateFail) {
     score -= 4
-    issues.push(`Ayaklar yerdeyken belirgin kayıyor (${m.footSkate} m/sn)`)
+    issue(message('qa.motionSkate', { value: m.footSkate }))
     fixes.push('feet stay firmly planted on the ground during each step, no sliding')
   } else if (m.footSkate > L.skateWarn) {
     score -= 2
-    issues.push(`Hafif ayak kayması (${m.footSkate} m/sn)`)
+    issue(message('qa.motionSkateMild', { value: m.footSkate }))
     fixes.push('feet planted firmly on each step')
   }
   if (m.penetration > L.penetrationFail) {
     score -= 4
-    issues.push(`Ayak zeminin ${Math.round(m.penetration * 100)} cm altına iniyor`)
+    issue(message('qa.penetration', { value: Math.round(m.penetration * 100) }))
     fixes.push('feet stay on the floor surface')
   } else if (m.penetration > L.penetrationWarn) {
     score -= 1
-    issues.push(`Ayak zemine biraz giriyor (${Math.round(m.penetration * 100)} cm)`)
+    issue(message('qa.penetrationMild', { value: Math.round(m.penetration * 100) }))
   }
   if (m.jitter > L.jitterFail || m.pop > L.popFail) {
     score -= 4
-    issues.push(m.pop > L.popFail ? `Bir karede ${Math.round(m.pop * 100)} cm ani sıçrama var (kopuk geçiş)` : `Hareket titrek (${m.jitter} m/sn³)`)
+    issue(m.pop > L.popFail ? message('qa.pop', { value: Math.round(m.pop * 100) }) : message('qa.jitter', { value: m.jitter }))
     fixes.push('smooth, continuous motion')
   } else if (m.jitter > L.jitterWarn) {
     score -= 1
-    issues.push(`Hafif titreme (${m.jitter} m/sn³)`)
+    issue(message('qa.jitterMild', { value: m.jitter }))
   }
   if (targets.stationary && m.contactRatio < 0.5) {
     score -= 2
-    issues.push('Yerinde durması gereken hareket ayaklarını çok kaldırıyor')
+    issue(message('qa.stationary'))
     fixes.push('stays in place with both feet on the ground')
   }
 
@@ -215,39 +230,43 @@ export function judgeMotion(m: MotionMetrics, targets: MotionTargets = {}, minSc
     const want = targets.speed
     const got = targets.measuredSpeed
     technical.push(`Hız: hedef ${want} m/sn, ölçülen ${got} m/sn`)
+    uiTechnical.push(message('qa.speedMeasure', { want, got }))
     const tol = Math.max(0.15, want * L.speedTolerance)
     if (Math.abs(got - want) > tol) {
       score -= 2
-      issues.push(`Hız hedeften uzak (${got} m/sn, hedef ${want})`)
+      issue(message('qa.speed', { got, want }))
       fixes.push(got < want ? 'moves noticeably faster' : 'moves noticeably slower')
     }
   }
   if (targets.direction !== undefined && targets.measuredDirection !== undefined && (targets.measuredSpeed ?? 1) > 0.2) {
     const d = angleDiff(targets.measuredDirection, targets.direction)
     technical.push(`Yön: hedef ${targets.direction}°, ölçülen ${targets.measuredDirection}°`)
+    uiTechnical.push(message('qa.directionMeasure', { want: targets.direction, got: targets.measuredDirection }))
     if (d > L.angleTolerance) {
       score -= 2
-      issues.push(`Hareket yönü ${Math.round(d)}° sapıyor`)
+      issue(message('qa.direction', { value: Math.round(d) }))
     }
   }
   if (targets.turn !== undefined && targets.measuredTurn !== undefined) {
     const d = Math.abs(targets.measuredTurn - targets.turn)
     technical.push(`Dönüş: hedef ${targets.turn}°, ölçülen ${targets.measuredTurn}°`)
+    uiTechnical.push(message('qa.turnMeasure', { want: targets.turn, got: targets.measuredTurn }))
     if (d > Math.max(L.angleTolerance, Math.abs(targets.turn) * 0.35)) {
       score -= 2
-      issues.push(`Dönüş açısı hedeften ${Math.round(d)}° farklı`)
+      issue(message('qa.turn', { value: Math.round(d) }))
       fixes.push(targets.turn === 0 ? 'keeps facing forward without turning' : `turns ${Math.abs(targets.turn)} degrees to the ${targets.turn > 0 ? 'right' : 'left'}`)
     }
   }
   if (targets.loopCost !== undefined) {
     technical.push(`Döngü dikişi: ${targets.loopCost}`)
+    uiTechnical.push(message('qa.seamMeasure', { value: targets.loopCost }))
     if (targets.loopCost > L.loopCostWarn) {
       score -= 1
-      issues.push('Döngü başı ve sonu arasında fark var; dikişte küçük atlama olabilir')
+      issue(message('qa.loop'))
       fixes.push('a steady, repeating cycle')
     }
   }
 
   score = Math.max(0, Math.min(10, score))
-  return { metrics: m, score, pass: score >= minScore, issues, promptFix: [...new Set(fixes)].join(', '), technical }
+  return { metrics: m, score, pass: score >= minScore, issues, uiIssues, promptFix: [...new Set(fixes)].join(', '), technical, uiTechnical }
 }

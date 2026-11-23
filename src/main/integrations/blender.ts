@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -27,7 +30,7 @@ export function runBlender(opts: {
   signal?: AbortSignal
 }): Promise<BlenderResult> {
   if (!opts.blenderPath || !fs.existsSync(opts.blenderPath)) {
-    return Promise.reject(new Error('Blender bulunamadı. Ayarlar → Blender yolu'))
+    return Promise.reject(new UiError(message('error.9f389a4386')))
   }
   ensureDir(opts.outDir)
   const out = path.join(opts.outDir, `${opts.name}.${opts.format}`)
@@ -74,7 +77,7 @@ export function runBlender(opts: {
     proc.on('error', reject)
     proc.on('close', (code) => {
       if (code !== 0 || !fs.existsSync(statsFile)) {
-        return reject(new Error(`Blender hata ile bitti (kod ${code}). Son çıktı:\n${tail.slice(-1200)}`))
+        return reject(new UiError(message('blender.failed', { code: String(code), detail: tail.slice(-1200) })))
       }
       const raw = JSON.parse(fs.readFileSync(statsFile, 'utf8')) as ModelStats & { previews: string[] }
       const { previews, ...stats } = raw
@@ -93,7 +96,7 @@ export interface AnimResult {
 /** Kimodo BVH → Manny adlı iskelet + root motion → FBX animasyon */
 export function runBlenderAnim(opts: { blenderPath: string; bvh: string; out: string; rootMotion: string; log: (m: string) => void; signal?: AbortSignal }): Promise<AnimResult> {
   if (!opts.blenderPath || !fs.existsSync(opts.blenderPath)) {
-    return Promise.reject(new Error('Blender bulunamadı. Ayarlar → Blender yolu'))
+    return Promise.reject(new UiError(message('error.9f389a4386')))
   }
   ensureDir(path.dirname(opts.out))
   const statsFile = opts.out.replace(/\.fbx$/i, '') + '_stats.json'
@@ -111,7 +114,7 @@ export function runBlenderAnim(opts: { blenderPath: string; bvh: string; out: st
     opts.signal?.addEventListener('abort', () => proc.kill(), { once: true })
     proc.on('error', reject)
     proc.on('close', (code) => {
-      if (code !== 0 || !fs.existsSync(statsFile)) return reject(new Error(`Blender animasyon dönüşümü başarısız (kod ${code}):\n${tail.slice(-1200)}`))
+      if (code !== 0 || !fs.existsSync(statsFile)) return reject(new UiError(message('blender.animFailed', { code: String(code), detail: tail.slice(-1200) })))
       const st = JSON.parse(fs.readFileSync(statsFile, 'utf8')) as { frames: number; fps: number; duration: number }
       resolve({ file: opts.out, ...st })
     })
@@ -130,7 +133,7 @@ export async function runAssembly(opts: {
   log: (m: string) => void
   signal?: AbortSignal
 }): Promise<Record<string, unknown>> {
-  if (!opts.blenderPath || !fs.existsSync(opts.blenderPath)) throw new Error('Blender bulunamadı. Ayarlar → Blender yolu')
+  if (!opts.blenderPath || !fs.existsSync(opts.blenderPath)) throw new UiError(message('error.9f389a4386'))
   ensureDir(opts.outDir)
   const args = ['-b', '--factory-startup', '-P', resourcePath('python', 'forge_assembly.py'), '--', opts.cmd, '--in', opts.input, '--out', opts.outDir, '--name', opts.name]
   if (opts.front) args.push(`--front=${opts.front}`)
@@ -153,7 +156,7 @@ export async function runAssembly(opts: {
       .filter((l) => /Error|Traceback|SystemExit|raise/.test(l))
       .slice(-4)
       .join(' | ')
-    throw new Error(`Blender montaj adımı (${opts.cmd}) başarısız: ${err || r.out.slice(-400)}`)
+    throw new UiError(message('error.b1bb97e6d3', { p0: String(opts.cmd), p1: String(err || r.out.slice(-400)) }))
   }
   return JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, unknown>
 }

@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 // OpenAI uyumlu görsel ve ses uçları: /images/generations, /images/edits, /audio/speech.
 // OpenAI, LocalAI, LiteLLM, Together, Fireworks, Kokoro-FastAPI, openedai-speech, Chatterbox gibi sunucularla çalışır.
 // Sağlayıcılar Ayarlar → Yapay zeka modelleri'ndeki OpenAI uyumlu kayıtlardır (adres + anahtar oradan gelir).
@@ -27,12 +29,12 @@ async function send(p: LlmProvider, url: string, init: RequestInit, what: string
     res = await fetch(url, init)
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e
-    throw new Error(`${p.name}: ${what} için sunucuya bağlanılamadı (${url}). Sunucu açık mı?`, { cause: e })
+    throw new UiError(message('error.4d5e8e0509', { p0: String(p.name), p1: String(what), p2: String(url) }), { cause: e })
   }
   if (!res.ok) {
     const t = (await res.text()).slice(0, 500)
     const hint = res.status === 404 ? ' — bu sunucu bu ucu desteklemiyor olabilir' : res.status === 401 ? ' — anahtar eksik ya da yanlış' : ''
-    throw new Error(`${p.name} ${what} hatası (${res.status})${hint}: ${t}`)
+    throw new UiError(message('error.2941411f5b', { p0: String(p.name), p1: String(what), p2: String(res.status), p3: String(hint), p4: String(t) }))
   }
   return res
 }
@@ -61,7 +63,7 @@ async function saveImages(data: { b64_json?: string; url?: string }[], o: ImageO
     else if (d.url?.startsWith('data:')) fs.writeFileSync(dest, Buffer.from(d.url.split(',')[1] ?? '', 'base64'))
     else if (d.url) {
       const r = await fetch(d.url, { signal: o.signal })
-      if (!r.ok) throw new Error(`Görsel indirilemedi (${r.status})`)
+      if (!r.ok) throw new UiError(message('error.811d4231f8', { p0: String(r.status) }))
       fs.writeFileSync(dest, Buffer.from(await r.arrayBuffer()))
     } else continue
     files.push(dest)
@@ -96,7 +98,7 @@ export async function openaiImage(o: ImageOptions): Promise<string[]> {
   }
   const j = (await res.json()) as { data?: { b64_json?: string; url?: string }[] }
   const files = await saveImages(j.data ?? [], o)
-  if (!files.length) throw new Error(`${o.provider.name} görsel döndürmedi`)
+  if (!files.length) throw new UiError(message('error.4e40e93e77', { p0: String(o.provider.name) }))
   return files
 }
 
@@ -125,7 +127,7 @@ export async function openaiSpeech(o: SpeechOptions): Promise<string> {
     'konuşma sesi'
   )
   const buf = Buffer.from(await res.arrayBuffer())
-  if (buf.length < 64) throw new Error(`${o.provider.name} boş ses döndürdü`)
+  if (buf.length < 64) throw new UiError(message('error.cab177fde8', { p0: String(o.provider.name) }))
   ensureDir(path.dirname(o.out))
   fs.writeFileSync(o.out, buf)
   return o.out

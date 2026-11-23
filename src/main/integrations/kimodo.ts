@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message, emitMessage } from '../../shared/i18n/message'
 // NVIDIA Kimodo (metinden insan hareketi) — kurulum, servis yönetimi ve üretim istemcisi.
 // İki çalıştırma yolu:
 //   native : Windows'ta doğrudan Python 3.12 + CUDA PyTorch (BIOS sanallaştırması gerekmez)
@@ -105,22 +107,22 @@ export async function kimodoStep(step: string, log: LogFn): Promise<void> {
   const s = getSettings()
   if (s.kimodoBackend === 'native') {
     const r = await native(step, log, 3 * 60 * 60 * 1000)
-    if (r.code !== 0) throw new Error(`Adım başarısız (${step}, kod ${r.code})`)
+    if (r.code !== 0) throw new UiError(message('error.e578d0b9c1', { p0: String(step), p1: String(r.code) }))
     return
   }
   if (step === 'vm') {
     if (!(await virtualizationEnabled())) {
-      throw new Error('BIOS’ta sanallaştırma kapalı (AMD: SVM Mode, Intel: VT-x). Bilgisayarı yeniden başlatıp BIOS’tan açın ya da Kimodo’yu "Yerel Windows" yoluyla çalıştırın.')
+      throw new UiError(message('error.b95c90c1ad'))
     }
-    log('Sanal Makine Platformu etkinleştiriliyor (yönetici onayı istenecek)…')
+    emitMessage(log, message('log.1e5b189a48'))
     await run('powershell.exe', ['-NoProfile', '-Command', "Start-Process wsl.exe -ArgumentList '--install','--no-distribution' -Verb RunAs -Wait"], { log })
-    log(`${s.wslDistro} kuruluyor…`)
+    emitMessage(log, message('log.549d37d9f4', { p0: String(s.wslDistro) }))
     const r = await run('wsl.exe', ['--install', '-d', s.wslDistro, '--no-launch'], { log, timeoutMs: 30 * 60 * 1000 })
-    if (r.code !== 0) throw new Error('Ubuntu kurulamadı; Windows yeniden başlatma isteyebilir. Yeniden başlattıktan sonra adımı tekrarlayın.')
+    if (r.code !== 0) throw new UiError(message('error.80e29ab4e4'))
     return
   }
   const r = await wsl(step, log, 3 * 60 * 60 * 1000)
-  if (r.code !== 0) throw new Error(`Adım başarısız (${step}, kod ${r.code})`)
+  if (r.code !== 0) throw new UiError(message('error.e578d0b9c1', { p0: String(step), p1: String(r.code) }))
 }
 
 export async function kimodoLogs(): Promise<string> {
@@ -153,7 +155,7 @@ export interface KimodoResult {
 
 export async function kimodoGenerate(req: KimodoRequest, signal?: AbortSignal): Promise<KimodoResult> {
   const h = await health()
-  if (!h.ok) throw new Error('Kimodo servisi çalışmıyor. Animasyon Stüdyosu → Kimodo kurulumu → "Servisi başlat"')
+  if (!h.ok) throw new UiError(message('error.d56fa01588'))
   const url = getSettings().kimodoUrl.replace(/\/$/, '') + '/generate'
   const body = {
     texts: req.texts,

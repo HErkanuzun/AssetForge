@@ -43,6 +43,7 @@ export interface ForgeApi {
   /** Tarayıcıdan (web sunucusu üzerinden) mı açıldı */
   isWeb: boolean
   settings: {
+    onLocale(cb: (locale: import('../shared/i18n').Locale) => void): () => void
     get(): Promise<SettingsPublic>
     set(patch: SettingsPatch): Promise<SettingsPublic>
   }
@@ -153,13 +154,13 @@ export interface ForgeApi {
       /** Kayıtlı dosyayı Gezgin'de gösterir ('' = yerleşik şablon) */
       show(id: string): Promise<void>
     }
-    onLog(cb: (line: string) => void): () => void
+    onLog(cb: (line: import('../shared/i18n/message').UiMessage) => void): () => void
   }
   /** Git deposundan kurulan özel arka uçlar ve Gradio uygulamaları */
   backends: {
     status(): Promise<BackendStatus[]>
     /** Depoyu indirir ve tarif önerir (kod çalıştırmaz) */
-    add(url: string): Promise<{ backend: CustomBackend; notes: string[] }>
+    add(url: string): Promise<{ backend: CustomBackend; notes: string[]; uiNotes?: import('../shared/i18n/message').MessageDescriptor[] }>
     setRecipe(id: string, json: string): Promise<CustomBackend>
     install(id: string): Promise<void>
     /** Başlatır ve hazır olana kadar bekler; adresi döner */
@@ -171,14 +172,14 @@ export interface ForgeApi {
     open(id: string): Promise<void>
     /** Gradio uygulamasının uç noktaları ve girişlerin eşlenmesi */
     inspect(url: string): Promise<GradioEndpointInfo[]>
-    onLog(cb: (m: { id: string; line: string }) => void): () => void
+    onLog(cb: (m: { id: string; line: string; uiMessage?: import('../shared/i18n/message').MessageDescriptor }) => void): () => void
   }
   kimodo: {
     status(): Promise<KimodoStatus>
     step(step: string): Promise<void>
     logs(): Promise<string>
     suggest(text: string, character: string): Promise<{ segments: AnimSegment[]; loop: boolean; name: string; usd: number }>
-    onLog(cb: (line: string) => void): () => void
+    onLog(cb: (line: import('../shared/i18n/message').UiMessage) => void): () => void
   }
   animsys: {
     list(characterId?: string): Promise<AnimSystem[]>

@@ -19,6 +19,7 @@ export function createApi(b: ForgeBridge): ForgeApi {
   return {
     isWeb: b.web,
     settings: {
+      onLocale: (cb) => b.on('settings:locale', cb),
       get: () => call('settings:get'),
       set: (patch) => call('settings:set', patch)
     },

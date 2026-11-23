@@ -44,7 +44,7 @@ Generated from `package-lock.json` by `node scripts/third-party-notices.mjs`. Ea
 |---|---|---|
 | [@anthropic-ai/sdk](https://github.com/anthropics/anthropic-sdk-typescript) | 1.6.0 | Apache-2.0 |
 | [@babel/runtime](https://github.com/babel/babel) | 7.29.10 | MIT |
-| [@hono/node-server](https://github.com/honojs/node-server) | 2.1.5 | MIT |
+| [@hono/node-server](https://github.com/honojs/node-server) | 2.1.11 | MIT |
 | [@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/typescript-sdk) | 1.32.2 | MIT |
 | [@opentelemetry/api](https://github.com/open-telemetry/opentelemetry-js) | 1.10.0 | Apache-2.0 |
 | [@stablelib/base64](https://github.com/StableLib/stablelib) | 1.0.1 | MIT |

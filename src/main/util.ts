@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+
+import { UiError } from '../shared/i18n/errors'
+import { message } from '../shared/i18n/message'
 import { app } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -15,7 +18,7 @@ export function resourcePath(...parts: string[]): string {
 
 export async function downloadTo(url: string, dest: string, signal?: AbortSignal): Promise<string> {
   const res = await fetch(url, { signal })
-  if (!res.ok) throw new Error(`İndirme başarısız (${res.status}): ${url.slice(0, 120)}`)
+  if (!res.ok) throw new UiError(message('error.b82609472e', { p0: String(res.status), p1: String(url.slice(0, 120)) }))
   ensureDir(path.dirname(dest))
   fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()))
   return dest
@@ -49,13 +52,13 @@ export function sniffImage(buf: Buffer): ImageMedia | null {
 
 export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (signal?.aborted) return reject(new Error('İptal edildi'))
+    if (signal?.aborted) return reject(new UiError(message('error.dbd417da03')))
     const t = setTimeout(resolve, ms)
     signal?.addEventListener(
       'abort',
       () => {
         clearTimeout(t)
-        reject(new Error('İptal edildi'))
+        reject(new UiError(message('error.dbd417da03')))
       },
       { once: true }
     )

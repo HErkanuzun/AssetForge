@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
+import { errorEnvelope } from '../../shared/i18n/errors'
+import { translate } from '../../shared/i18n'
+import { getSettings } from '../settings'
 // Web sunucusu: masaüstü arayüzünün aynısını tarayıcıya sunar. Arayüzün çağırdığı her işlem (IPC) burada
 // HTTP'den aynı işleyiciye gider; olaylar Server-Sent Events ile akar; dosyalar /files altından okunur.
 // Giriş: sahip parolası ya da davet bağlantısıyla açılan hesaplar. Roller policy.ts'te.
@@ -13,7 +18,7 @@ import { ensureDir } from '../util'
 import { createSession, endSession, inviteInfo, join, login, sessionUser } from './access'
 import { runAs, type Caller } from './caller'
 import { addClient, removeClient } from './hub'
-import { allowed, foreignPath, ROLE_LABEL, stringsOf } from './policy'
+import { allowed, foreignPath, stringsOf } from './policy'
 import { loadProject } from '../project'
 
 export type Handler = (...args: unknown[]) => unknown
@@ -119,7 +124,7 @@ function readBody(req: http.IncomingMessage, max: number): Promise<Buffer> {
     req.on('data', (c: Buffer) => {
       n += c.length
       if (n > max) {
-        reject(new Error('İstek çok büyük'))
+        reject(new UiError(message('error.bebd706ab9')))
         req.destroy()
       } else chunks.push(c)
     })
@@ -133,7 +138,7 @@ function readBody(req: http.IncomingMessage, max: number): Promise<Buffer> {
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
 function page(title: string, body: string): string {
-  return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · AssetForge</title>
+  return `<!doctype html><html lang="${getSettings().locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · AssetForge</title>
 <style>
 :root{color-scheme:dark}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0c10;color:#e8e8ec;font:15px/1.5 system-ui,Segoe UI,sans-serif;padding:16px}
 .box{width:100%;max-width:380px;background:#14161c;border:1px solid #262a33;border-radius:16px;padding:28px}
@@ -147,18 +152,18 @@ button{margin-top:18px;width:100%;padding:11px;border:0;border-radius:10px;backg
 
 const loginPage = (err = '') =>
   page(
-    'Giriş',
-    `<h1>Giriş yap</h1><p>Bu AssetForge’u paylaşan kişinin verdiği hesapla girin.</p>${err ? `<div class="err">${esc(err)}</div>` : ''}
-<form method="post" action="/login"><label for="n">Ad</label><input id="n" name="name" autocomplete="username" required autofocus>
-<label for="p">Parola</label><input id="p" name="password" type="password" autocomplete="current-password" required><button type="submit">Giriş</button></form>`
+    translate(getSettings().locale, 'web.loginTitle'),
+    `<h1>${esc(translate(getSettings().locale, 'web.loginHeading'))}</h1><p>${esc(translate(getSettings().locale, 'web.loginHelp'))}</p>${err ? `<div class="err">${esc(err)}</div>` : ''}
+<form method="post" action="/login"><label for="n">${esc(translate(getSettings().locale, 'web.name'))}</label><input id="n" name="name" autocomplete="username" required autofocus>
+<label for="p">${esc(translate(getSettings().locale, 'web.password'))}</label><input id="p" name="password" type="password" autocomplete="current-password" required><button type="submit">${esc(translate(getSettings().locale, 'web.loginTitle'))}</button></form>`
   )
 
 const joinPage = (t: string, role: WebRole, err = '') =>
   page(
-    'Katıl',
-    `<h1>Projeye katıl</h1><p>Rolün: <b>${ROLE_LABEL[role]}</b>${role === 'viewer' ? ' (yalnızca görüntüleme)' : ' (üretebilir ve düzenleyebilirsin)'}. Kendine bir ad ve parola seç.</p>${err ? `<div class="err">${esc(err)}</div>` : ''}
-<form method="post" action="/join/${esc(t)}"><label for="n">Ad</label><input id="n" name="name" autocomplete="username" minlength="2" maxlength="40" required autofocus>
-<label for="p">Parola (en az 8 karakter)</label><input id="p" name="password" type="password" autocomplete="new-password" minlength="8" required><button type="submit">Katıl</button></form>`
+    translate(getSettings().locale, 'web.join'),
+    `<h1>${esc(translate(getSettings().locale, 'web.joinHeading'))}</h1><p>${esc(translate(getSettings().locale, 'web.joinHelp', { role: translate(getSettings().locale, role === 'viewer' ? 'web.viewerRole' : role === 'owner' ? 'role.owner' : 'web.editorRole') }))}</p>${err ? `<div class="err">${esc(err)}</div>` : ''}
+<form method="post" action="/join/${esc(t)}"><label for="n">${esc(translate(getSettings().locale, 'web.name'))}</label><input id="n" name="name" autocomplete="username" minlength="2" maxlength="40" required autofocus>
+<label for="p">${esc(translate(getSettings().locale, 'web.newPassword'))}</label><input id="p" name="password" type="password" autocomplete="new-password" minlength="8" required><button type="submit">${esc(translate(getSettings().locale, 'web.join'))}</button></form>`
   )
 
 const PAGE_CSP = { 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'" }
@@ -186,7 +191,7 @@ function serveFile(req: http.IncomingMessage, res: http.ServerResponse, file: st
   let st: fs.Stats
   try {
     st = fs.statSync(file)
-    if (!st.isFile()) throw new Error('dosya değil')
+    if (!st.isFile()) throw new UiError(message('error.126e8c21fe'))
   } catch {
     send(res, 404, 'Bulunamadı')
     return
@@ -232,10 +237,10 @@ async function route(req: http.IncomingMessage, res: http.ServerResponse, deps: 
 
   if (p === '/login' && req.method === 'GET') return send(res, 200, loginPage(), 'text/html; charset=utf-8', PAGE_CSP)
   if (p === '/login' && req.method === 'POST') {
-    if (limited(ip)) return send(res, 429, loginPage('Çok fazla deneme. 10 dakika sonra yeniden deneyin.'), 'text/html; charset=utf-8', PAGE_CSP)
+    if (limited(ip)) return send(res, 429, loginPage(translate(getSettings().locale, 'web.rateLimit')), 'text/html; charset=utf-8', PAGE_CSP)
     const f = new URLSearchParams((await readBody(req, 16_384)).toString())
     const u = login(f.get('name') ?? '', f.get('password') ?? '')
-    if (!u) return send(res, 401, loginPage('Ad ya da parola yanlış'), 'text/html; charset=utf-8', PAGE_CSP)
+    if (!u) return send(res, 401, loginPage(translate(getSettings().locale, 'web.invalidLogin')), 'text/html; charset=utf-8', PAGE_CSP)
     attempts.delete(ip)
     res.writeHead(303, { Location: '/', 'Set-Cookie': sessionCookie(createSession(u.id), secure) })
     return void res.end()
@@ -247,12 +252,15 @@ async function route(req: http.IncomingMessage, res: http.ServerResponse, deps: 
       return send(
         res,
         410,
-        page('Davet', '<h1>Davet geçersiz</h1><p>Bu bağlantının süresi dolmuş ya da kullanılmış. Paylaşan kişiden yeni bir davet isteyin.</p>'),
+        page(
+          translate(getSettings().locale, 'web.invitation'),
+          `<h1>${esc(translate(getSettings().locale, 'web.invalidInvite'))}</h1><p>${esc(translate(getSettings().locale, 'web.invalidInviteHelp'))}</p>`
+        ),
         'text/html; charset=utf-8',
         PAGE_CSP
       )
     if (req.method === 'GET') return send(res, 200, joinPage(jm[1], info.role), 'text/html; charset=utf-8', PAGE_CSP)
-    if (limited(ip)) return send(res, 429, joinPage(jm[1], info.role, 'Çok fazla deneme'), 'text/html; charset=utf-8', PAGE_CSP)
+    if (limited(ip)) return send(res, 429, joinPage(jm[1], info.role, translate(getSettings().locale, 'web.rateLimit')), 'text/html; charset=utf-8', PAGE_CSP)
     const f = new URLSearchParams((await readBody(req, 16_384)).toString())
     try {
       const u = join(jm[1], f.get('name') ?? '', f.get('password') ?? '')
@@ -270,14 +278,14 @@ async function route(req: http.IncomingMessage, res: http.ServerResponse, deps: 
 
   const user = sessionUser(cookies(req)[COOKIE])
   if (!user) {
-    if (p.startsWith('/api/') || p.startsWith('/files/')) return json(res, 401, { ok: false, error: 'Oturum yok ya da süresi doldu; yeniden giriş yapın' })
+    if (p.startsWith('/api/') || p.startsWith('/files/')) return json(res, 401, { ok: false, ...errorEnvelope(new UiError(message('web.noSession'))) })
     res.writeHead(303, { Location: '/login' })
     return void res.end()
   }
 
   if (p.startsWith('/api/')) {
     // Başka sitelerden gönderilen formları engelle: arayüz her istekte bu başlığı ekler
-    if (req.method !== 'GET' && req.headers['x-forge'] !== '1') return json(res, 403, { ok: false, error: 'Geçersiz istek' })
+    if (req.method !== 'GET' && req.headers['x-forge'] !== '1') return json(res, 403, { ok: false, ...errorEnvelope(new UiError(message('web.invalidRequest'))) })
     return api(req, res, deps, user, url)
   }
   if (p.startsWith('/files/')) {
@@ -307,7 +315,7 @@ async function api(req: http.IncomingMessage, res: http.ServerResponse, deps: We
   }
 
   if (p === '/api/upload' && req.method === 'POST') {
-    if (!allowed(user.role, 'project:save')) return json(res, 403, { ok: false, error: 'Dosya yüklemek için editör rolü gerekir' })
+    if (!allowed(user.role, 'project:save')) return json(res, 403, { ok: false, ...errorEnvelope(new UiError(message('web.editorUpload'))) })
     const name = (url.searchParams.get('name') ?? 'dosya').replace(/[^\w.\- ()ğüşıöçĞÜŞİÖÇ]/g, '_').slice(-120) || 'dosya'
     const dir = ensureDir(path.join(deps.projectDir(), 'uploads', user.name.replace(/[^\w-]/g, '_')))
     const dest = path.join(dir, `${Date.now().toString(36)}_${name}`)
@@ -318,7 +326,7 @@ async function api(req: http.IncomingMessage, res: http.ServerResponse, deps: We
         req.on('data', (c: Buffer) => {
           n += c.length
           if (n > MAX_UPLOAD) {
-            reject(new Error('Dosya çok büyük (en fazla 2 GB)'))
+            reject(new UiError(message('error.c0e5081db6')))
             req.destroy()
           }
         })
@@ -330,13 +338,13 @@ async function api(req: http.IncomingMessage, res: http.ServerResponse, deps: We
     } catch (e) {
       out.destroy()
       fs.rmSync(dest, { force: true })
-      return json(res, 413, { ok: false, error: (e as Error).message })
+      return json(res, 413, { ok: false, ...errorEnvelope(e) })
     }
     return json(res, 200, { ok: true, value: dest })
   }
 
   if (p === '/api/diag') {
-    if (user.role !== 'owner') return json(res, 403, { ok: false, error: 'Yalnızca sahip' })
+    if (user.role !== 'owner') return json(res, 403, { ok: false, ...errorEnvelope(new UiError(message('web.ownerOnly'))) })
     return send(res, 200, await deps.diagnostics(), 'text/plain; charset=utf-8', { 'Content-Disposition': 'attachment; filename="AssetForge-tanilama.txt"' })
   }
 
@@ -344,9 +352,9 @@ async function api(req: http.IncomingMessage, res: http.ServerResponse, deps: We
   if (cm && req.method === 'POST') {
     const channel = cm[1]
     const fn = deps.registry.get(channel)
-    if (!fn) return json(res, 404, { ok: false, error: `Bilinmeyen işlem: ${channel}` })
-    if (HOST_ONLY.has(channel)) return json(res, 200, { ok: false, error: 'Bu işlem yalnızca AssetForge’un çalıştığı bilgisayarda yapılabilir' })
-    if (!allowed(user.role, channel)) return json(res, 200, { ok: false, error: `Bu işlem için yetkin yok (${ROLE_LABEL[user.role]}). Proje sahibinden rol isteyebilirsin.` })
+    if (!fn) return json(res, 404, { ok: false, ...errorEnvelope(new UiError(message('web.unknownAction', { channel }))) })
+    if (HOST_ONLY.has(channel)) return json(res, 200, { ok: false, ...errorEnvelope(new UiError(message('web.hostOnly'))) })
+    if (!allowed(user.role, channel)) return json(res, 200, { ok: false, ...errorEnvelope(new UiError(message('web.notAllowed'))) })
     let args: unknown[] = []
     try {
       const body = (await readBody(req, MAX_CALL_BODY)).toString()
@@ -355,22 +363,22 @@ async function api(req: http.IncomingMessage, res: http.ServerResponse, deps: We
       // Arayüzde undefined olan bağımsız değişkenler (JSON'da null'a dönüşür)
       for (const i of j.undef ?? []) if (Number.isInteger(i) && i >= 0 && i < args.length) args[i] = undefined
     } catch (e) {
-      return json(res, 400, { ok: false, error: (e as Error).message })
+      return json(res, 400, { ok: false, ...errorEnvelope(e) })
     }
     if (user.role !== 'owner') {
       const root = deps.projectDir()
       const known = channel === 'project:save' ? stringsOf(loadProject(root)) : new Set<string>()
       const bad = foreignPath(args, (s) => isInside(root, path.resolve(root, s)), known)
-      if (bad) return json(res, 200, { ok: false, error: `Proje klasörü dışındaki dosyalar kullanılamaz: ${bad}` })
+      if (bad) return json(res, 200, { ok: false, ...errorEnvelope(new UiError(message('web.foreignPath', { path: bad }))) })
     }
     try {
       const value = await runAs(caller, () => fn(...args))
       return json(res, 200, { ok: true, value: value === undefined ? null : value })
     } catch (e) {
-      return json(res, 200, { ok: false, error: (e as Error).message })
+      return json(res, 200, { ok: false, ...errorEnvelope(e) })
     }
   }
-  return json(res, 404, { ok: false, error: 'Bulunamadı' })
+  return json(res, 404, { ok: false, ...errorEnvelope(new UiError(message('web.notFound'))) })
 }
 
 /** Ayarlara göre başlatır, durdurur ya da yeniden başlatır */
@@ -387,7 +395,7 @@ export async function syncWebServer(cfg: { enabled: boolean; port: number; lan: 
   state = { ...want }
   const srv = http.createServer((req, res) => {
     route(req, res, deps).catch((e) => {
-      if (!res.headersSent) json(res, 500, { ok: false, error: (e as Error).message })
+      if (!res.headersSent) json(res, 500, { ok: false, ...errorEnvelope(e) })
       else res.end()
     })
   })

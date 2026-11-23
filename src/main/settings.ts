@@ -6,10 +6,12 @@ import crypto from 'node:crypto'
 import { setLogSecrets } from './log'
 import type { ComfyServer, ComfyWorkflowEntry, CustomBackend, LlmProvider, LlmRoles, McpExpose, McpServerConfig, SettingsPatch, SettingsPublic, WebConfig } from '../shared/types'
 import { migrateComfyServers } from '../shared/comfyServers'
+import { isLocale, resolveLocale, translate, type Locale } from '../shared/i18n'
 
 type SecretName = 'anthropic' | 'meshy' | 'elevenlabs' | 'huggingface' | 'comfy' | `llm:${string}` | `comfy:${string}`
 
 interface SettingsFile {
+  locale: Locale
   claudeModel: string
   /** Eski tek adres (yalnızca geçiş için okunur) */
   comfyUrl?: string
@@ -66,6 +68,7 @@ function detectBlender(): string {
 
 function defaults(): SettingsFile {
   return {
+    locale: resolveLocale(undefined, app.getLocale()),
     claudeModel: 'claude-opus-5-5',
     comfyServers: [],
     comfyDefaultServer: 'auto',
@@ -115,6 +118,7 @@ export function getSettings(): SettingsFile {
   }
   const d = defaults()
   cache = { ...d, ...loaded, secrets: { ...loaded.secrets } }
+  cache.locale = resolveLocale(loaded.locale, app.getLocale())
   savedProjectDir = cache.projectDir
   // Geliştirme kancası: yalnızca bu oturum için; dosyaya yazılmaz
   if (process.env.FORGE_PROJECT_DIR) cache.projectDir = process.env.FORGE_PROJECT_DIR
@@ -140,7 +144,23 @@ function persist(): void {
   // Önce geçici dosyaya yaz, sonra değiştir: yazma yarıda kalırsa eski ayarlar bozulmaz
   const tmp = file() + '.tmp'
   fs.writeFileSync(tmp, JSON.stringify(out, null, 2))
-  fs.renameSync(tmp, file())
+  // Windows scanners can briefly hold the destination open after a write.
+  // Retry the atomic replacement; never delete the previous settings file.
+  try {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        fs.renameSync(tmp, file())
+        break
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code
+        if (process.platform !== 'win32' || !['EPERM', 'EACCES', 'EBUSY'].includes(code ?? '') || attempt >= 5) throw error
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20 * (attempt + 1))
+      }
+    }
+  } catch (error) {
+    fs.rmSync(tmp, { force: true })
+    throw error
+  }
   refreshLogSecrets()
 }
 
@@ -178,7 +198,10 @@ export function getSecret(name: SecretName): string | undefined {
 }
 
 export function setSettings(patch: SettingsPatch): void {
-  const s = getSettings()
+  const previous = getSettings()
+  // Validate before changing secrets or any other part of a multi-field patch.
+  if (patch.locale !== undefined && !isLocale(patch.locale)) throw new Error(translate(previous.locale, 'language.invalid'))
+  const s = structuredClone(previous)
   const { secrets, providerKeys, comfyTokens, ...rest } = patch
   for (const [id, v] of Object.entries(comfyTokens ?? {})) {
     if (v === '') delete s.secrets[`comfy:${id}`]
@@ -203,12 +226,20 @@ export function setSettings(patch: SettingsPatch): void {
       else s.secrets[k] = safeStorage.encryptString(v.trim()).toString('base64')
     }
   }
-  persist()
+  try {
+    cache = s
+    persist()
+  } catch (e) {
+    cache = previous
+    refreshLogSecrets()
+    throw e
+  }
 }
 
 export function publicSettings(): SettingsPublic {
   const s = getSettings()
   return {
+    locale: s.locale,
     claudeModel: s.claudeModel,
     comfyServers: s.comfyServers.map((x) => ({ ...x, hasToken: !!getSecret(`comfy:${x.id}`) })),
     comfyDefaultServer: s.comfyDefaultServer,

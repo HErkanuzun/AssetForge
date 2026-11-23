@@ -8,6 +8,7 @@ import './animsys.css'
 import App from './App'
 import { StoreProvider } from './store'
 import { installWebBridge } from './webBridge'
+import { LocaleProvider } from './i18n'
 
 // Tarayıcıdan açıldıysa (web sunucusu) masaüstü köprüsünün yerine HTTP köprüsü
 installWebBridge()
@@ -15,7 +16,9 @@ installWebBridge()
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <StoreProvider>
-      <App />
+      <LocaleProvider>
+        <App />
+      </LocaleProvider>
     </StoreProvider>
   </StrictMode>
 )

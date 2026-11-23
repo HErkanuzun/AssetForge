@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message, emitMessage } from '../../shared/i18n/message'
 // Yerel ComfyUI: AssetForge kurar (Python 3.12 + CUDA PyTorch + ComfyUI + Manager), arka planda başlatır,
 // gerektiğinde kendiliğinden açar. Kullanıcının kendi ComfyUI'ı aynı adreste çalışıyorsa ona dokunulmaz.
 import type { ComfyLocalStatus, ComfyServer } from '../../shared/types'
@@ -64,10 +66,10 @@ export async function comfyLocalStatus(): Promise<ComfyLocalStatus> {
 
 /** Tek kurulum adımı; satır satır log akar */
 export async function comfyLocalStep(name: string, log: LogFn): Promise<void> {
-  if (!['env', 'clone', 'deps', 'start', 'stop'].includes(name)) throw new Error(`Bilinmeyen adım: ${name}`)
-  if (!isLocalUrl(managedUrl())) throw new Error('“Bu bilgisayar” kaydının adresi bu bilgisayarı göstermiyor; kurulum yalnızca yerel adreste (127.0.0.1) yapılabilir.')
+  if (!['env', 'clone', 'deps', 'start', 'stop'].includes(name)) throw new UiError(message('error.c3db04df62', { p0: String(name) }))
+  if (!isLocalUrl(managedUrl())) throw new UiError(message('error.9788919755'))
   const r = await step(name, log, 2 * 60 * 60 * 1000)
-  if (r.code !== 0) throw new Error(`ComfyUI adımı başarısız (${name}). Ayrıntı yukarıdaki çıktıda.`)
+  if (r.code !== 0) throw new UiError(message('error.a9b3594556', { p0: String(name) }))
   if (name === 'start') await waitReady(log, 180)
 }
 
@@ -82,7 +84,7 @@ async function waitReady(log: LogFn, seconds: number, signal?: AbortSignal): Pro
   while (Date.now() < until) {
     try {
       const info = await comfyInfo(url)
-      log(`${info} hazır`)
+      emitMessage(log, message('log.f2bf8236aa', { p0: String(info) }))
       return info
     } catch (e) {
       last = (e as Error).message
@@ -94,7 +96,7 @@ async function waitReady(log: LogFn, seconds: number, signal?: AbortSignal): Pro
     .filter((l) => l.trim())
     .slice(-6)
     .join(' | ')
-  throw new Error(`ComfyUI ${seconds} sn içinde açılmadı (${last}). Son günlük: ${tail.slice(0, 500)}`)
+  throw new UiError(message('error.808567535b', { p0: String(seconds), p1: String(last), p2: String(tail.slice(0, 500)) }))
 }
 
 /** Yerel kurulum tamam mı (başlatılabilir mi)? */
@@ -116,13 +118,13 @@ export async function ensureComfy(log: LogFn, signal?: AbortSignal): Promise<voi
   } catch {
     /* kapalı */
   }
-  if (!isLocalUrl(url)) throw new Error(`ComfyUI'a ulaşılamadı (${url}). Uzak sunucu açık mı?`)
+  if (!isLocalUrl(url)) throw new UiError(message('error.a33e9098f2', { p0: String(url) }))
   const st = parseJson<Record<string, boolean>>((await step('status', undefined, 60000)).out) ?? {}
   if (!(st.venv && st.torch && st.cloned && st.deps)) {
-    throw new Error('ComfyUI kapalı ve bu bilgisayarda kurulu değil. Ayarlar → Yerel araçlar → ComfyUI’dan “Kur” adımlarını çalıştırın ya da kendi ComfyUI’ınızı açın.')
+    throw new UiError(message('error.273642f7a1'))
   }
-  log('ComfyUI kapalı; başlatılıyor…')
+  emitMessage(log, message('log.6be301d737'))
   const r = await step('start', log, 60000)
-  if (r.code !== 0) throw new Error('ComfyUI başlatılamadı (Ayarlar → Yerel araçlar → ComfyUI → Günlük)')
+  if (r.code !== 0) throw new UiError(message('error.c101436576'))
   await waitReady(log, 180, signal)
 }

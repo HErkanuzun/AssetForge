@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { errorMessage } from '../../../shared/i18n/errors'
+import { message } from '../../../shared/i18n/message'
 // Ayarlar: solda kategori menüsü (arama ile), sağda yalnızca seçili kategori
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { AsyncButton, Field, NumberInput, Select, TextInput } from '../components/ui'
@@ -12,8 +14,10 @@ import ComfyLibrary from '../components/ComfyLibrary'
 import CustomBackends from '../components/CustomBackends'
 import AgentClis from '../components/AgentClis'
 import WebSettings from '../components/WebSettings'
+import { LANGUAGE_NAMES, LOCALES, type Locale, type PlainMessageKey } from '../../../shared/i18n'
+import { useLocale } from '../i18n'
 
-type Section = 'connect' | 'models' | 'project' | 'tools' | 'anim' | 'unreal' | 'mcp' | 'web' | 'about'
+type Section = 'connect' | 'models' | 'project' | 'tools' | 'anim' | 'unreal' | 'mcp' | 'web' | 'about' | 'language'
 
 const SECTIONS: { id: Section; label: string; icon: IconName; desc: string; keywords: string }[] = [
   {
@@ -55,7 +59,8 @@ const SECTIONS: { id: Section; label: string; icon: IconName; desc: string; keyw
     desc: 'Tarayıcıdan erişim, ekip davetleri ve roller, yalnızca sunucu modu',
     keywords: 'web tarayıcı browser paylaş ekip davet katıl rol editör izleyici sahip parola sunucu headless pencere tailscale cloudflare tünel ağ lan'
   },
-  { id: 'about', label: 'Hakkında', icon: 'gauge', desc: 'Sürüm, lisans, destek ve tanılama', keywords: 'sürüm versiyon hakkında lisans github hata bildir destek tanılama günlük log sorun' }
+  { id: 'about', label: 'Hakkında', icon: 'gauge', desc: 'Sürüm, lisans, destek ve tanılama', keywords: 'sürüm versiyon hakkında lisans github hata bildir destek tanılama günlük log sorun' },
+  { id: 'language', label: '', icon: 'globe', desc: '', keywords: `language locale ${LOCALES.map((value) => LANGUAGE_NAMES[value]).join(' ')} dil` }
 ]
 
 const AUDIO = [
@@ -70,23 +75,24 @@ const STORE_KEY = 'forge.settingsSection'
 type KeyName = 'anthropic' | 'meshy' | 'elevenlabs' | 'huggingface' | 'comfy'
 
 function KeyField({ name, label, has, link }: { name: KeyName; label: string; has: boolean; link: string }) {
+  const { t } = useLocale()
   const { setSettings, toast } = useStore()
   const [v, setV] = useState('')
   const save = async (value: string) => {
     setSettings(await window.forge.settings.set({ secrets: { [name]: value } }))
     setV('')
-    toast(value ? `${label} anahtarı kaydedildi` : `${label} anahtarı silindi`, 'ok')
+    toast(value ? t('settings.keySaved', { name: label }) : t('settings.keyDeleted', { name: label }), 'ok')
   }
   return (
-    <Field label={`${label} API anahtarı`} help={has ? '✓ Kayıtlı (Windows şifrelemesiyle saklanır)' : name === 'comfy' ? `Yok — ${link}` : `Yok — yukarıdan “Bağlan” ya da ${link}`}>
+    <Field label={t('settings.keyLabel', { name: label })} help={has ? t('settings.keyStored') : name === 'comfy' ? t('settings.keyMissing', { link }) : t('settings.keyConnect', { link })}>
       <div className="row">
-        <TextInput type="password" value={v} onChange={setV} placeholder={has ? '•••••••• (değiştirmek için yazın)' : 'anahtarı yapıştırın'} />
+        <TextInput type="password" value={v} onChange={setV} placeholder={has ? t('settings.keyReplace') : t('settings.keyPaste')} />
         <AsyncButton onClick={() => save(v)} disabled={!v}>
-          Kaydet
+          {t('common.save')}
         </AsyncButton>
         {has && (
           <AsyncButton className="ghost" onClick={() => save('')}>
-            Sil
+            {t('common.delete')}
           </AsyncButton>
         )}
       </div>
@@ -105,6 +111,8 @@ function Card({ title, desc, children }: { title: string; desc?: ReactNode; chil
 }
 
 export default function SettingsPage() {
+  const { locale, t } = useLocale()
+  const [savingLocale, setSavingLocale] = useState(false)
   const { settings, setSettings, setProject, toast } = useStore()
   const s = settings!
   const patch = async (p: Parameters<typeof window.forge.settings.set>[0]) => setSettings(await window.forge.settings.set(p))
@@ -131,43 +139,92 @@ export default function SettingsPage() {
   }, [section])
 
   const [q, setQ] = useState('')
+  const sections = useMemo(() => {
+    const keys: Partial<Record<Section, [PlainMessageKey, PlainMessageKey]>> = {
+      language: ['language.label', 'language.help'],
+      connect: ['settings.connect', 'settings.connectDesc'],
+      models: ['settings.models', 'settings.modelsDesc'],
+      project: ['settings.project', 'settings.projectDesc'],
+      anim: ['app.animation', 'settings.animDesc'],
+      mcp: ['settings.mcp', 'settings.mcpDesc'],
+      web: ['settings.web', 'settings.webDesc'],
+      about: ['settings.about', 'settings.aboutDesc']
+    }
+    return SECTIONS.map((x) => ({
+      ...x,
+      label: keys[x.id] ? t(keys[x.id]![0]) : x.id === 'tools' ? t('settings.tools') : x.label,
+      desc: keys[x.id] ? t(keys[x.id]![1]) : x.id === 'unreal' ? t('settings.unrealDesc') : x.desc
+    }))
+  }, [t])
   const shown = useMemo(() => {
-    const t = q.trim().toLocaleLowerCase('tr')
-    if (!t) return SECTIONS
-    return SECTIONS.filter((x) => `${x.label} ${x.desc} ${x.keywords}`.toLocaleLowerCase('tr').includes(t))
-  }, [q])
+    const needle = q.trim().toLocaleLowerCase(locale)
+    if (!needle) return sections
+    return sections.filter((x) => `${x.label} ${x.desc} ${x.id} ${x.keywords}`.toLocaleLowerCase(locale).includes(needle))
+  }, [q, locale, sections])
 
   const badge = (id: Section): ReactNode => {
-    if (id === 'connect') return missingCore ? <span className="set-dot warn" title="Eksik anahtar var" /> : <span className="set-count">{keyCount}/4</span>
-    if (id === 'mcp' && s.mcpExpose.enabled) return <span className="set-dot ok" title="MCP sunucusu açık" />
-    if (id === 'web' && s.web.enabled) return <span className="set-dot ok" title="Web sunucusu açık" />
+    if (id === 'connect') return missingCore ? <span className="set-dot warn" title={t('settings.missingKeys')} /> : <span className="set-count">{keyCount}/4</span>
+    if (id === 'mcp' && s.mcpExpose.enabled) return <span className="set-dot ok" title={t('settings.mcpEnabled')} />
+    if (id === 'web' && s.web.enabled) return <span className="set-dot ok" title={t('settings.webEnabled')} />
     return null
   }
 
   const test = async (fn: () => Promise<unknown>, label: string) => {
     try {
       const r = await fn()
-      toast(`${label}: bağlantı tamam (${String(r).slice(0, 60)})`, 'ok')
+      toast(message('settings.testOk', { name: label, detail: String(r).slice(0, 60) }), 'ok')
     } catch (e) {
-      toast(`${label}: ${(e as Error).message}`, 'error')
+      toast(message('feedback.namedDetail', { name: label, detail: errorMessage(e) }), 'error')
     }
   }
 
-  const current = SECTIONS.find((x) => x.id === section)!
+  const current = sections.find((x) => x.id === section)!
   let body: ReactNode
   switch (section) {
+    case 'language':
+      body = (
+        <Card title={t('language.label')}>
+          <Field label={t('language.label')} help={t('language.help')}>
+            <select
+              id="interface-language"
+              className="input"
+              aria-label={t('language.label')}
+              value={locale}
+              disabled={savingLocale}
+              onChange={async (e) => {
+                const next = e.target.value as Locale
+                setSavingLocale(true)
+                try {
+                  await patch({ locale: next })
+                } catch (error) {
+                  toast(message('language.saveFailed', { detail: errorMessage(error) }), 'error')
+                } finally {
+                  setSavingLocale(false)
+                }
+              }}
+            >
+              {LOCALES.map((value) => (
+                <option key={value} value={value}>
+                  {LANGUAGE_NAMES[value]}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </Card>
+      )
+      break
     case 'connect':
       body = (
         <>
           <QuickConnect />
-          <Card title="Anahtarları elle gir" desc="Anahtarınız zaten varsa buraya yapıştırabilirsiniz. Proje dosyasına yazılmaz; bu bilgisayarda şifreli saklanır.">
+          <Card title={t('settings.manualKeys')} desc={t('settings.manualKeysHelp')}>
             <KeyField name="anthropic" label="Claude (Anthropic)" has={s.hasKeys.anthropic} link="platform.claude.com → API Keys" />
             <KeyField name="meshy" label="Meshy" has={s.hasKeys.meshy} link="meshy.ai → Settings → API" />
             <KeyField name="elevenlabs" label="ElevenLabs" has={s.hasKeys.elevenlabs} link="elevenlabs.io → Profile → API keys" />
             <KeyField name="huggingface" label="Hugging Face" has={s.hasKeys.huggingface} link="huggingface.co → Settings → Access Tokens" />
             <div className="row">
-              <AsyncButton onClick={() => test(window.forge.testClaude, 'Claude')}>Claude’u test et</AsyncButton>
-              <AsyncButton onClick={() => test(async () => `${await window.forge.testMeshy()} kredi`, 'Meshy')}>Meshy bakiyesi</AsyncButton>
+              <AsyncButton onClick={() => test(window.forge.testClaude, 'Claude')}>{t('settings.testClaude')}</AsyncButton>
+              <AsyncButton onClick={() => test(async () => t('settings.credits', { count: await window.forge.testMeshy() }), 'Meshy')}>{t('settings.meshyBalance')}</AsyncButton>
             </div>
           </Card>
         </>
@@ -183,8 +240,8 @@ export default function SettingsPage() {
       break
     case 'project':
       body = (
-        <Card title="Proje">
-          <Field label="Proje klasörü" help="forge-project.json, çıktılar (output/), export/ ve iş kayıtları burada tutulur">
+        <Card title={t('settings.projectTitle')}>
+          <Field label={t('settings.projectDir')} help={t('settings.projectDirHelp')}>
             <div className="row">
               <TextInput value={s.projectDir} onChange={() => {}} />
               <AsyncButton
@@ -193,23 +250,37 @@ export default function SettingsPage() {
                   if (p) {
                     setProject(p)
                     setSettings(await window.forge.settings.get())
-                    toast('Proje açıldı: ' + p.name, 'ok')
+                    toast(message('settings.projectOpened', { name: p.name }), 'ok')
                   }
                 }}
               >
-                Klasör seç…
+                {t('settings.pickFolder')}
               </AsyncButton>
               <AsyncButton className="ghost" onClick={() => window.forge.openPath(s.projectDir)}>
-                Aç
+                {t('settings.openFolder')}
               </AsyncButton>
             </div>
           </Field>
           <div className="grid2">
-            <Field label="Aynı anda çalışacak iş sayısı" help="Meshy ve Claude istek sınırlarına göre 1-4 önerilir">
+            <Field label={t('settings.concurrent')} help={t('settings.concurrentHelp')}>
               <NumberInput value={s.concurrency} onChange={(v) => patch({ concurrency: Math.min(8, Math.max(1, v)) })} />
             </Field>
-            <Field label="Ses çıktı formatı" help="ElevenLabs çıktıları bu formatta kaydedilir">
-              <Select value={s.audioFormat} onChange={(v) => patch({ audioFormat: v })} options={AUDIO} />
+            <Field label={t('settings.audioFormat')} help={t('settings.audioHelp')}>
+              <Select
+                value={s.audioFormat}
+                onChange={(v) => patch({ audioFormat: v })}
+                options={AUDIO.map((option) => ({
+                  ...option,
+                  label:
+                    option.value === 'pcm_24000'
+                      ? t('settings.audio24')
+                      : option.value === 'pcm_44100'
+                        ? t('settings.audio44')
+                        : option.value === 'mp3_44100_128'
+                          ? t('settings.audioMp3')
+                          : option.label
+                }))}
+              />
             </Field>
           </div>
         </Card>
@@ -218,8 +289,8 @@ export default function SettingsPage() {
     case 'tools':
       body = (
         <>
-          <Card title="Blender" desc="Temizlik, ölçekleme, LOD, export ve önizleme render için arka planda çalışır.">
-            <Field label="blender.exe yolu" help={s.blenderPath ? undefined : 'Bulunamadı — Blender kurulu değilse blender.org’dan indirin'}>
+          <Card title="Blender" desc={t('settings.blenderDesc')}>
+            <Field label={t('settings.blenderPath')} help={s.blenderPath ? undefined : t('settings.blenderMissing')}>
               <div className="row">
                 <TextInput value={s.blenderPath} onChange={(v) => patch({ blenderPath: v })} />
                 <AsyncButton
@@ -228,39 +299,27 @@ export default function SettingsPage() {
                     if (f) await patch({ blenderPath: f })
                   }}
                 >
-                  Seç…
+                  {t('settings.choose')}
                 </AsyncButton>
               </div>
             </Field>
           </Card>
-          <Card
-            title="ComfyUI sunucuları"
-            desc="Görsel, doku, 3D model, ses ve animasyon üreten ComfyUI workflow’larını çalıştırır. Birden çok bilgisayar ekleyebilirsiniz: örneğin 3D’yi güçlü GPU’lu bilgisayarda, sesi diğerinde üretin. Yerel modeller (TRELLIS.2, Hunyuan3D, ACE-Step, Kimodo …) ücretsizdir; partner düğümleri (Meshy, Tripo, Rodin, ElevenLabs …) Comfy hesabı kredisiyle çalışır."
-          >
+          <Card title={t('settings.comfyServers')} desc={t('settings.comfyDesc')}>
             <ComfyServers />
-            <KeyField name="comfy" label="Comfy hesabı" has={s.hasKeys.comfy} link="platform.comfy.org → API Keys (yalnızca partner düğümleri için)" />
+            <KeyField name="comfy" label={t('settings.comfyAccount')} has={s.hasKeys.comfy} link={t('settings.comfyKeyLink')} />
           </Card>
-          <Card
-            title="ComfyUI workflow kitaplığı"
-            desc="ComfyUI’da kurduğunuz workflow’ları (Workflow → Export (API)) burada saklayın; ComfyUI düğümleri buradan seçer. Her workflow’un tercih ettiği sunucuyu belirleyebilir, sunucularda eksik düğüm ve model olup olmadığını denetleyebilirsiniz."
-          >
+          <Card title={t('settings.comfyLibrary')} desc={t('settings.comfyLibraryDesc')}>
             <ComfyLibrary />
           </Card>
-          <Card
-            title="Bu bilgisayara ComfyUI kurulumu (isteğe bağlı)"
-            desc="Kendi ComfyUI’ınız yoksa AssetForge bu bilgisayara kurup gerektiğinde arka planda başlatır (Windows + NVIDIA). Listedeki “Bu bilgisayar” kaydını kullanır."
-          >
+          <Card title={t('settings.comfyLocal')} desc={t('settings.comfyLocalDesc')}>
             <ComfyLocal />
-            <Field label="Kurulum klasörü" help="AssetForge ComfyUI’ı buraya kurar (Python ortamı, ComfyUI, modeller). Modeller büyüdükçe birkaç on GB olabilir.">
+            <Field label={t('common.installDir')} help={t('settings.comfyDirHelp')}>
               <TextInput value={s.comfyHome} onChange={(v) => patch({ comfyHome: v })} />
             </Field>
           </Card>
-          <Card
-            title="Özel arka uçlar ve Gradio uygulamaları"
-            desc="ComfyUI’a henüz gelmemiş bir yapay zekâ projesini git deposundan kurun: AssetForge depoyu indirir, kurulum tarifini (assetforge.json ya da önerdiği taslak) gösterir, onaylayınca kendi Python ortamına kurar ve gerektiğinde arka planda başlatır. Hatlarda Gradio Uygulaması düğümüyle kullanılır."
-          >
+          <Card title={t('settings.backends')} desc={t('settings.backendDesc')}>
             <CustomBackends />
-            <Field label="Kurulum klasörü" help="Her arka uç burada kendi klasöründe durur (depo, Python ortamı, günlük); Hugging Face modelleri _hf alt klasöründe ortak önbelleğe iner.">
+            <Field label={t('common.installDir')} help={t('settings.backendDirHelp')}>
               <TextInput value={s.backendsHome} onChange={(v) => patch({ backendsHome: v })} />
             </Field>
           </Card>
@@ -269,37 +328,30 @@ export default function SettingsPage() {
       break
     case 'anim':
       body = (
-        <Card
-          title="NVIDIA Kimodo"
-          desc={
-            <>
-              Kimodo metinden insan hareketi üretir; metni anlamak için Meta Llama-3-8B-Instruct kullanır. Kurulum adımları <b>Animasyon</b> sayfasındadır.
-            </>
-          }
-        >
+        <Card title="NVIDIA Kimodo" desc={t('settings.kimodoDesc')}>
           <div className={`set-note ${s.hasKeys.huggingface ? 'ok' : ''}`}>
             <Icon name={s.hasKeys.huggingface ? 'check' : 'link'} size={15} />
-            <span>{s.hasKeys.huggingface ? 'Hugging Face bağlı.' : 'Hugging Face token’ı gerekli (Llama-3 lisansı kabul edilmiş hesap).'}</span>
+            <span>{s.hasKeys.huggingface ? t('settings.hfConnected') : t('settings.hfRequired')}</span>
             {!s.hasKeys.huggingface && (
               <button className="btn primary" onClick={() => setSection('connect')}>
-                Bağlan
+                {t('common.connect')}
               </button>
             )}
           </div>
-          <Field label="Çalışma yolu" help="Yerel Windows: BIOS sanallaştırması gerekmez (önerilen). WSL2 + Docker: BIOS’ta SVM/VT-x açık olmalı.">
+          <Field label={t('settings.executionMode')} help={t('settings.executionModeHelp')}>
             <Select
               value={s.kimodoBackend}
               onChange={(v) => patch({ kimodoBackend: v as 'native' | 'wsl' })}
               options={[
-                { value: 'native', label: 'Yerel Windows (Python + CUDA)' },
+                { value: 'native', label: t('settings.native') },
                 { value: 'wsl', label: 'WSL2 + Docker' }
               ]}
             />
           </Field>
-          <Field label="Kimodo kurulum klasörü" help="~25 GB (PyTorch + modeller). Boş alanı bol bir diskte olmalı.">
+          <Field label={t('settings.kimodoDir')} help={t('settings.kimodoDirHelp')}>
             <TextInput value={s.kimodoHome} onChange={(v) => patch({ kimodoHome: v })} />
           </Field>
-          <Field label="Servis adresi">
+          <Field label={t('common.serviceUrl')}>
             <TextInput value={s.kimodoUrl} onChange={(v) => patch({ kimodoUrl: v })} />
           </Field>
         </Card>
@@ -307,19 +359,12 @@ export default function SettingsPage() {
       break
     case 'unreal':
       body = (
-        <Card title="Unreal Engine bağlantısı">
+        <Card title={t('settings.unrealConnection')}>
           <ol className="set-steps small">
-            <li>
-              <b>Edit → Plugins → Python Editor Script Plugin</b>’i açın.
-            </li>
-            <li>
-              <b>Project Settings → Plugins → Python → Enable Remote Execution</b>’ı işaretleyin.
-            </li>
-            <li>Editör açıkken “Unreal’ı bul”a basın. Unreal Export node’u asset’leri otomatik import eder.</li>
-            <li>
-              Remote Execution yoksa <b>Unreal MCP</b> sunucusu kullanılır (Python çalıştıran bir araç gerekir, ör. ExecutePython). Montajlı araçlarda fizik asset’i ve Anim BP de buradaki araç setiyle
-              kurulur.
-            </li>
+            <li>{t('settings.unrealStep1')}</li>
+            <li>{t('settings.unrealStep2')}</li>
+            <li>{t('settings.unrealStep3')}</li>
+            <li>{t('settings.unrealStep4')}</li>
           </ol>
           <AsyncButton
             className="primary"
@@ -328,22 +373,22 @@ export default function SettingsPage() {
                 const st = await window.forge.ueStatus()
                 const parts = [
                   st.remote.length ? `Remote Execution: ${st.remote.map((n) => `${n.projectName} (UE ${n.engineVersion})`).join(', ')}` : '',
-                  st.mcp ? `MCP: bağlı${st.python ? ` · Python: ${st.python}` : ' · Python aracı yok'}` : ''
+                  st.mcp ? `MCP: ${t('settings.connected')}${st.python ? ` · Python: ${st.python}` : ` · ${t('settings.noPythonTool')}`}` : ''
                 ].filter(Boolean)
-                if (!parts.length) toast('Açık Unreal Editor bulunamadı (Remote Execution ya da Unreal MCP açık mı?)', 'error')
+                if (!parts.length) toast(message('settings.unrealNotFound'), 'error')
                 else toast(parts.join(' · '), 'ok')
               } catch (e) {
-                toast((e as Error).message, 'error')
+                toast(errorMessage(e), 'error')
               }
             }}
           >
-            Unreal’ı bul
+            {t('settings.findUnreal')}
           </AsyncButton>
           <div style={{ height: 14 }} />
-          <Field label="Unreal MCP adresi" help="Remote Execution yoksa yedek yol; boş = kullanma">
+          <Field label={t('settings.unrealUrl')} help={t('settings.unrealUrlHelp')}>
             <TextInput value={s.ueMcpUrl} onChange={(v) => patch({ ueMcpUrl: v })} />
           </Field>
-          <Field label="Manny/Quinn IK Rig yolu" help="Karakterler bu IK Rig’ten retarget alır (UE5 Third Person şablonundaki varsayılan)">
+          <Field label={t('settings.ikRig')} help={t('settings.ikRigHelp')}>
             <TextInput value={s.mannyIkRig} onChange={(v) => patch({ mannyIkRig: v })} />
           </Field>
         </Card>
@@ -359,33 +404,33 @@ export default function SettingsPage() {
       body = (
         <Card title="AssetForge">
           <div className="kv2" style={{ gridTemplateColumns: '140px 1fr' }}>
-            <span className="muted">Sürüm</span>
+            <span className="muted">{t('common.version')}</span>
             <span>v{__APP_VERSION__} (alpha)</span>
-            <span className="muted">Lisans</span>
-            <span>GNU AGPL-3.0 — ücretsiz ve açık kaynak, ticari oyun projeleri dahil</span>
-            <span className="muted">Üretilen asset’ler</span>
-            <span>Sizindir; onları üreten servislerin (Meshy, ElevenLabs…) koşullarına tabidir</span>
-            <span className="muted">Anahtarlar</span>
-            <span>Windows DPAPI ile bu bilgisayarda şifreli</span>
+            <span className="muted">{t('common.license')}</span>
+            <span>{t('settings.licenseSummary')}</span>
+            <span className="muted">{t('settings.generatedAssets')}</span>
+            <span>{t('settings.assetsOwnership')}</span>
+            <span className="muted">{t('settings.keys')}</span>
+            <span>{t('settings.keysProtection')}</span>
           </div>
           <div className="row" style={{ marginTop: 12, flexWrap: 'wrap' }}>
             <a className="btn" href="https://github.com/HErkanuzun/AssetForge" target="_blank" rel="noreferrer">
               GitHub
             </a>
             <a className="btn" href="https://github.com/HErkanuzun/AssetForge/issues/new/choose" target="_blank" rel="noreferrer">
-              Sorun bildir
+              {t('settings.reportIssue')}
             </a>
             <a className="btn ghost" href="https://github.com/HErkanuzun/AssetForge/releases" target="_blank" rel="noreferrer">
-              Sürüm notları
+              {t('settings.releaseNotes')}
             </a>
             <a className="btn ghost" href="https://github.com/HErkanuzun/AssetForge/blob/main/LICENSE" target="_blank" rel="noreferrer">
-              Lisans metni
+              {t('settings.licenseText')}
             </a>
             <a className="btn ghost" href="https://github.com/HErkanuzun/AssetForge/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noreferrer">
-              Üçüncü taraf lisansları
+              {t('settings.thirdParty')}
             </a>
             <a className="btn ghost" href="https://github.com/HErkanuzun/AssetForge/blob/main/COMMERCIAL.md" target="_blank" rel="noreferrer">
-              Ticari lisans
+              {t('settings.commercial')}
             </a>
           </div>
         </Card>
@@ -394,29 +439,28 @@ export default function SettingsPage() {
         <>
           {body}
           <div style={{ height: 14 }} />
-          <Card title="Sorun bildirme">
+          <Card title={t('settings.reporting')}>
             <p className="muted small" style={{ marginTop: 0 }}>
-              Bir şey ters gittiyse tanılama dosyasını kaydedip GitHub’daki hata bildirimine ekle. Dosyada sürümler, sistem bilgisi, ayar özeti ve son günlük satırları bulunur. API anahtarları,
-              token’lar ve kullanıcı adın otomatik olarak gizlenir.
+              {t('settings.diagnosticsHelp')}
             </p>
             <div className="row" style={{ flexWrap: 'wrap' }}>
               <AsyncButton
                 onClick={async () => {
                   try {
                     const f = await window.forge.diag.save()
-                    if (f) toast(`Tanılama dosyası kaydedildi: ${f}`, 'ok')
+                    if (f) toast(message('settings.diagnosticsSaved', { file: f }), 'ok')
                   } catch (e) {
-                    toast(`Tanılama dosyası kaydedilemedi: ${(e as Error).message}`, 'error')
+                    toast(message('settings.diagnosticsFailed', { detail: errorMessage(e) }), 'error')
                   }
                 }}
               >
-                Tanılama dosyası kaydet
+                {t('settings.saveDiagnostics')}
               </AsyncButton>
-              <AsyncButton className="ghost" onClick={() => window.forge.diag.openLogs().catch((e: Error) => toast(e.message, 'error'))}>
-                Günlük klasörünü aç
+              <AsyncButton className="ghost" onClick={() => window.forge.diag.openLogs().catch((e: Error) => toast(errorMessage(e), 'error'))}>
+                {t('settings.openLogs')}
               </AsyncButton>
               <a className="btn ghost" href="https://github.com/HErkanuzun/AssetForge/issues/new?template=bug_report.yml" target="_blank" rel="noreferrer">
-                Hata bildir
+                {t('settings.reportBug')}
               </a>
             </div>
           </Card>
@@ -427,13 +471,13 @@ export default function SettingsPage() {
 
   return (
     <div className="page split set-page">
-      <nav className="set-nav" aria-label="Ayar kategorileri">
-        <h1>Ayarlar</h1>
+      <nav className="set-nav" aria-label={t('settings.categories')}>
+        <h1>{t('app.settings')}</h1>
         <div className="set-search">
           <Icon name="search" size={14} />
           <input
             className="input"
-            placeholder="Ayar ara…"
+            placeholder={t('common.searchSettings')}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => {
@@ -454,10 +498,12 @@ export default function SettingsPage() {
         ))}
         {!shown.length && (
           <div className="dim small" style={{ padding: '6px 10px' }}>
-            Sonuç yok
+            {t('common.noResults')}
           </div>
         )}
-        <div className="set-foot dim small">v{__APP_VERSION__} · Anahtarlar bu bilgisayarda şifreli saklanır.</div>
+        <div className="set-foot dim small">
+          v{__APP_VERSION__} · {t('settings.keysEncrypted')}
+        </div>
       </nav>
       <div className="split-main set-main">
         <header className="set-head">

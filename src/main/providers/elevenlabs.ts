@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message } from '../../shared/i18n/message'
 // ElevenLabs ses efekti API'si (https://elevenlabs.io/docs/api-reference/text-to-sound-effects/convert)
 import { getSecret } from '../settings'
 import { pcmToWav, sleep } from '../util'
@@ -14,7 +16,7 @@ export interface SfxRequest {
 
 export async function soundEffect(req: SfxRequest, signal?: AbortSignal): Promise<{ data: Buffer; ext: 'wav' | 'mp3' | 'opus' }> {
   const key = getSecret('elevenlabs')
-  if (!key) throw new Error('ElevenLabs API anahtarı yok (Ayarlar)')
+  if (!key) throw new UiError(message('error.3335f327a5'))
   const body: Record<string, unknown> = {
     text: req.text,
     loop: req.loop,
@@ -45,7 +47,7 @@ export async function soundEffect(req: SfxRequest, signal?: AbortSignal): Promis
       continue
     }
     const detail = await res.text().catch(() => '')
-    const hint = res.status === 401 ? 'API anahtarı geçersiz' : res.status === 403 ? 'Bu çıktı formatı planınızda yok olabilir (Ayarlar → ses formatı)' : 'ElevenLabs hatası'
-    throw new Error(`${hint} (${res.status}) ${detail.slice(0, 300)}`)
+    const hint = message(res.status === 401 ? 'provider.invalidKey' : res.status === 403 ? 'provider.audioFormat' : 'provider.failed')
+    throw new UiError(message('provider.error', { provider: 'ElevenLabs', hint, status: res.status, detail: detail.slice(0, 300) }))
   }
 }

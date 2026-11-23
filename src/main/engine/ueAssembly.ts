@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+
+import { UiError, errorMessage } from '../../shared/i18n/errors'
+import { message, emitMessage } from '../../shared/i18n/message'
 // Montajı yapılmış (rig.assembly) modeli Unreal'da kurar: iskeletli mesh + ezilme hedefleri + klipler,
 // kit sesleri (motor MetaSound'u dahil), fizik asset'i, araç Anim BP'si ve şablondan araç Blueprint'i.
 import fs from 'node:fs'
@@ -136,14 +139,14 @@ function script(file: string, manifest: Record<string, unknown>, varName = 'MANI
 async function py(file: string, manifest: Record<string, unknown>, what: string): Promise<Record<string, unknown>> {
   const r = await runInUe(script(file, manifest))
   const line = r.output.split('\n').find((l) => l.startsWith('FORGE_RESULT '))
-  if (!line) throw new Error(`${what}: Unreal'dan sonuç gelmedi ${r.result || r.output.slice(-400)}`)
+  if (!line) throw new UiError(message('error.a84d04cf10', { p0: String(what), p1: String(r.result || r.output.slice(-400)) }))
   return JSON.parse(line.slice(13)) as Record<string, unknown>
 }
 
 const sleep = (ms: number, signal: AbortSignal) =>
   new Promise<void>((res, rej) => {
     const t = setTimeout(res, ms)
-    signal.addEventListener('abort', () => (clearTimeout(t), rej(new Error('İptal edildi'))), { once: true })
+    signal.addEventListener('abort', () => (clearTimeout(t), rej(new UiError(message('error.dbd417da03')))), { once: true })
   })
 
 /**
@@ -169,12 +172,12 @@ export async function exportAssemblyToUe(
   let kit = collectKitSounds(ctx.projectDir, ctx.asset.id)
   const until = Date.now() + Math.max(0, o.kitWaitMin) * 60_000
   while (kit.pending.length && Date.now() < until) {
-    ctx.log(`Kit sesleri bekleniyor: ${kit.pending.join(', ')}`)
+    emitMessage(ctx.log, message('log.54c4c06f7b', { p0: String(kit.pending.join(', ')) }))
     await sleep(15_000, ctx.signal)
     kit = collectKitSounds(ctx.projectDir, ctx.asset.id)
   }
-  if (kit.pending.length) ctx.warn(`Bitmemiş kit sesleri atlandı: ${kit.pending.join(', ')} (bitince Export'u yeniden çalıştırın)`)
-  if (kit.missing.length) ctx.warn(`Çıktısı olmayan kit sesleri: ${kit.missing.join(', ')}`)
+  if (kit.pending.length) emitMessage(ctx.warn, message('log.cc080e980d', { p0: String(kit.pending.join(', ')) }))
+  if (kit.missing.length) emitMessage(ctx.warn, message('log.bbf2b1e2a7', { p0: String(kit.missing.join(', ')) }))
   const sounds: Record<string, string> = {}
   for (const [slot, f] of Object.entries(kit.files)) sounds[slot] = copy(f)
 
@@ -188,7 +191,7 @@ export async function exportAssemblyToUe(
         items: [{ type: 'dynamic_sound', name: msName, dest: `${o.dest}/Audio`, file: '', layers, inputs: { idle: kit.engine.dynamic.idleRpm, max: kit.engine.dynamic.maxRpm } }]
       })
     )
-    if (!r.success) ctx.warn(`Motor MetaSound'u kurulamadı: ${r.result || r.output.slice(-300)}`)
+    if (!r.success) emitMessage(ctx.warn, message('log.e44def4ebc', { p0: String(r.result || r.output.slice(-300)) }))
     else {
       sounds.engine = `${o.dest}/Audio/${msName}`
       notes.push(`motor sesi: ${msName} (${layers.length} katman)`)
@@ -196,12 +199,12 @@ export async function exportAssemblyToUe(
   }
 
   // 3) İskeletli mesh, klipler, sesler
-  ctx.log('Unreal: iskeletli mesh, ezilme hedefleri, klipler ve sesler içe aktarılıyor')
+  emitMessage(ctx.log, message('log.cf4a922056'))
   const base = { dest: o.dest, name: o.name, assembly: asmUe, mesh_fbx: meshFbx, sounds }
   const imp = await py('ue_vehicle.py', { ...base, step: 'import' }, 'İçe aktarma')
   for (const e of (imp.errors as string[]) ?? []) ctx.warn(`Unreal: ${e}`)
   const mesh = String(imp.mesh ?? '')
-  if (!mesh) throw new Error('Unreal iskeletli mesh oluşturmadı')
+  if (!mesh) throw new UiError(message('error.51f2049dd2'))
   notes.push(...((imp.notes as string[]) ?? []))
   const soundsUe = (imp.sounds as Record<string, string>) ?? {}
 
@@ -217,7 +220,7 @@ export async function exportAssemblyToUe(
   let animBp = ''
   try {
     const ts = await ueFindToolset('CreateVehiclePhysicsAsset')
-    if (!ts) ctx.warn('Unreal’da CreateVehiclePhysicsAsset aracı yok: fizik asset’i ve Anim BP elle kurulmalı')
+    if (!ts) emitMessage(ctx.warn, message('log.6b273cda59'))
     else {
       physicsAsset = `${o.dest}/PA_${o.name}`
       await ueTool(ts, 'CreateVehiclePhysicsAsset', { mesh: { refPath: mesh }, assetPath: physicsAsset, boneName: 'root', boxes: physicsBoxes(asm) })
@@ -228,7 +231,7 @@ export async function exportAssemblyToUe(
       notes.push(`fizik: PA_${o.name}, Anim BP: ABP_${o.name} (${doorBones(asm).length} açılır parça)`)
     }
   } catch (e) {
-    ctx.warn(`Fizik / Anim BP kurulamadı: ${(e as Error).message}`)
+    emitMessage(ctx.warn, message('log.2fa13d1db7', { p0: errorMessage(e) }))
   }
 
   // 5) Şablon araç Blueprint'i
@@ -236,10 +239,10 @@ export async function exportAssemblyToUe(
   const found = (await py('ue_exists.py', { paths: candidates }, 'Şablon arama').catch(() => ({ exists: [] }))) as { exists?: string[] }
   const template = candidates.find((c) => found.exists?.includes(c))
   if (!template) {
-    ctx.warn(`Araç şablonu bulunamadı (${candidates.join(', ')}). Mesh, fizik ve Anim BP hazır; Blueprint için Export → “Araç şablonu” alanına bir AWheeledVehiclePawn Blueprint’i yazın.`)
+    emitMessage(ctx.warn, message('log.c49393a6fd', { p0: String(candidates.join(', ')) }))
     return { blueprint: '', mesh, notes }
   }
-  ctx.log(`Unreal: ${template.split('/').pop()} şablonundan araç Blueprint’i kuruluyor`)
+  emitMessage(ctx.log, message('log.e58bd85677', { p0: String(template.split('/').pop()) }))
   const res = await py('ue_vehicle.py', { ...base, step: 'assemble', mesh, template, physics_asset: physicsAsset, anim_bp: animBp, sounds_ue: soundsUe }, 'Araç kurulumu')
   for (const e of (res.errors as string[]) ?? []) ctx.warn(`Unreal: ${e}`)
   notes.push(...((res.notes as string[]) ?? []))

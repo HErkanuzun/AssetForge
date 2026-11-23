@@ -12,6 +12,8 @@ import { allowed, foreignPath, shellEscalation } from '../src/main/web/policy'
 import { currentCaller } from '../src/main/web/caller'
 import { emit } from '../src/main/web/hub'
 import { syncWebServer, webRunning, type Handler } from '../src/main/web/server'
+import { translate } from '../src/shared/i18n'
+import { getSettings, setSettings } from '../src/main/settings'
 
 const tmp = path.join(os.tmpdir(), 'assetforge-test')
 const accessFile = path.join(tmp, 'web-access.json')
@@ -87,10 +89,10 @@ describe('hesaplar ve davetler', () => {
     expect(ed.role).toBe('editor')
     // Tek kullanımlık davet bitti
     expect(inviteInfo(inv.token)).toBeNull()
-    expect(() => join(inv.token, 'Başka', 'parola-xyz')).toThrow(/geçersiz/)
+    expect(() => join(inv.token, 'Başka', 'parola-xyz')).toThrow(translate(getSettings().locale, 'web.inviteExpired'))
     // Aynı ad iki kez alınamaz
     const inv2 = createInvite('viewer', 1, 2)
-    expect(() => join(inv2.token, 'editör ece', 'parola-xyz')).toThrow(/kullanılıyor/)
+    expect(() => join(inv2.token, 'editör ece', 'parola-xyz')).toThrow(translate(getSettings().locale, 'web.nameTaken'))
 
     expect(login('Editör Ece', 'yanlış-parola')).toBeNull()
     expect(login('editör ece', 'ece-parola')?.id).toBe(ed.id)
@@ -214,6 +216,35 @@ describe('web sunucusu (HTTP)', () => {
     expect(await r.text()).toContain('<title>AF</title>')
   })
 
+  it('localizes authentication pages and validation without changing permissions or CSP', async () => {
+    const previous = getSettings().locale
+    try {
+      for (const locale of ['en', 'zh-CN'] as const) {
+        setSettings({ locale })
+        const loginResponse = await fetch(base + '/login')
+        const html = await loginResponse.text()
+        expect(html).toContain(`lang="${locale}"`)
+        expect(html).toContain(translate(locale, 'web.loginHelp'))
+        expect(html).not.toContain('Giriş yap')
+        expect(loginResponse.headers.get('content-security-policy')).toContain("default-src 'none'")
+        const denied = await fetch(`${base}/login`, { method: 'POST', redirect: 'manual', body: new URLSearchParams({ name: 'Sahip', password: 'wrong-localization-fixture' }) })
+        expect(denied.status).toBe(401)
+        expect(await denied.text()).toContain(translate(locale, 'web.invalidLogin'))
+        const invite = createInvite('viewer')
+        const inviteHtml = await (await fetch(`${base}/join/${invite.token}`)).text()
+        expect(inviteHtml).toContain(translate(locale, 'web.viewerRole'))
+        const invalid = await fetch(`${base}/join/invalid-link`)
+        expect(invalid.status).toBe(410)
+        expect(await invalid.text()).toContain(translate(locale, 'web.invalidInvite'))
+        const invalidName = await fetch(`${base}/join/${invite.token}`, { method: 'POST', body: new URLSearchParams({ name: '<', password: 'fixture-password' }) })
+        expect(invalidName.status).toBe(400)
+        expect(await invalidName.text()).toContain(translate(locale, 'web.nameLength'))
+      }
+    } finally {
+      setSettings({ locale: previous })
+    }
+  })
+
   it('işlem çağrısı rol ile denetlenir ve çağıranı bilir', async () => {
     const ok = await (await callApi(editorCookie, 'run:start', ['p1', undefined])).json()
     expect(ok).toMatchObject({ ok: true, value: { channel: 'run:start', n: 2, second: 'undefined' } })
@@ -278,5 +309,21 @@ describe('web sunucusu (HTTP)', () => {
     expect(await (await fetch(`${base}/api/diag`, { headers: { Cookie: ownerCookie } })).text()).toBe('tanı')
     await fetch(`${base}/logout`, { headers: { Cookie: viewerCookie }, redirect: 'manual' })
     expect((await callApi(viewerCookie, 'project:load', [])).status).toBe(401)
+  })
+
+  it('localizes rate-limit feedback in both target languages', async () => {
+    const previous = getSettings().locale
+    try {
+      // Exhaust this fixture server's IP budget; no real accounts or network services.
+      for (let i = 0; i < 11; i++) await fetch(`${base}/login`, { method: 'POST', body: new URLSearchParams({ name: 'fixture-missing', password: 'fixture-wrong' }) })
+      for (const locale of ['en', 'zh-CN'] as const) {
+        setSettings({ locale })
+        const response = await fetch(`${base}/login`, { method: 'POST', body: new URLSearchParams({ name: 'fixture-missing', password: 'fixture-wrong' }) })
+        expect(response.status).toBe(429)
+        expect(await response.text()).toContain(translate(locale, 'web.rateLimit'))
+      }
+    } finally {
+      setSettings({ locale: previous })
+    }
   })
 })

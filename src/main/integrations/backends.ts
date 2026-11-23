@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message, emitMessage } from '../../shared/i18n/message'
 // Özel arka uçlar: git deposundan kurulan yapay zekâ projeleri. Her biri kendi klasöründe (depo, uv sanal ortamı,
 // günlük) durur; AssetForge kurar, gerektiğinde arka planda başlatır, hazır olunca adresini düğüme verir.
 // Kurulum komutları kullanıcının onayladığı tariften gelir; depo kodu bu bilgisayarda tam yetkiyle çalışır.
@@ -50,7 +52,7 @@ export const listBackends = (): CustomBackend[] => getSettings().customBackends
 
 export function getBackend(id: string): CustomBackend {
   const b = listBackends().find((x) => x.id === id)
-  if (!b) throw new Error(`Arka uç bulunamadı: ${id}`)
+  if (!b) throw new UiError(message('error.67fed85b99', { p0: String(id) }))
   return b
 }
 
@@ -66,10 +68,10 @@ async function findUv(log?: LogFn): Promise<string> {
   const w = await run(win ? 'where' : 'which', ['uv'])
   const found = w.code === 0 ? w.out.split(/\r?\n/).find((l) => l.trim()) : undefined
   if (found) return found.trim()
-  if (!win) throw new Error('uv bulunamadı: https://docs.astral.sh/uv/ adresinden kurun')
+  if (!win) throw new UiError(message('error.eb1a60c656'))
   log?.('uv kuruluyor (Python ortam yöneticisi)…')
   const r = await run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'irm https://astral.sh/uv/install.ps1 | iex'], { log, timeoutMs: 10 * 60_000 })
-  if (r.code !== 0 || !fs.existsSync(local)) throw new Error('uv kurulamadı; https://docs.astral.sh/uv/ adresinden elle kurun')
+  if (r.code !== 0 || !fs.existsSync(local)) throw new UiError(message('error.bb3c580c02'))
   return local
 }
 
@@ -104,13 +106,13 @@ async function runCmd(b: CustomBackend, uv: string, cmd: string, log: LogFn, sig
   log(`$ ${filled}`)
   const [exe, args] = shell(filled)
   const r = await run(exe, args, { cwd: repoOf(b.id), env: commandEnv(b, uv), log, signal, verbatim: win, timeoutMs: 3 * 60 * 60_000 })
-  if (signal?.aborted) throw new Error('İptal edildi')
-  if (r.code !== 0) throw new Error(`Komut başarısız (kod ${r.code}): ${filled}`)
+  if (signal?.aborted) throw new UiError(message('error.dbd417da03'))
+  if (r.code !== 0) throw new UiError(message('error.96a086fbd8', { p0: String(r.code), p1: String(filled) }))
 }
 
 async function git(args: string[], log: LogFn, cwd?: string, signal?: AbortSignal): Promise<void> {
   const r = await run('git', args, { cwd, log, signal, timeoutMs: 60 * 60_000, env: { GIT_TERMINAL_PROMPT: '0' } })
-  if (r.code !== 0) throw new Error(`git ${args[0]} başarısız (kod ${r.code}). Git kurulu mu, adres doğru mu?`)
+  if (r.code !== 0) throw new UiError(message('error.0dcc54bbac', { p0: String(args[0]), p1: String(r.code) }))
 }
 
 /** Kök dizindeki dosyalar ve olası başlatma dosyalarının başı: taslak tarif için */
@@ -149,9 +151,13 @@ function freePort(want: number, exceptId?: string): number {
  * Depoyu indirir (kod çalıştırmaz) ve tarifi bulur: depoda assetforge.json varsa o, yoksa dosyalara bakılarak
  * önerilen taslak. Kullanıcı tarifi görüp onaylamadan hiçbir komut çalışmaz.
  */
-export async function addBackend(gitUrl: string, log: LogFn, signal?: AbortSignal): Promise<{ backend: CustomBackend; notes: string[] }> {
+export async function addBackend(
+  gitUrl: string,
+  log: LogFn,
+  signal?: AbortSignal
+): Promise<{ backend: CustomBackend; notes: string[]; uiNotes: import('../../shared/i18n/message').MessageDescriptor[] }> {
   const url = gitUrl.trim()
-  if (!isGitUrl(url)) throw new Error('Geçerli bir git adresi girin (https://github.com/kullanıcı/proje)')
+  if (!isGitUrl(url)) throw new UiError(message('error.eb2e72b00d'))
   const id = uniqueId(slugFromRepo(url))
   fs.mkdirSync(dirOf(id), { recursive: true })
   try {
@@ -162,27 +168,30 @@ export async function addBackend(gitUrl: string, log: LogFn, signal?: AbortSigna
   }
   let recipe: BackendRecipe
   let notes: string[] = []
+  let uiNotes: import('../../shared/i18n/message').MessageDescriptor[] = []
   let fromRepo = false
   const own = path.join(repoOf(id), RECIPE_FILE)
   if (fs.existsSync(own)) {
     recipe = parseRecipe(fs.readFileSync(own, 'utf8'), url)
     fromRepo = true
+    uiNotes = [message('backend.noteOwn', { file: RECIPE_FILE })]
     notes.push(`Depodaki ${RECIPE_FILE} tarifi kullanılıyor. Kurmadan önce komutları gözden geçirin.`)
   } else {
     const g = guessRecipe(url, probeRepo(repoOf(id)))
     recipe = g.recipe
+    uiNotes = [message('backend.noteDraft', { file: RECIPE_FILE }), ...g.uiNotes]
     notes = [`Depoda ${RECIPE_FILE} yok; dosyalara bakılarak bir taslak hazırlandı. README’ye göre düzeltin.`, ...g.notes]
   }
   recipe.port = freePort(recipe.port)
   const backend: CustomBackend = { id, name: recipe.name, recipe, addedAt: Date.now(), recipeFromRepo: fromRepo }
   save([...listBackends(), backend])
-  return { backend, notes }
+  return { backend, notes, uiNotes }
 }
 
 export function updateRecipe(id: string, json: string): CustomBackend {
   const b = getBackend(id)
   const recipe = parseRecipe(json, b.recipe.repo)
-  if (recipe.port !== b.recipe.port && listBackends().some((x) => x.id !== id && x.recipe.port === recipe.port)) throw new Error(`Port ${recipe.port} başka bir arka uçta kullanılıyor`)
+  if (recipe.port !== b.recipe.port && listBackends().some((x) => x.id !== id && x.recipe.port === recipe.port)) throw new UiError(message('error.6920d42843', { p0: String(recipe.port) }))
   const next = { ...b, name: recipe.name, recipe }
   save(listBackends().map((x) => (x.id === id ? next : x)))
   return next
@@ -200,15 +209,15 @@ export async function installBackend(id: string, log: LogFn, signal?: AbortSigna
   const uv = needsUv(b.recipe) ? await findUv(log) : 'uv'
   if (b.recipe.python) {
     if (!fs.existsSync(pyOf(id))) {
-      log(`Python ${b.recipe.python} sanal ortamı oluşturuluyor…`)
+      emitMessage(log, message('log.047ba4fe9d', { p0: String(b.recipe.python) }))
       const r = await run(uv, ['venv', '--seed', '--python', b.recipe.python, venvOf(id)], { log, signal, timeoutMs: 30 * 60_000 })
-      if (r.code !== 0) throw new Error('Sanal ortam oluşturulamadı (uv venv)')
+      if (r.code !== 0) throw new UiError(message('error.b0efe7cef7'))
     }
   }
   writeState(id, { installedHash: undefined })
   for (const cmd of b.recipe.install) await runCmd(b, uv, cmd, log, signal)
   writeState(id, { installedHash: installHash(b.recipe) })
-  log('Kurulum tamam')
+  emitMessage(log, message('log.b59c68d258'))
 }
 
 const alive = (pid?: number) => {
@@ -251,11 +260,11 @@ export async function startBackend(id: string, log: LogFn): Promise<void> {
   const b = getBackend(id)
   if (await healthy(b)) return
   const st = readState(id)
-  if (!st.installedHash) throw new Error(`“${b.name}” henüz kurulmadı (Ayarlar → Yerel araçlar → Özel arka uçlar → Kur)`)
+  if (!st.installedHash) throw new UiError(message('error.f8f6c50f1f', { p0: String(b.name) }))
   if (alive(st.pid)) return
   const uv = needsUv(b.recipe) ? await findUv(log) : 'uv'
   const cmd = fillCommand(b.recipe.start, { port: b.recipe.port, python: pyOf(id), uv, repo: repoOf(id) })
-  log(`Başlatılıyor: ${cmd}`)
+  emitMessage(log, message('log.0704e2f445', { p0: String(cmd) }))
   const out = fs.openSync(logOf(id), 'a')
   fs.writeSync(out, `\n===== ${new Date().toISOString()} ${cmd}\n`)
   const [exe, args] = shell(cmd)
@@ -286,18 +295,18 @@ export async function ensureBackend(id: string, log: LogFn, signal?: AbortSignal
   const b = getBackend(id)
   if (await healthy(b)) return backendUrl(b)
   await startBackend(id, log)
-  log(`“${b.name}” açılıyor (ilk açılışta modeller indirilebilir; en fazla ${Math.round(b.recipe.startTimeout / 60)} dk beklenir)…`)
+  emitMessage(log, message('log.f267cf8e77', { p0: String(b.name), p1: String(Math.round(b.recipe.startTimeout / 60)) }))
   const until = Date.now() + b.recipe.startTimeout * 1000
   while (Date.now() < until) {
     if (await healthy(b)) {
-      log(`“${b.name}” hazır: ${backendUrl(b)}`)
+      emitMessage(log, message('log.7c7aceb0bf', { p0: String(b.name), p1: String(backendUrl(b)) }))
       return backendUrl(b)
     }
     if (!alive(readState(id).pid)) break
     await sleep(3000, signal)
   }
   const tail = backendLogs(id, 8).replace(/\s+/g, ' ').slice(-500)
-  throw new Error(`“${b.name}” açılmadı. Son günlük: ${tail || '(boş)'}`)
+  throw new UiError(message('error.ae8e6b3018', { p0: String(b.name), p1: String(tail || '(boş)') }))
 }
 
 export async function removeBackend(id: string): Promise<void> {

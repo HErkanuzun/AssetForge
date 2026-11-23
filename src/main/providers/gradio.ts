@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { UiError } from '../../shared/i18n/errors'
+import { message, emitMessage } from '../../shared/i18n/message'
 // Herhangi bir Gradio uygulamasını API'siyle çalıştırır (yerel demo, Pinokio'nun açtığı uygulama, Hugging Face Space).
 // Gradio 4 ve 5: /info (5'te /gradio_api/info) uç noktaları ve girişleri anlatır; /call/<ad> işi başlatır,
 // /call/<ad>/<event_id> sonucu SSE olarak akıtır; dosyalar /upload ile yüklenir, /file= ile indirilir.
@@ -32,7 +34,7 @@ async function request(url: string, init: RequestInit, what: string): Promise<Re
     return await fetch(url, init)
   } catch (e) {
     if (init.signal?.aborted) throw e
-    throw new Error(`Gradio uygulamasına ulaşılamadı (${new URL(url).origin}) — ${what}. Uygulama açık mı?`, { cause: e })
+    throw new UiError(message('error.8f5ccf0b5c', { p0: String(new URL(url).origin), p1: String(what) }), { cause: e })
   }
 }
 
@@ -48,7 +50,7 @@ export async function gradioApi(url: string, token?: string, signal?: AbortSigna
     }
     last = `${r.status}`
   }
-  throw new Error(`Bu adreste Gradio API’si bulunamadı (${root}, yanıt ${last}). Gradio 4 veya üstü gerekir; uygulamada API kapalı olabilir.`)
+  throw new UiError(message('error.a39b4923a4', { p0: String(root), p1: String(last) }))
 }
 
 const KIND_BY_COMPONENT: Record<string, ComfyOutputKind> = { image: 'image', imageeditor: 'image', gallery: 'image', annotatedimage: 'image', model3d: 'model', audio: 'audio' }
@@ -104,7 +106,7 @@ async function upload(api: string, file: string, token?: string, signal?: AbortS
   const form = new FormData()
   form.append('files', new Blob([fs.readFileSync(file)]), path.basename(file))
   const r = await request(`${api}/upload`, { method: 'POST', body: form, headers: headers(token), signal }, 'dosya yükleme')
-  if (!r.ok) throw new Error(`Gradio dosyayı kabul etmedi (${r.status}): ${(await r.text()).slice(0, 200)}`)
+  if (!r.ok) throw new UiError(message('error.524724813d', { p0: String(r.status), p1: String((await r.text()).slice(0, 200)) }))
   const [p] = (await r.json()) as string[]
   return { path: p, orig_name: path.basename(file), meta: { _type: 'gradio.FileData' } }
 }
@@ -179,14 +181,14 @@ export interface GradioRunOptions {
 export async function gradioRun(o: GradioRunOptions): Promise<{ files: Record<ComfyOutputKind, string[]>; text: string[] }> {
   const { api, info } = await gradioApi(o.url, o.token, o.signal)
   const names = Object.keys(info.named_endpoints ?? {})
-  if (!names.length) throw new Error('Gradio uygulamasında API’ye açık uç nokta yok')
+  if (!names.length) throw new UiError(message('error.ee01f7820d'))
   const want = o.endpoint?.trim()
   const name = want ? names.find((n) => n === want || n === `/${want.replace(/^\//, '')}`) : names[0]
-  if (!name) throw new Error(`Gradio uç noktası “${want}” yok. Var olanlar: ${names.join(', ')}`)
+  if (!name) throw new UiError(message('error.35bbac76ba', { p0: String(want), p1: String(names.join(', ')) }))
   const ep = info.named_endpoints![name]
   const params = ep.parameters ?? []
   const roles = mapRoles(params)
-  o.log(`Gradio: ${api.replace(/\/gradio_api$/, '')} · uç nokta ${name}`)
+  emitMessage(o.log, message('log.459b8eec25', { p0: String(api.replace(/\/gradio_api$/, '')), p1: String(name) }))
 
   const files: Record<string, Record<string, unknown>> = {}
   for (const k of ['image', 'model', 'audio'] as const) {
@@ -224,7 +226,7 @@ export async function gradioRun(o: GradioRunOptions): Promise<{ files: Record<Co
     { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers(o.token) }, body: JSON.stringify({ data }), signal: o.signal },
     'iş başlatma'
   )
-  if (!call.ok) throw new Error(`Gradio isteği reddetti (${call.status}): ${(await call.text()).slice(0, 300)}`)
+  if (!call.ok) throw new UiError(message('error.06621ac878', { p0: String(call.status), p1: String((await call.text()).slice(0, 300)) }))
   const { event_id } = (await call.json()) as { event_id: string }
   o.progress?.(10)
   const timeout = AbortSignal.timeout((o.timeoutMin && o.timeoutMin > 0 ? o.timeoutMin : 30) * 60_000)
@@ -234,32 +236,34 @@ export async function gradioRun(o: GradioRunOptions): Promise<{ files: Record<Co
   try {
     text = await res.text()
   } catch (e) {
-    if (timeout.aborted) throw new Error(`Gradio zaman aşımı (${o.timeoutMin || 30} dk)`, { cause: e })
+    if (timeout.aborted) throw new UiError(message('error.d7ecc2e675', { p0: String(o.timeoutMin || 30) }), { cause: e })
     throw e
   }
   const events = parseSse(text)
   const err = events.find((e) => e.event === 'error')
   const done = [...events].reverse().find((e) => e.event === 'complete')
   if (!done)
-    throw new Error(`Gradio uygulaması hata verdi${err?.data ? ` — ${String(typeof err.data === 'string' ? err.data : JSON.stringify(err.data)).slice(0, 300)}` : ' (uygulamanın konsoluna bakın)'}`)
+    throw new UiError(
+      message('error.ffdc6a020b', { p0: err?.data ? ` — ${String(typeof err.data === 'string' ? err.data : JSON.stringify(err.data)).slice(0, 300)}` : message('feedback.consoleHint') })
+    )
   const result = Array.isArray(done.data) ? done.data : [done.data]
   o.progress?.(80)
 
   const out: Record<ComfyOutputKind, string[]> = { image: [], model: [], audio: [], anim: [] }
   const texts = result.filter((v): v is string => typeof v === 'string' && !!v.trim())
-  for (const t of texts) o.log(`Gradio metin çıktısı: ${t.slice(0, 200)}`)
+  for (const t of texts) emitMessage(o.log, message('log.69e919a63f', { p0: String(t.slice(0, 200)) }))
   const found = collectFiles(result, ep.returns ?? [])
   ensureDir(o.outDir)
   const counts: Record<string, number> = {}
   for (const f of found) if (f.kind) counts[f.kind] = (counts[f.kind] ?? 0) + 1
   for (const f of found) {
     if (!f.kind) {
-      o.log(`Tanınmayan çıktı atlandı: ${f.ref.orig_name ?? f.ref.path ?? f.ref.url}`)
+      emitMessage(o.log, message('log.cf5bb68c3d', { p0: String(f.ref.orig_name ?? f.ref.path ?? f.ref.url) }))
       continue
     }
     const src = f.ref.url ? (/^https?:/i.test(f.ref.url) ? f.ref.url : `${base(o.url)}${f.ref.url.startsWith('/') ? '' : '/'}${f.ref.url}`) : `${api}/file=${f.ref.path}`
     const r = await request(src, { headers: headers(o.token), signal: o.signal }, 'çıktı indirme')
-    if (!r.ok) throw new Error(`Gradio çıktısı indirilemedi (${r.status}): ${src}`)
+    if (!r.ok) throw new UiError(message('error.72d169e3f4', { p0: String(r.status), p1: String(src) }))
     const n = out[f.kind].length + 1
     const ext = path.extname((f.ref.orig_name ?? f.ref.path ?? src).split('?')[0]).toLowerCase() || '.bin'
     const dest = path.join(o.outDir, `${o.baseName}${counts[f.kind] > 1 ? `_${n}` : ''}${ext}`)

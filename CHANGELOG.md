@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+- Interface language switching for English, Simplified Chinese, and Turkish, with persistent language preferences.
+
+### Fixed
+- Updated the transitive dependency `@hono/node-server` from 2.1.5 to 2.1.11 to address published security advisories.
+
 ## [0.6.0] - 2026-11-10
 
 ### Added

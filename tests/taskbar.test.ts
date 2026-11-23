@@ -1,7 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { describe, expect, it } from 'vitest'
 import type { Job, NodeRunState } from '../src/shared/types'
-import { jobsProgress, pageFromArgv } from '../src/main/taskbar'
+import { jobsProgress, pageFromArgv, localizedJumpPages } from '../src/main/taskbar'
+
+describe('localized jump-list captions', () => {
+  it('changes captions without changing page routes', () => {
+    const en = localizedJumpPages('en')
+    const zh = localizedJumpPages('zh-CN')
+    expect(en.map((x) => x.page)).toEqual(zh.map((x) => x.page))
+    expect(en.find((x) => x.page === 'settings')?.title).toBe('Settings')
+    expect(zh.find((x) => x.page === 'settings')?.title).toBe('设置')
+    expect(localizedJumpPages('tr').find((x) => x.page === 'home')?.title).toBe('Atölye')
+  })
+})
 
 const node = (status: NodeRunState['status'], progress = 0): NodeRunState => ({ status, progress, logs: [], attempts: 0 })
 const job = (status: Job['status'], nodes: NodeRunState[]): Job => ({ id: Math.random().toString(36), status, nodes: Object.fromEntries(nodes.map((n, i) => [`n${i}`, n])) }) as unknown as Job
